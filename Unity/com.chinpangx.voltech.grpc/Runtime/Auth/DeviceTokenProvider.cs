@@ -99,7 +99,7 @@ namespace VolTech.Client.Auth
 
         private async UniTask<AccountData> RegisterAsync()
         {
-            // サーバーは 16〜128 文字の表示できる ASCII 文字を受け付ける(Shared/docs/wiki/api/device-service.md)
+            // サーバーは 16〜128 文字の表示できる ASCII 文字を受け付ける(docs/wiki/api/device-service.md)
             var secretKey = Guid.NewGuid().ToString();
             var registered = await client.RegisterAsync(
                 new RegisterRequest { SecretKey = secretKey },

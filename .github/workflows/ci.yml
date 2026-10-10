@@ -1,0 +1,71 @@
+# 基盤の CI。Unity のテストはライセンスと時間が重いので、ここでは回さない(手元の sandbox で流す)。
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: app
+          MYSQL_USER: app
+          MYSQL_PASSWORD: app
+        ports:
+          - 13306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost -uroot -proot"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            server/rust
+            sandbox/server
+      # docker-compose.yml の docker/mysql/init と同じく、sandbox のサーバー用の DB を作る
+      - name: Create sandbox database
+        run: mysql -h 127.0.0.1 -P 13306 -uroot -proot < docker/mysql/init/01-sandbox.sql
+      - name: fmt
+        run: make fmt-check
+      - name: clippy
+        run: make lint
+      - name: test
+        run: |
+          cargo test --manifest-path server/rust/Cargo.toml
+          cargo test --manifest-path sandbox/server/Cargo.toml
+
+  plugin-and-codegen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: plugin test
+        run: make plugin-test
+      # 生成したコードはコミットしているので、生成し直して差分が出ないことを確かめる
+      - name: codegen is up to date
+        run: |
+          make proto-gen sandbox-proto-gen
+          git diff --exit-code
+
+  wiki:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - run: make wiki-lint

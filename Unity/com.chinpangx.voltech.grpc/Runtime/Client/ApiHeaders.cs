@@ -1,7 +1,7 @@
 ﻿namespace VolTech.Client
 {
     /// <summary>
-    /// サーバーとやり取りするヘッダー(メタデータ)の名前。サーバーの名前(Server/framework/status など)と一致させる。
+    /// サーバーとやり取りするヘッダー(メタデータ)の名前。サーバーの名前(server/rust/status など)と一致させる。
     /// </summary>
     public static class ApiHeaders
     {
