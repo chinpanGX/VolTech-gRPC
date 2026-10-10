@@ -3,7 +3,6 @@ title: "リポジトリ構成"
 status: index
 area: repo
 sections: ["2"]
-source: "docs/feature-grpc-foundation.md"
 updated: 2026-10-06
 ---
 

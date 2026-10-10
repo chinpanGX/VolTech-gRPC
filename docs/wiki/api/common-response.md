@@ -3,7 +3,6 @@ title: "共通レスポンス項目"
 status: confirmed
 area: api
 sections: ["3.9"]
-source: "docs/feature-grpc-foundation.md"
 related: [api/errors, server/transaction]
 proto: [sandbox/proto/sandbox/v1/sandbox.proto]
 updated: 2026-10-07

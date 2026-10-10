@@ -3,7 +3,6 @@ title: "認証とアカウント情報"
 status: confirmed
 area: client
 sections: ["5.5"]
-source: "docs/feature-grpc-foundation.md"
 related: [client/structure]
 proto: []
 code: [Unity/com.chinpangx.voltech.grpc/Runtime/Auth]

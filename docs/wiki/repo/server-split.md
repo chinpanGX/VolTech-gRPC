@@ -3,7 +3,6 @@ title: "サーバーの分け方"
 status: deferred
 area: repo
 sections: ["2.3"]
-source: "docs/feature-grpc-foundation.md"
 related: [server/transaction]
 proto: []
 updated: 2026-10-06

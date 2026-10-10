@@ -3,7 +3,6 @@ title: "ApiCore の共通処理"
 status: confirmed
 area: client
 sections: ["5.3"]
-source: "docs/feature-grpc-foundation.md"
 related: [api/metadata, client/error-handling, client/auth-account, client/response-items]
 proto: []
 code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/ApiCore.cs]

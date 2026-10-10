@@ -3,7 +3,6 @@ title: "エラー"
 status: confirmed
 area: api
 sections: ["3.5"]
-source: "docs/feature-grpc-foundation.md"
 related: [api/auth, server/auth, server/status, client/error-handling, client/response-items, ops/testing]
 proto: [sandbox/proto/sandbox/v1/error_code.proto]
 code: [server/rust/error]

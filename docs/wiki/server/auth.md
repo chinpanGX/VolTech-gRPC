@@ -3,7 +3,6 @@ title: "認証(サーバー)"
 status: confirmed
 area: server
 sections: ["4.5"]
-source: "docs/feature-grpc-foundation.md"
 related: [repo/boundary, api/auth, api/device-service]
 proto: [server/rust/auth/proto/voltech/v1/device.proto]
 code: [server/rust/auth]

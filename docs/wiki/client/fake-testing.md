@@ -3,7 +3,6 @@ title: "サーバーが無いときの差し替えとテスト"
 status: confirmed
 area: client
 sections: ["5.8"]
-source: "docs/feature-grpc-foundation.md"
 related: [api/codegen]
 proto: []
 code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/Testing]

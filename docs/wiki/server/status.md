@@ -3,7 +3,6 @@ title: "サーバーの状態(メンテナンス・強制アップデート・�
 status: confirmed
 area: server
 sections: ["4.6"]
-source: "docs/feature-grpc-foundation.md"
 related: [api/metadata]
 proto: [sandbox/proto/sandbox/v1/error_code.proto]
 code: [server/rust/status, sandbox/server/config/server_status.toml]

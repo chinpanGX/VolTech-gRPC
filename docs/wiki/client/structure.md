@@ -3,7 +3,6 @@ title: "構成"
 status: confirmed
 area: client
 sections: ["5.1"]
-source: "docs/feature-grpc-foundation.md"
 related: [repo/current-plan, client/auth-account, client/connection, ops/testing]
 proto: []
 updated: 2026-10-10

@@ -3,7 +3,6 @@ title: "共通レスポンス項目の反映"
 status: confirmed
 area: client
 sections: ["5.6"]
-source: "docs/feature-grpc-foundation.md"
 related: [api/codegen, api/common-response, client/fake-testing]
 proto: []
 code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/Hooks]

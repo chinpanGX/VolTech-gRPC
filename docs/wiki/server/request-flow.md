@@ -3,7 +3,6 @@ title: "リクエストの処理の流れ"
 status: confirmed
 area: server
 sections: ["4.2"]
-source: "docs/feature-grpc-foundation.md"
 related: [api/metadata, server/transaction, server/auth, server/status]
 proto: []
 code: [sandbox/server/server/src/lib.rs]

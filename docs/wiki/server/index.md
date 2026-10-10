@@ -3,7 +3,6 @@ title: "サーバー基盤(Rust)"
 status: index
 area: server
 sections: ["4"]
-source: "docs/feature-grpc-foundation.md"
 updated: 2026-10-06
 ---
 

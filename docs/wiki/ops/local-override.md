@@ -3,7 +3,6 @@ title: "パッケージとテンプレートを同時に直すとき"
 status: confirmed
 area: ops
 sections: ["6.4"]
-source: "docs/feature-grpc-foundation.md"
 related: [repo/current-plan]
 proto: []
 updated: 2026-10-10

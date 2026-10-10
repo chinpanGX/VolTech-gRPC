@@ -3,7 +3,6 @@ title: "ラッパー"
 status: confirmed
 area: client
 sections: ["5.2"]
-source: "docs/feature-grpc-foundation.md"
 related: [api/codegen, client/connection]
 proto: []
 code: [sandbox/UnityProject/Assets/Generated/Wrappers]

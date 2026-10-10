@@ -3,7 +3,6 @@ title: "冪等性(RequestID と idempotency_level)"
 status: confirmed
 area: api
 sections: ["3.6"]
-source: "docs/feature-grpc-foundation.md"
 related: [server/transaction]
 proto: [sandbox/proto/sandbox/v1/sandbox.proto]
 updated: 2026-10-06

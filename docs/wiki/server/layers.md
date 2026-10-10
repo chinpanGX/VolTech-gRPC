@@ -3,7 +3,6 @@ title: "レイヤー構成"
 status: confirmed
 area: server
 sections: ["4.1"]
-source: "docs/feature-grpc-foundation.md"
 related: [server/transaction]
 proto: []
 updated: 2026-10-06

@@ -3,7 +3,6 @@ title: "コレクター(差分・バッジ・通知)"
 status: confirmed
 area: server
 sections: ["4.4"]
-source: "docs/feature-grpc-foundation.md"
 related: [api/common-response]
 proto: []
 code: []

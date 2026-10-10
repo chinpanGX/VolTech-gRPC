@@ -3,7 +3,6 @@ title: "付録: Atlasの乗せ換え"
 status: appendix
 area: appendix
 sections: ["7.1", "7.2"]
-source: "docs/feature-grpc-foundation.md"
 related: [overview, api/errors, server/collectors, client/wrapper, client/api-core, client/error-handling, client/auth-account, client/response-items, client/fake-testing]
 proto: []
 updated: 2026-10-06

@@ -3,7 +3,6 @@ title: "参考資料"
 status: reference
 area: root
 sections: ["10"]
-source: "docs/feature-grpc-foundation.md"
 updated: 2026-10-06
 ---
 

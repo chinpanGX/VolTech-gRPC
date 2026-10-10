@@ -3,7 +3,6 @@ title: "API定義"
 status: index
 area: api
 sections: ["3"]
-source: "docs/feature-grpc-foundation.md"
 updated: 2026-10-10
 ---
 

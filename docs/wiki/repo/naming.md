@@ -3,7 +3,6 @@ title: "リポジトリ名と命名"
 status: current
 area: repo
 sections: ["2.2"]
-source: "docs/feature-grpc-foundation.md"
 related: [repo/current-plan, repo/folder-layout, ops/local-override]
 proto: []
 updated: 2026-10-10

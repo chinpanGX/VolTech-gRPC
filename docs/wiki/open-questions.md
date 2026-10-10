@@ -3,7 +3,6 @@ title: "未確定・保留"
 status: open
 area: root
 sections: ["9"]
-source: "docs/feature-grpc-foundation.md"
 updated: 2026-10-10
 ---
 

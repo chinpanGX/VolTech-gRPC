@@ -3,7 +3,6 @@ title: "運用(パッケージとテンプレート)"
 status: deferred
 area: repo
 sections: ["2.1"]
-source: "docs/feature-grpc-foundation.md"
 related: [ops/local-override]
 proto: [sandbox/proto/sandbox/v1/error_code.proto]
 updated: 2026-10-06

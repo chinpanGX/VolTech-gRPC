@@ -3,7 +3,6 @@ title: "エラー処理"
 status: confirmed
 area: client
 sections: ["5.4"]
-source: "docs/feature-grpc-foundation.md"
 related: [api/errors, client/auth-account, client/response-items]
 proto: []
 code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/Errors, Unity/com.chinpangx.voltech.grpc/Runtime/Client/ErrorHandling]

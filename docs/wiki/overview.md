@@ -3,7 +3,6 @@ title: "概要(目的・範囲・成果物・進め方・全体構成)"
 status: confirmed
 area: overview
 sections: ["1.1", "1.2", "1.3", "1.4", "1.5"]
-source: "docs/feature-grpc-foundation.md"
 related: [repo/operations, repo/naming, repo/folder-layout, repo/current-plan, api/errors, api/idempotency, api/common-response, server/transaction, client/fake-testing, appendix/atlas-migration]
 proto: []
 updated: 2026-10-10

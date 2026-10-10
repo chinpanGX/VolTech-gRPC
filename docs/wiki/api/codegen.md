@@ -3,7 +3,6 @@ title: "コード生成"
 status: confirmed
 area: api
 sections: ["3.4"]
-source: "docs/feature-grpc-foundation.md"
 related: [repo/folder-layout, api/errors, api/idempotency, api/auth, server/transaction, server/auth, client/wrapper, client/response-items, client/fake-testing]
 proto: []
 code: [tools/protoc-gen-voltech-grpc, buf.gen.yaml]

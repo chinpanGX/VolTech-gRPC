@@ -3,7 +3,6 @@ title: "基本規約(型の定義元・通信方式・nullable と oneof)"
 status: confirmed
 area: api
 sections: ["3.1", "3.2", "3.3"]
-source: "docs/feature-grpc-foundation.md"
 related: []
 proto: []
 updated: 2026-10-06

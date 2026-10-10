@@ -3,7 +3,6 @@ title: "開発運用"
 status: index
 area: ops
 sections: ["6"]
-source: "docs/feature-grpc-foundation.md"
 updated: 2026-10-06
 ---
 

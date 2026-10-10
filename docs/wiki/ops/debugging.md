@@ -3,7 +3,6 @@ title: "デバッグ"
 status: confirmed
 area: ops
 sections: ["6.2"]
-source: "docs/feature-grpc-foundation.md"
 related: [client/api-core]
 proto: []
 updated: 2026-10-07

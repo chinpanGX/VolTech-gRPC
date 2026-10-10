@@ -3,7 +3,6 @@ title: "当面の実装方針"
 status: current
 area: repo
 sections: ["2.6"]
-source: "docs/feature-grpc-foundation.md"
 related: [repo/operations, repo/naming, repo/folder-layout, api/errors]
 proto: [sandbox/proto/sandbox/v1/error_code.proto]
 updated: 2026-10-10

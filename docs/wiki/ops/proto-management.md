@@ -3,7 +3,6 @@ title: ".proto の管理"
 status: confirmed
 area: ops
 sections: ["6.1"]
-source: "docs/feature-grpc-foundation.md"
 related: []
 proto: []
 updated: 2026-10-06

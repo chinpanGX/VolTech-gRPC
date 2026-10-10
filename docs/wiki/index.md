@@ -3,13 +3,12 @@ title: "gRPC基盤 設計wiki"
 status: index
 area: root
 sections: []
-source: "docs/feature-grpc-foundation.md"
 updated: 2026-10-10
 ---
 
 # gRPC基盤 設計wiki
 
-> 原本: `docs/feature-grpc-foundation.md`(2026-10-06 時点で章・節ごとに分割した)。以後の更新は、この wiki と `proto/` を正とする。更新のルールは [CLAUDE.md](CLAUDE.md)。
+> 設計書(2026-10-06 時点)を章・節ごとに分割して作った。設計書は削除し、いまはコードと `.proto` を正、この wiki をその説明とする。更新のルールは [CLAUDE.md](CLAUDE.md)。
 
 > 本書は、Unity と Rust のサーバーを gRPC でつなぐ基盤の設計ドラフト。基盤はパッケージとして提供し、テンプレートはサンプルが兼ねる。当面は1つのリポジトリで実装し、形が固まったら基盤を分ける([2.6](repo/current-plan.md)、[リポジトリ名と命名](repo/naming.md))。
 >

@@ -3,7 +3,6 @@ title: "with_transaction() と冪等性"
 status: confirmed
 area: server
 sections: ["4.3"]
-source: "docs/feature-grpc-foundation.md"
 related: [server/collectors, client/api-core]
 proto: []
 code: [server/rust/transaction]

@@ -3,7 +3,6 @@ title: "メタデータ(ヘッダー)"
 status: confirmed
 area: api
 sections: ["3.8"]
-source: "docs/feature-grpc-foundation.md"
 related: [api/idempotency, api/auth, server/status, client/api-core]
 proto: []
 updated: 2026-10-10

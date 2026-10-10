@@ -3,7 +3,6 @@ title: "クライアント基盤(C# / Unity)"
 status: index
 area: client
 sections: ["5"]
-source: "docs/feature-grpc-foundation.md"
 updated: 2026-10-07
 ---
 

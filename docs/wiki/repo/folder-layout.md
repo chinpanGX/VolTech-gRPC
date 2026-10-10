@@ -3,7 +3,6 @@ title: "フォルダ構成"
 status: deferred
 area: repo
 sections: ["2.4"]
-source: "docs/feature-grpc-foundation.md"
 related: [repo/current-plan, api/errors]
 proto: [sandbox/proto/sandbox/v1/error_code.proto]
 updated: 2026-10-10

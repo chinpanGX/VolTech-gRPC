@@ -53,5 +53,5 @@ description: コードや .proto の変更に合わせて docs/wiki を直す。
 ## 注意
 
 - `status` を `confirmed` に上げるのは人が決める。自分の判断で上げない
-- 原本 `docs/feature-grpc-foundation.md` は編集しない
+- 正はソースコード(`.proto` を含む)。wiki に合わせてコードを直さない。コードが間違っていそうなら人に確認する
 - 日本語で書く。Python などで日本語を含む文字列を置き換えるときは UTF-8 で読み書きする(perl の `-CSD` だけでは、スクリプト中の日本語が化ける)

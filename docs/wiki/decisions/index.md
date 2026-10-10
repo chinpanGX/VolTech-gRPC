@@ -3,7 +3,6 @@ title: "採らなかった案(索引)"
 status: index
 area: decisions
 sections: ["8"]
-source: "docs/feature-grpc-foundation.md"
 updated: 2026-10-10
 ---
 

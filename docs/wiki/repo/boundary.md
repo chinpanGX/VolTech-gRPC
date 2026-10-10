@@ -3,7 +3,6 @@ title: "基盤とアプリの境界"
 status: deferred
 area: repo
 sections: ["2.5"]
-source: "docs/feature-grpc-foundation.md"
 related: [repo/operations, api/errors, api/common-response, server/transaction, server/auth, client/error-handling, client/auth-account, client/response-items]
 proto: [sandbox/proto/sandbox/v1/error_code.proto]
 updated: 2026-10-06

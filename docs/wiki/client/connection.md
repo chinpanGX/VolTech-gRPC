@@ -3,7 +3,6 @@ title: "接続設定"
 status: confirmed
 area: client
 sections: ["5.7"]
-source: "docs/feature-grpc-foundation.md"
 related: [server/request-flow]
 proto: []
 code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/ApiCoreOptions.cs, Unity/com.chinpangx.voltech.grpc/Runtime/Unity/ApiChannel.cs]
