@@ -9,8 +9,8 @@
 
 .EXAMPLE
   ./setup.ps1
-  ./setup.ps1 -ProjectPath Unity/UnityProject
-  ./setup.ps1 -ProjectPath Unity/UnityProject -NoLfs
+  ./setup.ps1 -ProjectPath sandbox/UnityProject
+  ./setup.ps1 -ProjectPath sandbox/UnityProject -NoLfs
   ./setup.ps1 -DryRun
 #>
 param(

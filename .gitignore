@@ -1,10 +1,11 @@
 # リポジトリ全体の .gitignore
-# Unity プロジェクトの分は Unity/UnityProject/.gitignore にある。
+# Unity プロジェクトの分は sandbox/UnityProject/.gitignore にある。
 
 # --- Rust ---
 # ビルド成果物(ワークスペース外で個別に cargo build したクレートの target も含む)
-/Server/target/
-/Server/**/target/
+/server/rust/target/
+/server/**/target/
+/sandbox/server/target/
 # rustfmt のバックアップ
 **/*.rs.bk
 # Windows の MSVC ビルドで出るデバッグシンボル
@@ -50,10 +51,11 @@ Thumbs.db
 Desktop.ini
 
 # --- Obsidian(docs/wiki を開いたときの、人ごとの画面の状態・プラグイン・ゴミ箱)---
-Shared/docs/wiki/.obsidian/workspace.json
-Shared/docs/wiki/.obsidian/workspace-mobile.json
-Shared/docs/wiki/.obsidian/plugins/
-Shared/docs/wiki/.trash/
+docs/wiki/.obsidian/workspace.json
+docs/wiki/.obsidian/workspace-mobile.json
+docs/wiki/.obsidian/graph.json
+docs/wiki/.obsidian/plugins/
+docs/wiki/.trash/
 
 # --- Python(wiki のスクリプトを動かすと作られる)---
 __pycache__/

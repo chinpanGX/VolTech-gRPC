@@ -1,5 +1,5 @@
 # リポジトリ全体の .gitattributes
-# Unity プロジェクトの分(LFS を含む)は Unity/UnityProject/.gitattributes にある。
+# Unity プロジェクトの分(LFS を含む)は sandbox/UnityProject/.gitattributes にある。
 
 # 既定: テキスト判定は Git に任せ、改行は LF で保存
 * text=auto eol=lf
@@ -27,7 +27,8 @@ Cargo.lock  text -diff linguist-generated
 *.sln       text eol=crlf
 
 # .proto から生成した C# はレビューの差分で畳む
-Unity/UnityProject/Assets/Scripts/Api/Generated/** linguist-generated
+Unity/com.chinpangx.voltech.grpc/Runtime/Generated/** linguist-generated
+sandbox/UnityProject/Assets/Generated/** linguist-generated
 
 # --- バイナリ ---
 *.png  binary

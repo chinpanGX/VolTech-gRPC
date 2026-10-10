@@ -6,7 +6,7 @@ description: Unity プロジェクトに .gitignore と .gitattributes (Git LFS 
 # Unity Git セットアップ
 
 Unity プロジェクトのルート (`Assets/` と `ProjectSettings/` がある階層) に
-`.gitignore` と `.gitattributes` を配置する。モノレポ (例: `Server/` と `Unity/UnityProject/` が同居)
+`.gitignore` と `.gitattributes` を配置する。モノレポ (例: `server/` と `sandbox/UnityProject/` が同居)
 でも、ファイルを Unity プロジェクト直下に置くことで他ディレクトリに影響しない。
 
 ## 構成

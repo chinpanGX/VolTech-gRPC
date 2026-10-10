@@ -1,9 +1,9 @@
-# 基盤(Server/framework)の .proto は、それぞれのクレートに置いている
+# 基盤(server/rust)の .proto は、それぞれのクレートに置いている
 version: v2
 modules:
-  - path: Shared/proto
-  - path: Server/framework/auth/proto
-  - path: Server/framework/error/proto
+  - path: server/rust/auth/proto
+  - path: server/rust/error/proto
+  # - path: sandbox/proto          # Phase 6 で .proto を作ってから、行頭の # を外す
 lint:
   use:
     - STANDARD

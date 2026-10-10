@@ -1,29 +1,21 @@
-# C# のコード生成。Rust は Server/app/proto の build.rs で生成する。
-# 生成先はここにだけ書く(Unity プロジェクトの Assets/Scripts/Api/Generated)。
+# 基盤の .proto(voltech.v1)→ UPM パッケージの C#。Rust は各クレートの build.rs で生成する。
+# sandbox の .proto は buf.gen.sandbox.yaml で sandbox の Unity プロジェクトに出す。
 # 通信するときに見るファイルを探しやすいように、生成するものの種類でフォルダを分ける
-# (Wrappers: 呼ぶときに使うラッパー、Messages: リクエスト・レスポンスの型、Grpc: ApiCore が使う gRPC クライアント)。
-# 名前空間は分けない(ラッパーのファイルがメッセージ型の partial class に目印を付けるので、同じ名前空間である必要がある)。
+# (Messages: リクエスト・レスポンスの型、Grpc: gRPC クライアント)。
+# 基盤のデバイス登録(voltech.v1)は Auth が直接呼ぶので、ラッパーは生成しない。
 # Unity では Grpc.Tools が動かないので、生成した C# はコミットする。
 version: v2
 # clean は使わない。生成のたびに .meta まで消えて GUID が変わり、差分が出るため。
 # .proto を消したときは、生成済みの .cs と .meta を手で消す
 plugins:
   # protoc 組み込みの C# 生成: メッセージ型
-  # 名前空間ごとのフォルダに出す(パッケージが違えば、同じ名前の .proto があってもぶつからない)
   - protoc_builtin: csharp
-    out: Unity/UnityProject/Assets/Scripts/Api/Generated/Messages
+    out: Unity/com.chinpangx.voltech.grpc/Runtime/Generated/Messages
     opt:
       - base_namespace=
   # grpc_csharp_plugin: gRPC クライアント(make proto-tools が .tools/bin に入れる)
   - local: grpc_csharp_plugin
-    out: Unity/UnityProject/Assets/Scripts/Api/Generated/Grpc
+    out: Unity/com.chinpangx.voltech.grpc/Runtime/Generated/Grpc
     opt:
       - no_server
       - base_namespace=
-  # 自作のプラグイン: ApiCore を通して呼ぶラッパー・RPC のパスの定数・共通レスポンス項目の目印のインターフェース
-  # (Tools/protoc-gen-voltech-grpc。make proto-plugin が .tools/voltech-grpc に入れる)
-  # 基盤のデバイス登録(voltech.v1)は Auth が直接呼ぶので、アプリのパッケージだけを生成する
-  - local: protoc-gen-voltech-grpc
-    out: Unity/UnityProject/Assets/Scripts/Api/Generated/Wrappers
-    opt:
-      - package=app.v1

@@ -1,0 +1,20 @@
+# sandbox の .proto(sandbox.v1)→ sandbox の Unity プロジェクトの C#。
+# 名前空間は分けない(ラッパーのファイルがメッセージ型の partial class に目印を付けるので、同じ名前空間である必要がある)。
+version: v2
+# clean は使わない(buf.gen.yaml と同じ理由)
+plugins:
+  - protoc_builtin: csharp
+    out: sandbox/UnityProject/Assets/Generated/Messages
+    opt:
+      - base_namespace=
+  - local: grpc_csharp_plugin
+    out: sandbox/UnityProject/Assets/Generated/Grpc
+    opt:
+      - no_server
+      - base_namespace=
+  # 自作のプラグイン: ApiCore を通して呼ぶラッパー・RPC のパスの定数・共通レスポンス項目の目印のインターフェース
+  # (tools/protoc-gen-voltech-grpc。make proto-plugin が .tools/voltech-grpc に入れる)
+  - local: protoc-gen-voltech-grpc
+    out: sandbox/UnityProject/Assets/Generated/Wrappers
+    opt:
+      - package=sandbox.v1
