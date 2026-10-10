@@ -2,15 +2,12 @@
 title: "API定義"
 status: index
 area: api
-sections: ["3"]
 updated: 2026-10-10
 ---
 
 # API定義
 
-> 原本の見出し: 3. API定義 【確定】
-
-`.proto` で決める、サーバーとクライアントの約束ごと。実装はサーバー([4章](../server/index.md))とクライアント([5章](../client/index.md))に書く。
+`.proto` で決める、サーバーとクライアントの約束ごと。実装はサーバー([サーバー基盤](../server/index.md))とクライアント([クライアント基盤](../client/index.md))に書く。
 
 ## ページ
 

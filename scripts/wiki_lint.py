@@ -8,7 +8,6 @@
   - status が決まった値のどれかであること
   - 相対リンクの先が存在すること(コードブロックの中は見ない)
   - frontmatter の related / proto / code が実在するページ・ファイルを指すこと(code は大文字・小文字まで)
-  - 原本の節番号(sections)が複数のページに重複していないこと(警告。1つの節を複数のページに分けることがあるため)
   - どのページも index.md から辿れること(警告)
 エラーがあれば終了コード 1。
 """
@@ -39,7 +38,6 @@ LINK = re.compile(r'\]\(\s*(?:<([^>]+)>|([^)\s]+))(?:\s+"[^"]*")?\s*\)')
 
 pages = dict.fromkeys(iter_pages())
 
-section_owner = {}
 links_of = {}
 for p in sorted(pages):
     name = page_name(p)
@@ -62,11 +60,6 @@ for p in sorted(pages):
         # 大文字・小文字まで確かめる(git のパスと文字列で比べる wiki_affected.py で一致しなくなるため)
         if not exists_exact(REPO, c):
             errors.append("%s: code '%s' が存在しない(大文字・小文字も確かめる)" % (name, c))
-    for s in as_list(name, fm, "sections"):
-        if "." in s:
-            if s in section_owner:
-                warnings.append("%s: sections '%s' が %s と重複" % (name, s, section_owner[s]))
-            section_owner[s] = name
     outs = set()
     for m in LINK.finditer(strip_code(body)):
         target = m.group(1) or m.group(2)

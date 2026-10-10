@@ -2,7 +2,6 @@
 title: "クライアントのリファレンス"
 status: current
 area: guide
-sections: []
 related: [guide/add-api, client/api-core, client/error-handling, client/response-items, client/auth-account, client/fake-testing, client/structure]
 proto: []
 code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client, Unity/com.chinpangx.voltech.grpc/Runtime/Auth, Unity/com.chinpangx.voltech.grpc/Runtime/Unity, Unity/com.chinpangx.voltech.grpc/Runtime/Client/Errors/ProtoErrorPolicyProvider.cs]

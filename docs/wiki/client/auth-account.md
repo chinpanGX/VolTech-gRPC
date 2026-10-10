@@ -2,16 +2,15 @@
 title: "認証とアカウント情報"
 status: confirmed
 area: client
-sections: ["5.5"]
 related: [client/structure]
 proto: []
 code: [Unity/com.chinpangx.voltech.grpc/Runtime/Auth]
-updated: 2026-10-06
+updated: 2026-10-10
 ---
 
 # 認証とアカウント情報
 
-パッケージの Auth(Unity に依存しない .NET のコード。名前は [5.1](structure.md) の注記のとおり、作るときに決める)が持つ。`ApiCore` とは、トークンを渡す interface(例: `ITokenProvider`)でつなぐ。保存先のパスとバンドルIDは、Unity 用の層が渡す。
+パッケージの Auth(Unity に依存しない .NET のコード。名前は [構成](structure.md) の注記のとおり、作るときに決める)が持つ。`ApiCore` とは、トークンを渡す interface(例: `ITokenProvider`)でつなぐ。保存先のパスとバンドルIDは、Unity 用の層が渡す。
 
 ## デバイス登録とトークン
 
@@ -74,12 +73,3 @@ public interface IAccountStore
 - 鍵の元がアプリの中にある以上、暗号化は難読化の位置づけ(他のアプリからはOSのサンドボックスで守られる)。本当に守りたいアプリは、iOSのKeychainやAndroidのKeystoreを使う実装に差し替える
 - PBKDF2は本来は要らないが、コストは無視できるので、動作確認済みのコードを変える量を減らすために残す
 - 注意(v1ではドキュメントに書くだけ): 保存したファイルはOSのバックアップに含まれることがある。別の端末に戻すと、2台が同じ `device_id` を持ち、認証のたびに互いのトークンを無効にし合う。バックアップから外すかはアプリに任せる
-
-## 採らなかった案
-
-| 項目 | 採らなかった案 | 理由 |
-|---|---|---|
-| アカウント情報の保存 | JsonUtility で JSON にする | Unity に依存し、本体(Core)に置けない |
-| アカウント情報の保存 | BinaryWriter で手書き、MessagePack-CSharp | 項目を足すときにバージョンを自分で管理する / 依存が増える |
-| アカウント情報の保存 | `BinaryFormatter` | 安全上の問題があり、.NET では廃止の方向 |
-| アカウント情報の保存 | Supplement にパッケージとして依存する | 基盤の用途に合わせて作り変えるため、コードをコピーする |

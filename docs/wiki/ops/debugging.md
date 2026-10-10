@@ -2,10 +2,9 @@
 title: "デバッグ"
 status: confirmed
 area: ops
-sections: ["6.2"]
 related: [client/api-core]
 proto: []
-updated: 2026-10-07
+updated: 2026-10-10
 ---
 
 # デバッグ

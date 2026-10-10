@@ -2,7 +2,6 @@
 title: "サーバーのリファレンス"
 status: current
 area: guide
-sections: []
 related: [guide/add-api, server/request-flow, server/transaction, server/auth, server/status, api/errors]
 proto: []
 code: [server/rust/auth/src, server/rust/error/src, server/rust/status/src, server/rust/transaction/src, sandbox/server/server/src/lib.rs, sandbox/server/server/src/main.rs, sandbox/server/server/src/sandbox_service.rs]

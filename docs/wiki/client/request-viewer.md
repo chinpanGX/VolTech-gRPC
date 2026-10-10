@@ -2,7 +2,6 @@
 title: "通信の Viewer(エディタ拡張)"
 status: current
 area: client
-sections: []
 related: [client/api-core, client/structure, client/connection, ops/debugging, api/metadata, api/errors]
 proto: []
 code: [Unity/com.chinpangx.voltech.grpc/Runtime/Tracing, Unity/com.chinpangx.voltech.grpc/Editor, Unity/com.chinpangx.voltech.grpc/Runtime/Unity/ApiChannel.cs]
@@ -162,17 +161,3 @@ USB でつないだ実機からの受け取りは、自動のテストで確か�
 - `ApiTraceInterceptor`: `FakeCallInvoker` を包んで呼び、成功・業務エラー・通信エラーで、ヘッダー・Body の JSON・ステータス・`ErrorInfo` が記録されること。結果と例外がそのまま呼び出し側に返ること。記録の処理で例外が起きても通信が失敗しないこと(EditMode テスト)
 - 端末から送る形: `ApiTrace` を JSON にして読み戻すと、同じ中身になること。切り詰めがサロゲートペアを割らないこと(EditMode テスト)
 - ウィンドウと実機からの受け取りは自動のテストをせず、サンプルを Play したときと、開発ビルドを USB でつないだときに、目で確かめる
-
-## 採らなかった案
-
-| 項目 | 採らなかった案 | 理由 |
-|---|---|---|
-| 記録する場所 | `ApiCore` の中(`IApiLogger` を広げる) | トークンの発行(`DeviceTokenProvider`)が見えない。実際に送ったヘッダー・受け取ったトレーラーも見えない |
-| 記録する場所 | YetAnotherHttpHandler の HTTP の層 | HTTP/2 のフレームから gRPC のメッセージを読み直すことになり、手間に見合わない |
-| Body の見せ方 | `IMessage.ToString()`(1行の JSON) | 長いレスポンスが読めない。既定値のフィールドが出ないので、送ったかどうか分からない |
-| 画面の作り方 | UXML・USS を用意する | 小さなツールなので、C# だけのほうがファイルが少なく、追いやすい |
-| Viewer の機能 | 表示した JSON を貼り付け・書き換えて、Viewer から送り直す | `ApiCore` を通らずに送ると、トークン・順番待ち・RequestID の扱いが実際のアプリと変わる。送り直しはアプリの操作で行う |
-| 実機の通信 | 端末の画面に Viewer を作る | 小さい画面で読める UI を作るのが難しく、JSON のコピーもしにくい。USB でつないでエディタで見れば足りる |
-| 実機の通信 | 自前のソケット・HTTP サーバーでエディタに送る | Unity の PlayerConnection がプロファイラーと同じ接続(USB・ADB)をそのまま使える |
-| ビルドから除く方法 | `#if UNITY_EDITOR \|\| DEVELOPMENT_BUILD` でコードを囲む | どのコードがどのビルドに入るかが、ファイルを開かないと分からない。エディタで一部のコード(実機だけの処理)がコンパイルされず、壊れても気づけない。アセンブリで分ければ、asmdef を見るだけで分かる |
-| ビルドでの記録 | トークンや secret_key が残る。開発ビルドだけにする |

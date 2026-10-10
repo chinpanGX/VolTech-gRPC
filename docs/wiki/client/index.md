@@ -2,13 +2,10 @@
 title: "クライアント基盤(C# / Unity)"
 status: index
 area: client
-sections: ["5"]
-updated: 2026-10-07
+updated: 2026-10-10
 ---
 
 # クライアント基盤(C# / Unity)
-
-> 原本の見出し: 5. クライアント基盤 【確定】
 
 基盤は、**gRPCを呼び出し側から隠すラッパー**と、**共通処理をまとめた `ApiCore`** を提供する(DeNAの内製基盤Takashoと同じ考え方)。型名(`ApiCore`、`ApiResult` など)は、実装するときに調整してよい。
 

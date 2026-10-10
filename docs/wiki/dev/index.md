@@ -2,7 +2,6 @@
 title: "基盤開発者向けガイド"
 status: index
 area: dev
-sections: []
 related: [guide/index, repo/current-plan]
 proto: []
 updated: 2026-10-10

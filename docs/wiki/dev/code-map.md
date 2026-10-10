@@ -2,7 +2,6 @@
 title: "コードの地図"
 status: current
 area: dev
-sections: []
 related: [repo/current-plan, dev/workflow, guide/client-reference, guide/server-reference]
 proto: []
 code: [server/rust/Cargo.toml, server/rust, sandbox/server, Unity/com.chinpangx.voltech.grpc, tools/protoc-gen-voltech-grpc, sandbox/proto, scripts, buf.yaml, buf.gen.yaml]
@@ -29,9 +28,9 @@ updated: 2026-10-10
 | `Unity/com.chinpangx.voltech.grpc/Editor/` | `VolTech.Client.Editor` | 通信の Viewer のウィンドウと、実機の記録の受け取り。エディタだけ | 目で確かめる |
 | `tools/protoc-gen-voltech-grpc/` | `protoc-gen-voltech-grpc` | ラッパーを生成する protoc プラグイン([protoc プラグインの中身](protoc-plugin.md)) | `tests/` |
 
-## sandbox(基盤の動作確認用。配布しない)
+## sandbox(アプリの雛形。基盤の動作確認も兼ねる)
 
-アプリとしての確認は grpc-foundation-samples で行う。sandbox には基盤の機能を1つずつ試す RPC だけを置く。
+テンプレートから作ったアプリは、sandbox を書き換えてアプリにする([始め方](../guide/getting-started.md))。このリポジトリでは、基盤の機能を1つずつ試す RPC だけを置く(業務機能は入れない。アプリとしての確認は grpc-foundation-samples で行う)。
 
 | 置き場所 | 中身 |
 |---|---|
@@ -45,7 +44,7 @@ updated: 2026-10-10
 
 ## 依存の向き
 
-- サーバー: `server/rust/` のクレートは sandbox やアプリに依存しない。`voltech-grpc-auth`・`-status`・`-transaction` は `voltech-grpc-error` に依存する。sandbox は別のワークスペースから `path` で基盤を参照する(アプリが `git` で参照するのと同じ形)
+- サーバー: `server/rust/` のクレートは sandbox やアプリに依存しない。`voltech-grpc-auth`・`-status`・`-transaction` は `voltech-grpc-error` に依存する。sandbox は別のワークスペースから `path` で基盤を参照する(テンプレートから作ったアプリも同じ形)
 - クライアント: `VolTech.Client` は Unity に依存しない(asmdef の No Engine References)。`VolTech.V1` を `VolTech.Client`・`VolTech.Client.Auth` が参照し、`VolTech.Client.Auth` を `VolTech.Client.Unity` が参照する。`VolTech.Client.Unity` は `VolTech.Client.Tracing` を参照しない(`Tracing` の側が起動時に `ApiChannel.AddInterceptor` で登録する。リリースビルドで消えるアセンブリを参照しないため)
 - asmdef の参照は GUID で書く([構成](../client/structure.md))
 

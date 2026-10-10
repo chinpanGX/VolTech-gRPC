@@ -1,40 +1,61 @@
 ---
-title: "gRPC基盤 設計wiki"
+title: "VolTech gRPC wiki"
 status: index
 area: root
-sections: []
 updated: 2026-10-10
 ---
 
-# gRPC基盤 設計wiki
+# VolTech gRPC wiki
 
-> 設計書(2026-10-06 時点)を章・節ごとに分割して作った。設計書は削除し、いまはコードと `.proto` を正、この wiki をその説明とする。更新のルールは [CLAUDE.md](CLAUDE.md)。
+Unity のクライアントと Rust のサーバーを gRPC でつなぐための基盤。`.proto` に API を書くと、サーバーとクライアントの型と呼び出しのコードが生成され、通信のたびに要る処理は基盤が受け持つ。
 
-> 本書は、Unity と Rust のサーバーを gRPC でつなぐ基盤の設計ドラフト。基盤はパッケージとして提供し、テンプレートはサンプルが兼ねる。当面は1つのリポジトリで実装し、形が固まったら基盤を分ける([2.6](repo/current-plan.md)、[リポジトリ名と命名](repo/naming.md))。
->
-> - **VolTech gRPC**(`voltech-grpc`): 基盤のパッケージ。Unity のクライアントの通信基盤、サーバーの認証・エラー・状態の判定・トランザクション、ラッパー生成の protoc プラグイン
-> - **サンプル兼テンプレート**(`grpc-foundation-samples`): 基盤を使うアプリの雛形と、簡略化したガチャのサンプル
->
-> テンプレートは簡略化したガチャをサンプルにして作り、完成後にAtlasのAPIサーバーをgRPCへ乗せ換える([1.4](overview.md))。
+| 基盤がすること | アプリが書くこと |
+|---|---|
+| デバイス登録・トークンの発行・認証(初回の通信で自動) | API の `.proto` |
+| エラーの変換と、ダイアログ・画面遷移の振り分け | ハンドラー(業務処理)と DB のテーブル |
+| 再送しても一度だけ処理する(RequestID) | ダイアログの見た目と画面遷移 |
+| 1リクエスト = 1トランザクション | 所持データの差分(`player_diff`)の反映処理 |
+| メンテナンス・強制アップデート・日付変更の判定 | |
+| 通信の記録と、エディタでの確認(Request Viewer) | |
 
-- ステータス: ドラフト。決まった節には【確定】を付けている。決まっていないことは[9章](open-questions.md)、採らなかった案は[8章](decisions/index.md)、参考資料は[10章](references.md)にまとめている
-- 実装の進め方: パッケージ・リポジトリの分け方は後で検討する。当面は1つのリポジトリで、[2.6](repo/current-plan.md) の方針で実装を進める
-- 文中の「学マス資料」「シャドバWB資料」は[10章](references.md)の資料を指す
+このリポジトリはテンプレートで、アプリはこれを clone して作る。基盤と、アプリの雛形(`sandbox/`)が入っている。作り込んだ例は [grpc-foundation-samples](https://github.com/chinpanGX/grpc-foundation-samples)(ガチャのアプリ)にある。
 
-## 読む人ごとの入口
+## はじめて使う人はこの順に読む
 
-- **基盤を使ってアプリを作る人**: [利用者向けガイド](guide/index.md) — 始め方、API の足し方、クライアント・サーバーのリファレンス、ツール
-- **基盤そのものを直す人**: [基盤開発者向けガイド](dev/index.md) — コードの地図、直すときの流れ、protoc プラグインの中身
+1. [始め方](guide/getting-started.md) — clone して、雛形のサーバーとクライアントを動かす
+2. [API を足す](guide/add-api.md) — `.proto` を書き、生成し、サーバーとクライアントから使う
+3. 組み込むときに引く: [クライアントのリファレンス](guide/client-reference.md)・[サーバーのリファレンス](guide/server-reference.md)・[ツール](guide/tools.md)
+
+## やりたいことから探す
+
+| やりたいこと | 読むページ |
+|---|---|
+| 業務エラー(ジェム不足など)を返したい | [エラー](api/errors.md) |
+| エラーを画面で自分で処理したい / ダイアログの見た目を変えたい | [エラー処理](client/error-handling.md) |
+| 課金のような RPC を二重に実行させたくない / 読むだけの RPC にしたい | [冪等性](api/idempotency.md) |
+| 所持データの変化をクライアントに反映したい | [共通レスポンス項目](api/common-response.md)・[反映](client/response-items.md) |
+| メンテナンス・強制アップデートにしたい | [サーバーの状態](server/status.md) |
+| 接続先・タイムアウトを変えたい | [接続設定](client/connection.md) |
+| サーバー無しでクライアントを試したい・テストしたい | [サーバーが無いときの差し替えとテスト](client/fake-testing.md) |
+| 通信の中身を見たい | [ツール](guide/tools.md)(Request Viewer)・[デバッグ](ops/debugging.md)(grpcurl) |
+| 環境を作りたい・make のコマンドを知りたい | [環境構築とよく使うコマンド](ops/setup.md) |
+| upstream から基盤を取り込みたい | [運用](repo/operations.md) |
+
+## 基盤そのものを直す人
+
+[基盤開発者向けガイド](dev/index.md) から読む(コードの地図、直すときの流れ)。wiki の書き方は [CLAUDE.md](CLAUDE.md)。決まっていないことは [未確定・保留](open-questions.md)。
 
 ## ページ一覧
 
-状態: `confirmed` 確定 / `deferred` 保留(別リポジトリ案) / `current` 当面の方針 / `appendix` 付録(基盤の設計とは別)
+下の「設計」の各章は、なぜその形にしたかを書いたページ。使い方だけを知りたいときは、上の入口から読めばよい。
+
+状態: `confirmed` 確定 / `current` 当面の方針(あとで変わり得る) / `deferred` 保留 / `appendix` 付録
 
 ### [利用者向けガイド](guide/index.md)
 
 | ページ | 状態 | 内容 |
 |---|---|---|
-| [始め方](guide/getting-started.md) | `current` | テンプレートを clone して、サーバーとクライアントを動かすまで |
+| [始め方](guide/getting-started.md) | `current` | テンプレート(このリポジトリ)を clone して、雛形のサーバーとクライアントを動かすまで |
 | [API を足す](guide/add-api.md) | `current` | `.proto` → 生成 → サーバーのハンドラー → クライアントの呼び出し |
 | [クライアントのリファレンス](guide/client-reference.md) | `current` | `ApiCore`・ラッパー・アプリが実装する interface・テスト用の部品 |
 | [サーバーのリファレンス](guide/server-reference.md) | `current` | `voltech-grpc-*` のクレートと組み込み方 |
@@ -58,7 +79,7 @@ updated: 2026-10-10
 
 | ページ | 状態 | 内容 |
 |---|---|---|
-| [運用(パッケージとテンプレート)](repo/operations.md) | `deferred` | パッケージ(バージョン参照)とテンプレート(clone)の2形態での提供と、その運用 |
+| [運用(パッケージとテンプレート)](repo/operations.md) | `deferred` | テンプレート(clone して基盤を手元で参照)を基本に、既存のアプリにはタグで参照させる運用 |
 | [リポジトリ名と命名](repo/naming.md) | `current` | リポジトリ・パッケージ・クレート・.proto パッケージの命名と理由 |
 | [サーバーの分け方](repo/server-split.md) | `deferred` | モジュラーモノリスの採用と、プロセスを分ける基準 |
 | [フォルダ構成](repo/folder-layout.md) | `deferred` | テンプレート/パッケージのフォルダ構成と、クレート依存の向き |
@@ -111,7 +132,7 @@ updated: 2026-10-10
 | [.proto の管理](ops/proto-management.md) | `confirmed` | buf による lint / breaking / generate |
 | [デバッグ](ops/debugging.md) | `confirmed` | Postman・grpcurl・gRPC リフレクション |
 | [テスト](ops/testing.md) | `confirmed` | 結合テストの観点と、実行するタイミング |
-| [パッケージとテンプレートを同時に直すとき](ops/local-override.md) | `confirmed` | リポジトリを分けた場合の手元参照の手順 |
+| [パッケージとテンプレートを同時に直すとき](ops/local-override.md) | `confirmed` | 基盤をタグで参照しているアプリから、手元の基盤を参照する手順 |
 
 ### 付録
 
@@ -122,5 +143,3 @@ updated: 2026-10-10
 ### 判断の記録
 
 - [未確定・保留](open-questions.md) — 決まっていないこと
-- [採らなかった案(索引)](decisions/index.md) — 検討して見送った案と、その理由
-- [参考資料](references.md) — 設計の根拠にした資料とリンク

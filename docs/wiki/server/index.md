@@ -2,13 +2,10 @@
 title: "サーバー基盤(Rust)"
 status: index
 area: server
-sections: ["4"]
-updated: 2026-10-06
+updated: 2026-10-10
 ---
 
 # サーバー基盤(Rust)
-
-> 原本の見出し: 4. サーバー基盤 【確定(クレートの細かい分け方を除く)】
 
 ## ページ
 

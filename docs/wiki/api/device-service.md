@@ -2,7 +2,6 @@
 title: "API: DeviceService(デバイス登録・トークンの発行)"
 status: current
 area: api
-sections: []
 related: [api/auth, api/metadata, api/errors, server/auth, client/auth-account]
 proto: [server/rust/auth/proto/voltech/v1/device.proto]
 updated: 2026-10-10

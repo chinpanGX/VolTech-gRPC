@@ -2,20 +2,19 @@
 title: "API を足す"
 status: current
 area: guide
-sections: []
 related: [guide/client-reference, guide/server-reference, guide/tools, api/codegen, api/errors, api/idempotency, api/common-response]
 proto: [sandbox/proto/sandbox/v1/sandbox.proto, sandbox/proto/sandbox/v1/error_code.proto]
-code: [sandbox/server/server/src, sandbox/server/server/src/lib.rs, buf.gen.yaml]
+code: [sandbox/server/server/src, sandbox/server/server/src/lib.rs, sandbox/server/proto/build.rs, buf.gen.sandbox.yaml]
 updated: 2026-10-10
 ---
 
 # API を足す
 
-新しい API を足すときの手順。例はサンプルのガチャ(`GachaService/Draw`)で、パスとコマンドは grpc-foundation-samples の構成で書く(アプリは samples を clone して作るため)。`.proto` が API の唯一の定義元で、サーバー(Rust)とクライアント(C#)のコードはそこから生成する([コード生成](../api/codegen.md))。
+新しい API を足すときの手順。パスとコマンドは、テンプレートの雛形(`sandbox/`)の構成で書く([始め方](getting-started.md))。コードの例はサンプルのガチャ(`GachaService/Draw`。grpc-foundation-samples に全体がある)。`.proto` が API の唯一の定義元で、サーバー(Rust)とクライアント(C#)のコードはそこから生成する([コード生成](../api/codegen.md))。
 
 ## 1. `.proto` を書く
 
-アプリの `.proto` は `Shared/proto/app/v1/` に置く。サーバーはこのフォルダの `.proto` をすべて読むので、ファイルを足すだけでよい。
+アプリの `.proto` は `sandbox/proto/sandbox/v1/` に置く。ファイルを足したら、サーバーの生成の対象(`sandbox/server/proto/build.rs` の `protox::compile` に渡す一覧)にも足す。
 
 ```proto
 service GachaService {
@@ -35,15 +34,15 @@ service GachaService {
 ## 2. コードを生成する
 
 ```
-make proto-gen
+make sandbox-proto-gen
 ```
 
-- C#: `Unity/UnityProject/Assets/Scripts/Api/Generated/` に、メッセージ型(`Messages/`)・gRPC クライアント(`Grpc/`)・ラッパー(`Wrappers/`。`GachaApi` のように、サービスごとに1クラス)ができる。生成したコードはコミットする
-- Rust: `make proto-gen` は要らない。サーバーをビルドすると、`Server/app/proto` の `build.rs` が生成する(生成コードはコミットしない)
+- C#: `sandbox/UnityProject/Assets/Generated/` に、メッセージ型(`Messages/`)・gRPC クライアント(`Grpc/`)・ラッパー(`Wrappers/`。`GachaApi` のように、サービスごとに1クラス)ができる。生成したコードはコミットする
+- Rust: 生成のコマンドは要らない。サーバーをビルドすると、`sandbox/server/proto` の `build.rs` が生成する(生成コードはコミットしない)
 
 ## 3. サーバーのハンドラーを書く
 
-`Server/app/api/src/` に、生成されたサービスの trait を実装する。本体は `Transactions::run` の中で動かす。トランザクションと、冪等性の対象の RPC の二重実行の防止を、基盤がまとめて行う。
+`sandbox/server/server/src/` に、生成されたサービスの trait を実装する(雛形では `sandbox_service.rs`)。本体は `Transactions::run` の中で動かす。トランザクションと、冪等性の対象の RPC の二重実行の防止を、基盤がまとめて行う。
 
 ```rust
 async fn draw(&self, request: Request<DrawRequest>) -> Result<Response<DrawResponse>, Status> {
@@ -69,7 +68,7 @@ async fn draw(&self, request: Request<DrawRequest>) -> Result<Response<DrawRespo
 }
 ```
 
-作ったサービスは `Server/app/server/src/lib.rs` で登録する。認証が要るサービスには `AuthLayer` と `DateChangeLayer` を付ける(付け忘れると、ハンドラーで認証の情報が取れずに INTERNAL になる)。
+作ったサービスは `sandbox/server/server/src/lib.rs` で登録する。認証が要るサービスには `AuthLayer` と `DateChangeLayer` を付ける(付け忘れると、ハンドラーで認証の情報が取れずに INTERNAL になる)。
 
 ```rust
 .add_service(auth.layer(date_change.layer(GachaServiceImpl::new(transactions).into_server())))
@@ -79,7 +78,7 @@ async fn draw(&self, request: Request<DrawRequest>) -> Result<Response<DrawRespo
 
 ## 4. クライアントから呼ぶ
 
-生成したラッパーを、`ApiCore` と `CallInvoker` を渡して作る。サンプルでは `SampleLifetimeScope` で VContainer に登録している。
+生成したラッパーを、`ApiCore` と `CallInvoker` を渡して作る。雛形ではテストの `ApiServerTestBase` で作っている。samples では `SampleLifetimeScope` で VContainer に登録している。
 
 ```csharp
 builder.Register(resolver => new GachaApi(resolver.Resolve<ApiCore>(), callInvoker), Lifetime.Singleton);
@@ -111,7 +110,7 @@ if (!result.IsSuccess && result.Error.Code == (int)ErrorCode.InsufficientGems)
 
 ## 5. テストを書く
 
-- サーバー: `Server/app/server/tests/` に、起動したサーバーに gRPC でつなぐ結合テストを書く(MySQL を使う)
+- サーバー: `sandbox/server/server/tests/` に、起動したサーバーに gRPC でつなぐ結合テストを書く(MySQL を使う)
 - クライアント: `FakeCallInvoker` に RPC の処理を登録すれば、サーバー無しでラッパーと `ApiCore` を通せる。生成した `GachaServiceMethods.Draw` などのパスの定数を使う([サーバーが無いときの差し替えとテスト](../client/fake-testing.md))
 
 ## チェックリスト
@@ -119,6 +118,6 @@ if (!result.IsSuccess && result.Error.Code == (int)ErrorCode.InsufficientGems)
 - [ ] `.proto` のコメントに、何をするか・どのエラーをいつ返すかを書いた
 - [ ] 冪等性(`idempotency_level`)を決めた
 - [ ] 新しいエラーコードに既定の action を付けた
-- [ ] `make proto-gen` で生成したコードをコミットした
+- [ ] `make sandbox-proto-gen` で生成したコードをコミットした
 - [ ] サーバーのサービスを登録し、`AuthLayer`・`DateChangeLayer` を付けた
 - [ ] クライアントのラッパーを登録した

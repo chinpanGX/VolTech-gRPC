@@ -2,15 +2,12 @@
 title: "リポジトリ構成"
 status: index
 area: repo
-sections: ["2"]
-updated: 2026-10-06
+updated: 2026-10-10
 ---
 
 # リポジトリ構成
 
-> 原本の見出し: 2. リポジトリ構成 【分け方は保留。当面は 2.6 で進める】
-
-> [2.1](operations.md)〜[2.4](folder-layout.md)(と [1.3](../overview.md) のリポジトリ、[6.4](../ops/local-override.md) の手順)は、パッケージとテンプレートを別のリポジトリにする場合の形。パッケージ・リポジトリにどう分けるかは、実装を進めて形が固まってから検討する([9章](../open-questions.md) #17)。それまでは [2.6](current-plan.md) の方針で、1つのリポジトリで実装する。
+> [運用](operations.md)〜[フォルダ構成](folder-layout.md)(と [概要](../overview.md) のリポジトリ、[パッケージとテンプレートを同時に直すとき](../ops/local-override.md) の手順)は、パッケージとテンプレートを別のリポジトリにする場合の形。パッケージ・リポジトリにどう分けるかは、実装を進めて形が固まってから検討する([未確定・保留](../open-questions.md) #17)。それまでは [当面の実装方針](current-plan.md) の方針で、1つのリポジトリで実装する。
 
 ## ページ
 

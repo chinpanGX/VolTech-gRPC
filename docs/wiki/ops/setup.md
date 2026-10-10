@@ -2,7 +2,6 @@
 title: "環境構築とよく使うコマンド"
 status: current
 area: ops
-sections: []
 related: [ops/proto-management, ops/testing, guide/getting-started, api/codegen]
 proto: []
 code: [Makefile, scripts/proto-tools.sh, .env.example, buf.gen.yaml, buf.gen.sandbox.yaml]
@@ -11,14 +10,14 @@ updated: 2026-10-10
 
 # 環境構築とよく使うコマンド
 
-このリポジトリ(VolTech gRPC)で、基盤を直して確かめるまでの手順。アプリとして動かすのは grpc-foundation-samples で行う([始め方](../guide/getting-started.md))。
+このリポジトリ(VolTech gRPC)の環境構築と、よく使うコマンド。基盤を直すときも、テンプレートから作ったアプリでも同じ手順で使う([始め方](../guide/getting-started.md))。
 
 | フォルダ | 内容 |
 |---|---|
 | `server/rust/` | サーバーの基盤クレート(Cargo ワークスペース) |
 | `Unity/com.chinpangx.voltech.grpc/` | Unity クライアントの UPM パッケージ |
 | `tools/protoc-gen-voltech-grpc/` | ラッパーを生成する protoc プラグイン([コード生成](../api/codegen.md)) |
-| `sandbox/` | 基盤の動作確認用の `.proto`・サーバー・Unity プロジェクト(配布しない) |
+| `sandbox/` | アプリの雛形(`.proto`・サーバー・Unity プロジェクト)。基盤の動作確認にも使う |
 | `docs/wiki/` | 設計(この wiki) |
 
 ## 必須のツール
@@ -27,7 +26,7 @@ updated: 2026-10-10
 |---|---|---|
 | Docker Desktop | | MySQL(`make db-up`) |
 | Rust(rustup) | stable(edition 2024) | サーバーのビルド・テスト |
-| Unity | 6000.3.17f1 | sandbox の Unity プロジェクト(パッケージのコンパイルとテスト) |
+| Unity | 6000.6.5f1 | sandbox の Unity プロジェクト(パッケージのコンパイルとテスト) |
 | .NET SDK | 10 で確認 | protoc プラグインと、クライアントの書き方のチェック(`make client-lint`) |
 | GNU Make | | `make` のコマンド |
 | Git for Windows | | Windows では、`make` のコマンドを Git Bash で動かす |

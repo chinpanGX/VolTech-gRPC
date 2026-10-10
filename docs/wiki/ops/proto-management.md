@@ -2,10 +2,9 @@
 title: ".proto の管理"
 status: confirmed
 area: ops
-sections: ["6.1"]
 related: []
 proto: []
-updated: 2026-10-06
+updated: 2026-10-10
 ---
 
 # .proto の管理

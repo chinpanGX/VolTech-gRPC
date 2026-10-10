@@ -2,13 +2,10 @@
 title: "開発運用"
 status: index
 area: ops
-sections: ["6"]
-updated: 2026-10-06
+updated: 2026-10-10
 ---
 
 # 開発運用
-
-> 原本の見出し: 6. 開発運用 【確定】
 
 ## ページ
 

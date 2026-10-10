@@ -2,7 +2,6 @@
 title: "ラッパー"
 status: confirmed
 area: client
-sections: ["5.2"]
 related: [api/codegen, client/connection]
 proto: []
 code: [sandbox/UnityProject/Assets/Generated/Wrappers]
@@ -18,7 +17,7 @@ Serviceクラス(アプリ)
 ラッパー(自作のprotocプラグインで生成。gRPCサービスごとに1クラス)
   │  RPCを呼ぶ処理を static ラムダで渡す
   ▼
-ApiCore(基盤)  共通処理(5.3)
+ApiCore(基盤)  共通処理
   │
   ▼
 生成されたgRPCクライアント(grpc_csharp_plugin) → GrpcChannel + YetAnotherHttpHandler
@@ -48,17 +47,8 @@ if (!result.IsSuccess) return;   // 失敗時の共通の処理(ダイアログ�
 - **gRPCサービスごとに1クラス、RPCごとに1メソッド**。クラス名は gRPCサービス名の末尾の `Service` を `Api` に置き換える(例: `GachaService` → `GachaApi`。[コード生成](../api/codegen.md))
 - メソッド名は、生成クライアントと同じ **`{RPC名}Async`**。`.proto` から呼び出し箇所までを名前で追える
 - ラッパーは、`ApiCore` に「RPCを呼ぶ処理」を **`static` ラムダ**で渡すだけ。キャプチャしないラムダは delegate が使い回されるので、呼び出しごとのアロケーションは起きない。`static` を付けると、うっかりキャプチャしたときにコンパイルエラーになる
-- RPCごとの設定(冪等性の対象か)と、サービスごとの設定(認証が要るか)は、プラグインが `.proto` から読んで埋め込む([3.4](../api/codegen.md))
+- RPCごとの設定(冪等性の対象か)と、サービスごとの設定(認証が要るか)は、プラグインが `.proto` から読んで埋め込む([コード生成](../api/codegen.md))
 - **一度呼んだ通信はキャンセルできない**。ラッパーは `CancellationToken` を受け取らず、`ApiCore` は共通レスポンス項目の反映まで必ず最後まで行う
   - 送信後に打ち切ると、サーバーでは処理が終わっているのにクライアントには反映されない(例: ガチャを引いた直後に画面を閉じると、ジェムは減っているのにクライアントのデータは変わらない)
   - 呼び出した画面が閉じられたときは、通信は止めず、呼び出し側が待つのをやめるだけにする(UniTask の `AttachExternalCancellation`)
-  - 応答が返ってこない場合は、deadline([5.7](connection.md))で扱う
-
-## 採らなかった案
-
-| 項目 | 採らなかった案 | 理由 |
-|---|---|---|
-| ラッパーの形 | APIごとに1クラス(実務のRESTの `ApiBase` の形) | 中身が1行のクラスがAPIの数だけでき、Serviceクラスの依存も増える |
-| ラッパーの形 | ラッパーを作らず、`ApiCore` を直接呼ぶ | gRPCの型が隠れず、呼び出し側にラムダを書くことになる |
-| ラッパーの形 | メソッド名を `SendAsync` にそろえてオーバーロードする | 補完でAPIを区別しにくく、ログやスタックトレースにAPI名が出ない |
-| ラッパー | 呼び出し側がキャンセルできる(`CancellationToken` を受け取る) | 送信後に打ち切ると、サーバーの処理結果がクライアントに反映されない |
+  - 応答が返ってこない場合は、deadline([接続設定](connection.md))で扱う

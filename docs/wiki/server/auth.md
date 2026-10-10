@@ -2,7 +2,6 @@
 title: "認証(サーバー)"
 status: confirmed
 area: server
-sections: ["4.5"]
 related: [repo/boundary, api/auth, api/device-service]
 proto: [server/rust/auth/proto/voltech/v1/device.proto]
 code: [server/rust/auth]
@@ -18,9 +17,9 @@ updated: 2026-10-10
 - **トークン**: ランダムな文字列(Atlasは ULID を2つ連結)。`device_id` と有効期限と一緒にDBに保存する。有効期限は1時間、1デバイスにつき1つ(発行し直すと上書き)
 - **`player_id`**: デバイス登録で ULID を発行し、`devices.player_id`(`BINARY(16)`)に保存する。デバイスとプレイヤーの対応はここだけで持ち、`players` は `device_id` を持たない([基盤とアプリの境界](../repo/boundary.md))
 - **検証**: `AuthLayer` がメタデータ `authorization` を検証する。BAN・アカウント停止もここで判定する
-- トークンは有効だがプレイヤーがまだいない状態(サインアップの前)を、`PlayerResolver`([2.5](../repo/boundary.md))が扱えるようにする
+- トークンは有効だがプレイヤーがまだいない状態(サインアップの前)を、`PlayerResolver`([基盤とアプリの境界](../repo/boundary.md))が扱えるようにする
 - **サーバーがプレイヤーを特定する根拠は、トークンだけ**。`device_id`・`player_id` はクライアントから受け取らない(秘密の値ではないので、信じるとなりすましができる)
-- **`skip_auth` は v1 では読まず、ルーターで要認証のサービスにだけ `AuthLayer` を付ける**。付け分けのずれは結合テストで確かめる([6章](../ops/index.md))。ずれても `UNAUTHENTICATED` になってすぐ気づける(冪等性のずれのように、エラーが出ないまま二重実行になることは無い)
+- **`skip_auth` は v1 では読まず、ルーターで要認証のサービスにだけ `AuthLayer` を付ける**。付け分けのずれは結合テストで確かめる([開発運用](../ops/index.md))。ずれても `UNAUTHENTICATED` になってすぐ気づける(冪等性のずれのように、エラーが出ないまま二重実行になることは無い)
 
 ## アプリから使う
 
@@ -46,10 +45,3 @@ updated: 2026-10-10
 - `PlayerResolver::resolve` は `player_id` を受け取り、`PlayerStatus`(`NotCreated` / `Active` / `Suspended`)を返す。`Suspended` なら `AuthLayer` が `ACCOUNT_SUSPENDED` で弾く
 - `AuthContext` は `player_id` を必ず持ち、サインアップ済みかを `player_created` で持つ。作成済みのプレイヤーが要るハンドラーは、未作成なら `PLAYER_NOT_FOUND` を返す(アプリの `api::context::player_id`)。サインアップだけは、作成済みかを問わずに `player_id` を使う
 - 既存のデバイスには `player_id` を決められないので、マイグレーション(`20261004000003_add_player_id_to_devices.sql`)で開発・テストのデータを消してから列を足した。アプリ側も `20261004100005_remove_device_id_from_players.sql` で `players` から `device_id` を外した
-
-## 採らなかった案
-
-| 項目 | 採らなかった案 | 理由 |
-|---|---|---|
-| 認証の情報の渡し方 | クライアントが `device_id`・`player_id` をメタデータで送る | 秘密の値ではないので、信じるとなりすましができる。確かめるならトークンから引いた値を使えば足りる。仲介役のサービスがトークンを検証してヘッダーに入れる構成なら成り立つが、v1 は `AuthLayer` がその役を担い、ヘッダーではなく `AuthContext` で渡す |
-| `player_id` の引き方 | `access_tokens` にも `player_id` を持たせる | 引き継ぎで対応が変わったときに、2か所を書き換えることになる。`devices` との結合で1回の問い合わせに収まる |

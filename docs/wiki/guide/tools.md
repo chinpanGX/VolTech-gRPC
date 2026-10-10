@@ -2,7 +2,6 @@
 title: "ツール"
 status: current
 area: guide
-sections: []
 related: [api/codegen, client/request-viewer, ops/setup, ops/debugging]
 proto: []
 code: [tools/protoc-gen-voltech-grpc/src/GeneratorParameters.cs, buf.gen.yaml, buf.yaml, Makefile, Unity/com.chinpangx.voltech.grpc/Editor, Unity/com.chinpangx.voltech.grpc/Runtime/Tracing]
