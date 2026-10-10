@@ -116,9 +116,9 @@ ApiTraceInterceptor → ApiTraceStore              ApiTraceReceiver(EditorConnec
 └──────────────────────┴────────────────────────────────────────┘
 ```
 
-- **全体**: 上に Toolbar、下を `TwoPaneSplitView`(左右)で分ける
+- **全体**: 上に Toolbar、下を `TwoPaneSplitView`(左右)で分ける。開いたときに 1100×640 より小さければ広げ、一覧と詳細の両方が見えるようにする(ドッキングしているときは広げない)
 - **Toolbar**: 記録のクリア、記録の一時停止、Play を始めたら自動でクリアするか、最新の行を自動で選ぶか、RPC 名での絞り込み
-- **一覧**(`ListView`): 1行に時刻・RPC の短い名前(サービス名を省く)・状態(`OK` / ステータスかエラーコードの名前 / 送信中)・所要時間。エラーの行は文字色を変える
+- **一覧**(`MultiColumnListView`): Time(時刻)・API(RPC の短い名前。サービス名を省く)・Result(`OK` / ステータスかエラーの reason / 送信中)・Duration(所要時間)の4列。見出しと列の区切り線を付け、列の幅は見出しの境目で変えられる。1行おきに背景の色を変え、エラーの行は文字色を変える
 - **詳細**(`ScrollView`): 上に RPC のフルパス・開始時刻・所要時間・状態を出し、その下に `Foldout` で Request・Response・Error を並べる
   - **Headers**: 項目ごとに1行。名前の `Label`(幅をそろえる)と値の `Label` を横に並べる。値は選択できるようにして(`selection.isSelectable`)、一部だけコピーできる
   - **Body**: 読み取り専用・複数行の `TextField` に JSON を出す(範囲を選んでコピーできる)。見出しの横の「Copy」ボタンで、JSON 全体をクリップボードに入れる(`EditorGUIUtility.systemCopyBuffer`)

@@ -24,12 +24,17 @@ namespace VolTech.Client.Editor
         private const float HeaderKeyWidth = 180;
         private const long RefreshIntervalMs = 200;
 
+        // 開いたときの大きさ。一覧(4列)と詳細の両方が見えるようにする
+        private static readonly Vector2 initialSize = new(1100, 640);
+        private const float ListPaneWidth = 460;
+
         // 詳細の Body の TextField に出す文字数の上限
         private const int MaxShownBodyLength = 64 * 1024;
 
         private static readonly Color errorColor = new(0.95f, 0.45f, 0.4f);
         private static readonly Color pendingColor = new(0.6f, 0.6f, 0.6f);
         private static readonly Color keyColor = new(0.65f, 0.75f, 0.9f);
+        private static readonly Color columnBorderColor = new(0.5f, 0.5f, 0.5f, 0.35f);
 
         // ドメインのリロードをまたいで残す設定
         [SerializeField]
@@ -39,7 +44,7 @@ namespace VolTech.Client.Editor
         private bool followLatest = true;
 
         private readonly List<ApiTrace> shown = new();
-        private ListView list;
+        private MultiColumnListView list;
         private ScrollView detail;
         private IMGUIContainer connectionDropdown;
         private ToolbarToggle recordToggle;
@@ -61,7 +66,13 @@ namespace VolTech.Client.Editor
         [MenuItem("Window/VolTech gRPC/Request Viewer")]
         private static void Open()
         {
-            GetWindow<ApiTraceWindow>("Request Viewer");
+            var window = GetWindow<ApiTraceWindow>("Request Viewer");
+            // 小さいままだと詳細(右側)が見えないので、開いたときに広げる。ドッキングしているときは広げない
+            if (!window.docked && (window.position.width < initialSize.x || window.position.height < initialSize.y))
+            {
+                var position = window.position;
+                window.position = new Rect(position.x, position.y, Mathf.Max(position.width, initialSize.x), Mathf.Max(position.height, initialSize.y));
+            }
         }
 
         private void OnEnable()
@@ -79,7 +90,7 @@ namespace VolTech.Client.Editor
         {
             rootVisualElement.Add(CreateToolbar());
 
-            var split = new TwoPaneSplitView(0, 380, TwoPaneSplitViewOrientation.Horizontal);
+            var split = new TwoPaneSplitView(0, ListPaneWidth, TwoPaneSplitViewOrientation.Horizontal);
             split.style.flexGrow = 1;
             split.Add(CreateList());
             detail = new ScrollView(ScrollViewMode.Vertical);
@@ -153,16 +164,22 @@ namespace VolTech.Client.Editor
             return toolbar;
         }
 
-        private ListView CreateList()
+        // 一覧: 時刻・API(RPC の短い名前)・結果・通信時間の4列。列の幅は見出しの境目で変えられる
+        private MultiColumnListView CreateList()
         {
-            list = new ListView
+            list = new MultiColumnListView
             {
                 fixedItemHeight = 20,
                 selectionType = SelectionType.Single,
                 itemsSource = shown,
-                makeItem = MakeRow,
-                bindItem = (element, index) => BindRow(element, shown[index]),
+                // 1行おきに背景の色を変えて、行を目で追いやすくする
+                showAlternatingRowBackgrounds = AlternatingRowBackground.All,
+                showBorder = true,
             };
+            list.columns.Add(CreateColumn("time", "Time", 70, false, trace => FormatTime(trace.StartedAt, "HH:mm:ss")));
+            list.columns.Add(CreateColumn("api", "API", 140, true, trace => trace.ShortMethod));
+            list.columns.Add(CreateColumn("result", "Result", 150, false, StateText));
+            list.columns.Add(CreateColumn("duration", "Duration", 70, false, trace => trace.DurationMs < 0 ? "" : $"{trace.DurationMs:0} ms", TextAnchor.MiddleRight));
             list.style.flexGrow = 1;
             list.selectionChanged += selected =>
             {
@@ -173,53 +190,50 @@ namespace VolTech.Client.Editor
             return list;
         }
 
-        // 一覧の1行: 時刻・RPC の短い名前・状態・所要時間
-        private static VisualElement MakeRow()
+        private Column CreateColumn(string name, string title, float width, bool stretchable, Func<ApiTrace, string> text, TextAnchor align = TextAnchor.MiddleLeft)
         {
-            var row = new VisualElement();
-            row.style.flexDirection = FlexDirection.Row;
-            row.style.alignItems = Align.Center;
-            row.style.paddingLeft = 4;
-            row.Add(RowCell("time", 90));
-            row.Add(RowCell("method", 0));
-            row.Add(RowCell("state", 150));
-            row.Add(RowCell("duration", 60));
-            return row;
+            return new Column
+            {
+                name = name,
+                title = title,
+                width = width,
+                minWidth = 40,
+                stretchable = stretchable,
+                resizable = true,
+                sortable = false,
+                makeCell = () => MakeCell(name == "time", align),
+                bindCell = (element, index) => BindCell((Label)element, shown[index], text),
+            };
         }
 
-        private static Label RowCell(string name, float width)
+        private static Label MakeCell(bool first, TextAnchor align)
         {
-            var label = new Label { name = name };
-            if (width > 0)
-            {
-                label.style.width = width;
-            }
-            else
-            {
-                label.style.flexGrow = 1;
-            }
-
+            var label = new Label();
+            label.style.paddingLeft = 4;
+            label.style.paddingRight = 4;
+            label.style.unityTextAlign = align;
             label.style.overflow = Overflow.Hidden;
             label.style.textOverflow = TextOverflow.Ellipsis;
+            label.style.flexGrow = 1;
+            // 列の区切りを、セルの左の線で見せる
+            if (!first)
+            {
+                label.style.borderLeftWidth = 1;
+                label.style.borderLeftColor = columnBorderColor;
+            }
+
             return label;
         }
 
-        private static void BindRow(VisualElement row, ApiTrace trace)
+        private static void BindCell(Label label, ApiTrace trace, Func<ApiTrace, string> text)
         {
-            row.Q<Label>("time").text = FormatTime(trace.StartedAt, "HH:mm:ss");
-            row.Q<Label>("method").text = trace.ShortMethod;
-            row.Q<Label>("state").text = StateText(trace);
-            row.Q<Label>("duration").text = trace.DurationMs < 0 ? "" : $"{trace.DurationMs:0} ms";
-            var color = trace.State switch
+            label.text = text(trace);
+            label.style.color = trace.State switch
             {
                 ApiTraceState.Failed => errorColor,
                 ApiTraceState.Pending => pendingColor,
                 _ => (StyleColor)StyleKeyword.Null,
             };
-            foreach (var label in row.Query<Label>().ToList())
-            {
-                label.style.color = color;
-            }
         }
 
         private void Refresh()
