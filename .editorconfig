@@ -16,3 +16,8 @@ indent_style = tab
 
 [*.{bat,cmd,ps1,sln}]
 end_of_line = crlf
+
+# Unity のパッケージの C#。Unity がスクリプトを作るときに BOM を付けるので、それに合わせる
+# (sandbox の Unity プロジェクトも同じ。sandbox/UnityProject/.editorconfig)
+[Unity/**.cs]
+charset = utf-8-bom

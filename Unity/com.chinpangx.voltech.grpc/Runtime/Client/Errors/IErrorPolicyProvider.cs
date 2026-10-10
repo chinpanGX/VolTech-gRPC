@@ -1,4 +1,4 @@
-namespace VolTech.Client
+﻿namespace VolTech.Client
 {
     /// <summary>
     /// アプリが知っているエラーコードと、その既定の action を渡す。基盤の ErrorPolicyProvider が実装する。

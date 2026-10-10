@@ -1,4 +1,4 @@
-namespace VolTech.Client
+﻿namespace VolTech.Client
 {
     /// <summary>
     /// エラーコードと、その既定の action。エラーの定義ファイル(errors.toml)から生成した一覧(All)に入る。
