@@ -1,7 +1,7 @@
 ﻿using Cysharp.Threading.Tasks;
 using Google.Protobuf;
 
-namespace VolTech.Grpc.Client
+namespace VolTech.Client
 {
     /// <summary>
     /// 成功したレスポンスの badges で、バッジの状態を更新する。アプリが実装する。

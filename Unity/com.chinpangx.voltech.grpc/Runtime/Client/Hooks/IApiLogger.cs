@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace VolTech.Grpc.Client
+namespace VolTech.Client
 {
     /// <summary>
     /// 通信のログを出す。Unity 用の層が Debug.Log につなぐ。

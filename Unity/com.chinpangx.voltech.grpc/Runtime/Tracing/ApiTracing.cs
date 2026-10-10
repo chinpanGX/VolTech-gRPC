@@ -1,14 +1,14 @@
 ﻿using System.Threading;
-using Api.Unity;
+using VolTech.Client.Unity;
 using UnityEngine;
 
-namespace VolTech.Grpc.Client.Tracing
+namespace VolTech.Client.Tracing
 {
     /// <summary>
     /// 通信の記録を始める。ApiChannel.CreateCallInvoker で作る CallInvoker に、記録の Interceptor を足す。
     /// </summary>
     /// <remarks>
-    /// このアセンブリ(VolTech.Grpc.Client.Tracing)は、エディタと開発ビルドにだけ入る(asmdef の Define Constraints)。リリースビルドでは
+    /// このアセンブリ(VolTech.Client.Tracing)は、エディタと開発ビルドにだけ入る(asmdef の Define Constraints)。リリースビルドでは
     /// アセンブリごと入らないので、記録の Interceptor も足されない。Api はこのアセンブリを参照せず、こちらから登録する。
     /// </remarks>
     public static class ApiTracing
@@ -20,7 +20,7 @@ namespace VolTech.Grpc.Client.Tracing
         /// </summary>
         /// <remarks>
         /// Play と実機では、シーンを読み込む前(LifetimeScope が CallInvoker を作る前)に Unity が呼ぶ。
-        /// Play していないエディタ(EditMode テスト)では、VolTech.Grpc.Client.Editor が呼ぶ。
+        /// Play していないエディタ(EditMode テスト)では、VolTech.Client.Editor が呼ぶ。
         /// 実機(開発ビルド)では、記録をつながっているエディタにも送る。
         /// </remarks>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]

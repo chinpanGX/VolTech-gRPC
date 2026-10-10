@@ -1,6 +1,6 @@
 ﻿using Grpc.Core;
 
-namespace VolTech.Grpc.Client
+namespace VolTech.Client
 {
     /// <summary>
     /// FakeCallInvoker に届いた1回の呼び出し。

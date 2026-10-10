@@ -4,9 +4,9 @@ using Cysharp.Threading.Tasks;
 using Grpc.Core;
 using NUnit.Framework;
 using UnityEngine.TestTools;
-using VolTech.Grpc.Client;
+using VolTech.Client;
 
-namespace Tests.EditMode
+namespace VolTech.Client.Tests.EditMode
 {
     /// <summary>
     /// 共通エラーハンドラーの既定の実装が、action ごとに決まったダイアログを出し、押されたボタンから動きを決めることを確かめる。

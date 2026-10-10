@@ -1,4 +1,4 @@
-﻿namespace VolTech.Grpc.Client
+﻿namespace VolTech.Client
 {
     /// <summary>
     /// 基盤の予約エラーコード(1〜999)のうち、クライアントが自分で使う番号。値はアプリの error_code.proto と同じ。

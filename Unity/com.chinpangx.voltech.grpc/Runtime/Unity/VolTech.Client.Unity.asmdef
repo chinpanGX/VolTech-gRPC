@@ -1,0 +1,19 @@
+{
+    "name": "VolTech.Client.Unity",
+    "rootNamespace": "VolTech.Client.Unity",
+    "references": [
+        "GUID:a2bb72b22f122374c9fcd20dd5be0031",
+        "GUID:5a7785fbb9a243cca8e0d10a345c877a",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:c3bc0afe4a069b54aa23296f3c18a871"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

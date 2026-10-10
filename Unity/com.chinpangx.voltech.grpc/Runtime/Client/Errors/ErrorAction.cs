@@ -1,4 +1,4 @@
-﻿namespace VolTech.Grpc.Client
+﻿namespace VolTech.Client
 {
     /// <summary>
     /// エラーが起きたときにクライアントが取る行動。値は voltech/v1/error_options.proto の ErrorAction と同じ。

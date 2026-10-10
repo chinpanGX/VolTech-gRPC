@@ -1,4 +1,4 @@
-﻿namespace VolTech.Grpc.Client
+﻿namespace VolTech.Client
 {
     /// <summary>
     /// RPC ごとの設定。ラッパーが .proto に合わせて持つ。

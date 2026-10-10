@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Google.Protobuf;
 using Grpc.Core;
 
-namespace VolTech.Grpc.Client
+namespace VolTech.Client
 {
     /// <summary>
     /// 受け取ったエラーを、エラーコードと action に変換する。

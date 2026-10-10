@@ -1,6 +1,6 @@
 ﻿using Cysharp.Threading.Tasks;
 
-namespace VolTech.Grpc.Client
+namespace VolTech.Client
 {
     /// <summary>
     /// エラーダイアログの見た目。アプリが実装する。

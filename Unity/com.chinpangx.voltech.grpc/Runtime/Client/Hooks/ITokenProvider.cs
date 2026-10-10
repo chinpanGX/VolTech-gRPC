@@ -1,6 +1,6 @@
 ﻿using Cysharp.Threading.Tasks;
 
-namespace VolTech.Grpc.Client
+namespace VolTech.Client
 {
     /// <summary>
     /// アクセストークンを渡す。デバイス登録・トークンの発行・期限の確認は実装の中で行う。

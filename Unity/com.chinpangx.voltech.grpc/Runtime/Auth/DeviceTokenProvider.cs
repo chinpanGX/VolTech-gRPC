@@ -2,10 +2,10 @@
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Grpc.Core;
-using VolTech.Grpc.Client;
-using VolTech.Grpc.V1;
+using VolTech.Client;
+using VolTech.V1;
 
-namespace Api.Auth
+namespace VolTech.Client.Auth
 {
     /// <summary>
     /// デバイス認証でアクセストークンを渡す。未登録ならデバイス登録し、トークンが無いか期限が近ければ発行し直す。

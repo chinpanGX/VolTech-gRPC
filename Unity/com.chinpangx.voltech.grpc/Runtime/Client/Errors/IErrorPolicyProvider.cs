@@ -1,4 +1,4 @@
-﻿namespace VolTech.Grpc.Client
+﻿namespace VolTech.Client
 {
     /// <summary>
     /// エラーコードの名前と番号の対応と、既定の action を渡す。アプリの error_code.proto から作る。

@@ -3,7 +3,7 @@ using System.Threading;
 using UnityEngine;
 using UnityEngine.Networking.PlayerConnection;
 
-namespace VolTech.Grpc.Client.Tracing
+namespace VolTech.Client.Tracing
 {
     /// <summary>
     /// 実機(開発ビルド)の通信の記録を、PlayerConnection でつながっているエディタに送る。

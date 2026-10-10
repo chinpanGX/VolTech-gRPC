@@ -2,7 +2,7 @@
 using System.Text;
 using UnityEngine;
 
-namespace VolTech.Grpc.Client.Tracing
+namespace VolTech.Client.Tracing
 {
     /// <summary>
     /// 実機からエディタへ、PlayerConnection で通信の記録を送るときの決まり(メッセージの ID と、送る形)。

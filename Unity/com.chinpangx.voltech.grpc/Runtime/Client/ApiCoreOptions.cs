@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace VolTech.Grpc.Client
+namespace VolTech.Client
 {
     /// <summary>
     /// ApiCore の設定。

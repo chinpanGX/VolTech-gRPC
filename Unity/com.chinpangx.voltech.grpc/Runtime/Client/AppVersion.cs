@@ -1,6 +1,6 @@
 ﻿using Grpc.Core;
 
-namespace VolTech.Grpc.Client
+namespace VolTech.Client
 {
     /// <summary>
     /// アプリのプラットフォームとバージョン。サーバーはこれをプラットフォームごとの最低バージョンと比べ、古ければ UPDATE_REQUIRED を返す。

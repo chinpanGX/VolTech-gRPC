@@ -1,6 +1,6 @@
 ﻿using Cysharp.Threading.Tasks;
 
-namespace Api.Auth
+namespace VolTech.Client.Auth
 {
     /// <summary>
     /// メモリに持つだけの IAccountStore。テストと、保存の仕組みができるまでの仮の実装。

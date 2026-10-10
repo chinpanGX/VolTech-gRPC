@@ -4,7 +4,7 @@ using Google.Protobuf.WellKnownTypes;
 using Google.Rpc;
 using Grpc.Core;
 
-namespace VolTech.Grpc.Client
+namespace VolTech.Client
 {
     /// <summary>
     /// 偽のサーバー(FakeCallInvoker に登録する処理)が投げる、サーバーと同じ形のエラーを作る。

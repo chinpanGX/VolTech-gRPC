@@ -1,9 +1,9 @@
 ﻿using UnityEditor;
 using UnityEditor.Networking.PlayerConnection;
 using UnityEngine.Networking.PlayerConnection;
-using VolTech.Grpc.Client.Tracing;
+using VolTech.Client.Tracing;
 
-namespace VolTech.Grpc.Client.Editor
+namespace VolTech.Client.Editor
 {
     /// <summary>
     /// PlayerConnection でつながっている実機(開発ビルド)から、通信の記録を受け取る。
@@ -15,7 +15,7 @@ namespace VolTech.Grpc.Client.Editor
     /// </remarks>
     public sealed class ApiTraceReceiver : ScriptableSingleton<ApiTraceReceiver>
     {
-        private const string ClearOnPlayKey = "VolTech.Grpc.Client.Tracing.ClearOnPlay";
+        private const string ClearOnPlayKey = "VolTech.Client.Tracing.ClearOnPlay";
 
         /// <summary>接続先の端末から受け取った通信の記録。</summary>
         public static ApiTraceStore Store { get; } = new();

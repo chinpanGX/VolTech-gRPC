@@ -8,7 +8,7 @@ using Cysharp.Threading.Tasks;
 using NUnit.Framework;
 using Tests.EditMode.TestDoubles;
 using UnityEngine.TestTools;
-using VolTech.Grpc.Client;
+using VolTech.Client;
 
 namespace Tests.EditMode
 {

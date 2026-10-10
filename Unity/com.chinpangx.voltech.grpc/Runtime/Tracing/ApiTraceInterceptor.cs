@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
-using VolTech.Grpc.Client;
+using VolTech.Client;
 
-namespace VolTech.Grpc.Client.Tracing
+namespace VolTech.Client.Tracing
 {
     /// <summary>
     /// 単項の通信を ApiTraceStore に記録する Interceptor。記録するだけで、リクエストもレスポンスも変えない。

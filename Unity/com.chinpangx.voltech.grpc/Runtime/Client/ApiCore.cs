@@ -6,7 +6,7 @@ using Cysharp.Threading.Tasks;
 using Google.Protobuf;
 using Grpc.Core;
 
-namespace VolTech.Grpc.Client
+namespace VolTech.Client
 {
     /// <summary>
     /// API の呼び出しの共通処理。トークンとヘッダーの付与、順番待ち、再認証、エラーの変換とハンドラーの呼び出し、

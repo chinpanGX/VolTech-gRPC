@@ -5,7 +5,7 @@ using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Grpc.Net.Client;
 
-namespace Api.Unity
+namespace VolTech.Client.Unity
 {
     /// <summary>
     /// YetAnotherHttpHandler(HTTP/2)で通信する GrpcChannel を作る。チャンネルは1つを使い回す。
@@ -43,8 +43,8 @@ namespace Api.Unity
         /// AddInterceptor で足された Interceptor を付ける。
         /// </summary>
         /// <remarks>
-        /// エディタと開発ビルドでは、VolTech.Grpc.Client.Tracing のアセンブリが記録の Interceptor を足す(通信の Viewer で見る)。
-        /// リリースビルドには VolTech.Grpc.Client.Tracing が入らないので、何も付かない。
+        /// エディタと開発ビルドでは、VolTech.Client.Tracing のアセンブリが記録の Interceptor を足す(通信の Viewer で見る)。
+        /// リリースビルドには VolTech.Client.Tracing が入らないので、何も付かない。
         /// 付ける Interceptor は呼ぶたびに決めるので、CallInvoker を作った後に足された Interceptor も付く。
         /// </remarks>
         public static CallInvoker CreateCallInvoker(GrpcChannel channel)

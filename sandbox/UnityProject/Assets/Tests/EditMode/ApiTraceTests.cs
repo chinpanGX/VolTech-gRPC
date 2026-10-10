@@ -9,8 +9,8 @@ using Grpc.Core.Interceptors;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using VolTech.Grpc.Client;
-using VolTech.Grpc.Client.Tracing;
+using VolTech.Client;
+using VolTech.Client.Tracing;
 
 namespace Tests.EditMode
 {

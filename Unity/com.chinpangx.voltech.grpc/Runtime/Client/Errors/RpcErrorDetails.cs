@@ -2,7 +2,7 @@
 using Google.Rpc;
 using Grpc.Core;
 
-namespace VolTech.Grpc.Client
+namespace VolTech.Client
 {
     /// <summary>
     /// サーバーがエラーと一緒に返す詳細(リッチエラーモデル)を読む。

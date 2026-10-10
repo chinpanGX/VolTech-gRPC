@@ -1,8 +1,8 @@
 ﻿using System;
 using UnityEngine;
-using VolTech.Grpc.Client;
+using VolTech.Client;
 
-namespace Api.Unity
+namespace VolTech.Client.Unity
 {
     /// <summary>
     /// 通信のログを Unity の Console に出す。

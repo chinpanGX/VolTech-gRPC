@@ -8,9 +8,9 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.Networking.PlayerConnection;
 using UnityEngine.UIElements;
-using VolTech.Grpc.Client.Tracing;
+using VolTech.Client.Tracing;
 
-namespace VolTech.Grpc.Client.Editor
+namespace VolTech.Client.Editor
 {
     /// <summary>
     /// 通信の Viewer。API のリクエストとレスポンスを1件ずつ、ヘッダーと Body(JSON)に分けて見る。

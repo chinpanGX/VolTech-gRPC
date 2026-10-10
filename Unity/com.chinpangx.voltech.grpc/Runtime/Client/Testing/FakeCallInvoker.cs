@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Grpc.Core;
 
-namespace VolTech.Grpc.Client
+namespace VolTech.Client
 {
     /// <summary>
     /// 通信する代わりに、RPC ごとに登録した処理を呼ぶ CallInvoker。サーバーが無いときの差し替えとテストに使う。

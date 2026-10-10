@@ -1,4 +1,4 @@
-﻿namespace VolTech.Grpc.Client
+﻿namespace VolTech.Client
 {
     /// <summary>
     /// エラーダイアログに出すボタンの組み合わせ。

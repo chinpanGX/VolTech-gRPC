@@ -1,6 +1,6 @@
 ﻿using System;
 using Cysharp.Threading.Tasks;
-using VolTech.Grpc.Client;
+using VolTech.Client;
 
 namespace Tests.EditMode.TestDoubles
 {

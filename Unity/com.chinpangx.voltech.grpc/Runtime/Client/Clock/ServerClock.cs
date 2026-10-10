@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace VolTech.Grpc.Client
+namespace VolTech.Client
 {
     /// <summary>
     /// 最後に受け取ったサーバー時刻と、そこからの経過時間で、今のサーバー時刻を計算する。

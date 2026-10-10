@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
-using VolTech.Grpc.Client;
+using VolTech.Client;
 
-namespace Api.Unity
+namespace VolTech.Client.Unity
 {
     /// <summary>
     /// 動いているプラットフォームから AppVersion を作る。

@@ -1,6 +1,6 @@
 ﻿using Cysharp.Threading.Tasks;
 
-namespace VolTech.Grpc.Client
+namespace VolTech.Client
 {
     /// <summary>
     /// 共通エラーハンドラーの既定の実装。action ごとに決まったボタンのダイアログを出し、押されたボタンから動きを決める。

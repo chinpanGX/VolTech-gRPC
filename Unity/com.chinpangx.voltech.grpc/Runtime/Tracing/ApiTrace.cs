@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace VolTech.Grpc.Client.Tracing
+namespace VolTech.Client.Tracing
 {
     /// <summary>
     /// 1回の通信の記録。通信の Viewer(ApiTraceWindow)が表示する。

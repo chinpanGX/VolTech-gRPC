@@ -1,7 +1,7 @@
 ﻿using Cysharp.Threading.Tasks;
 using Google.Protobuf;
 
-namespace VolTech.Grpc.Client
+namespace VolTech.Client
 {
     /// <summary>
     /// 成功したレスポンスの player_diff を、アプリのデータ(Repository)に反映する。アプリが実装する。

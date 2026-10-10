@@ -1,7 +1,7 @@
 ﻿using Cysharp.Threading.Tasks;
 using Google.Protobuf;
 
-namespace VolTech.Grpc.Client
+namespace VolTech.Client
 {
     /// <summary>
     /// 成功したレスポンスの notifications を、待ち行列に積む。アプリが実装する。

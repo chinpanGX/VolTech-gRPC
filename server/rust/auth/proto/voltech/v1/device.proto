@@ -5,7 +5,7 @@ package voltech.v1;
 import "google/protobuf/timestamp.proto";
 import "voltech/v1/auth_options.proto";
 
-option csharp_namespace = "VolTech.Grpc.V1";
+option csharp_namespace = "VolTech.V1";
 
 // デバイス登録とアクセストークンの発行。
 service DeviceService {

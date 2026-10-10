@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections;
 using System.Linq;
-using Api.Auth;
+using VolTech.Client.Auth;
 using Cysharp.Threading.Tasks;
 using Google.Protobuf.WellKnownTypes;
 using NUnit.Framework;
 using UnityEngine.TestTools;
-using VolTech.Grpc.Client;
-using VolTech.Grpc.V1;
+using VolTech.Client;
+using VolTech.V1;
 
-namespace Tests.EditMode
+namespace VolTech.Client.Tests.EditMode
 {
     /// <summary>
     /// DeviceTokenProvider の、デバイス登録とトークンの発行の自動化を、サーバーなしで確かめる。

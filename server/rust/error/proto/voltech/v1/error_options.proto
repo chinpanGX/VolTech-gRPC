@@ -4,7 +4,7 @@ package voltech.v1;
 
 import "google/protobuf/descriptor.proto";
 
-option csharp_namespace = "VolTech.Grpc.V1";
+option csharp_namespace = "VolTech.V1";
 
 // エラーが起きたときにクライアントが取る行動。
 enum ErrorAction {

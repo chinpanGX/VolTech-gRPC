@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace VolTech.Grpc.Client
+namespace VolTech.Client
 {
     /// <summary>
     /// 今のサーバー時刻。端末の時計を使わないので、端末の時刻を変えられても影響を受けない。

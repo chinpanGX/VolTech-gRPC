@@ -1,8 +1,8 @@
 ﻿using System;
 using NUnit.Framework;
-using VolTech.Grpc.Client;
+using VolTech.Client;
 
-namespace Tests.EditMode
+namespace VolTech.Client.Tests.EditMode
 {
     /// <summary>
     /// ServerClock が、受け取ったサーバー時刻と経過時間から今のサーバー時刻を計算することを確かめる。

@@ -1,6 +1,6 @@
 ﻿using Cysharp.Threading.Tasks;
 
-namespace VolTech.Grpc.Client
+namespace VolTech.Client
 {
     /// <summary>
     /// handledCodes で受け取らなかったエラーを処理する。ダイアログを出し、その後の動きを返す。

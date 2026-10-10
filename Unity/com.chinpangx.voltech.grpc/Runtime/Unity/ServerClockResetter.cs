@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
-using VolTech.Grpc.Client;
+using VolTech.Client;
 
-namespace Api.Unity
+namespace VolTech.Client.Unity
 {
     /// <summary>
     /// アプリが前面に戻ったら ServerClock を受け取る前の状態に戻す。次に API が成功したときに、サーバー時刻で合わせ直す。

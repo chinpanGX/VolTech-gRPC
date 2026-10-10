@@ -1,0 +1,8 @@
+{
+  "name": "com.chinpangx.voltech.grpc",
+  "displayName": "VolTech gRPC",
+  "version": "0.1.0",
+  "unity": "6000.3",
+  "description": "Unity client foundation for gRPC game backends.",
+  "keywords": ["grpc", "unity", "game-backend"]
+}

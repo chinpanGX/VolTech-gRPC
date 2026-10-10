@@ -1,6 +1,6 @@
 ﻿using Cysharp.Threading.Tasks;
 
-namespace Api.Auth
+namespace VolTech.Client.Auth
 {
     /// <summary>
     /// アカウント情報(device_id・secret_key・player_id)を端末に保存する。

@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Net.Sockets;
-using Api.Auth;
+using VolTech.Client.Auth;
 using Api.Badges;
 using Api.Errors;
 using Api.Notifications;
 using Api.Repositories;
-using Api.Unity;
+using VolTech.Client.Unity;
 using Grpc.Core;
 using Grpc.Net.Client;
 using NUnit.Framework;
 using Tests.EditMode.TestDoubles;
-using VolTech.Grpc.Client;
+using VolTech.Client;
 
 namespace Tests.EditMode
 {

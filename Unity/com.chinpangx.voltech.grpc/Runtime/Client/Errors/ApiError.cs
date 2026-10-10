@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Grpc.Core;
 
-namespace VolTech.Grpc.Client
+namespace VolTech.Client
 {
     /// <summary>
     /// API の呼び出しの失敗。受け取ったエラーをエラーコードに変換したもの。

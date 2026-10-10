@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace VolTech.Grpc.Client
+namespace VolTech.Client
 {
     /// <summary>
     /// API の呼び出しの結果。成功ならレスポンス、失敗ならエラーを持つ。呼び出し側に例外は投げない。

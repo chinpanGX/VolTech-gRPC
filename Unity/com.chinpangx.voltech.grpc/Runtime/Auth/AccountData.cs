@@ -1,4 +1,4 @@
-﻿namespace Api.Auth
+﻿namespace VolTech.Client.Auth
 {
     /// <summary>
     /// 端末に保存するアカウント情報。
