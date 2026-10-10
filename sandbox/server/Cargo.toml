@@ -20,7 +20,7 @@ proto = { path = "proto" }
 # 外部クレートの版は server/rust/Cargo.toml に合わせる
 dotenvy = "0.15"
 prost = "0.14"
-protox = "0.9"
+protox = "0.10"
 sqlx = { version = "0.9", default-features = false, features = ["runtime-tokio", "mysql", "mysql-rsa", "migrate", "macros"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal"] }
 tokio-stream = { version = "0.1", features = ["net"] }

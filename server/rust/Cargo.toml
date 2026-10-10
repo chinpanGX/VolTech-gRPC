@@ -18,7 +18,7 @@ http = "1"
 jiff = "0.2"
 prost = "0.14"
 prost-types = "0.14"
-protox = "0.9"
+protox = "0.10"
 rand = "0.10"
 serde = { version = "1", features = ["derive"] }
 sqlx = { version = "0.9", default-features = false, features = ["runtime-tokio", "mysql", "mysql-rsa", "migrate", "macros"] }
