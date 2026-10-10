@@ -1446,6 +1446,7 @@ dependencies = [
  "tonic",
  "tonic-prost",
  "tonic-prost-build",
+ "voltech-grpc-error",
 ]
 
 [[package]]
