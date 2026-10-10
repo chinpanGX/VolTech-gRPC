@@ -55,7 +55,7 @@ Interceptor は、`AsyncUnaryCall` を同じ形で包み直し、レスポンス
 - 送るときの記録は `Add`(末尾に足す)、結果は `Update`(同じ Id の記録があるときだけ置き換える)で入れる。送信中に Clear したり、500 件を超えて捨てたりした記録が、応答を受け取ったときに戻ってこないようにする。実機から受け取った記録は `Put`(無ければ足す)で入れる
 - Interceptor の続きはメインスレッドで動くとは限らないので、追加・更新は lock で守り、変わるたびに版(`Version`)を増やす。ウィンドウは定期的(200ms)に版を見て、変わっていたら描き直す(別スレッドから UI に触らない)
 - 記録はメモリにだけ持つ。Play を止めても消えないので、止めてから見返せる。エディタを閉じると消える
-- Play を始める前(`ExitingEditMode`)に消す(Clear on Play。既定はオン)。ドメインのリロードを切っていても、前の Play の記録と混ざらない。Play を始めた後(`EnteredPlayMode`)に消すと、最初のシーンの初期化で送った通信の記録まで消えるので、その前に消す。ウィンドウを閉じていても効くように、消す処理は `ApiTraceReceiver`(`[InitializeOnLoadMethod]`)が持つ
+- Play を始める前(`ExitingEditMode`)に消す(Clear on Play。既定はオン)。ドメインのリロードを切っていても、前の Play の記録と混ざらない。Play を始めた後(`EnteredPlayMode`)に消すと、最初のシーンの初期化で送った通信の記録まで消えるので、その前に消す。ウィンドウを閉じていても効くように、消す処理は `GrpcMonitorReceiver`(`[InitializeOnLoadMethod]`)が持つ
 
 ### 組み込み方
 
@@ -77,22 +77,22 @@ USB でつないだ実機(開発ビルド)の通信を、エディタの同じ�
 
 ```
 端末(開発ビルド)                                 エディタ
-ApiTraceInterceptor → ApiTraceStore              ApiTraceReceiver(EditorConnection)
+ApiTraceInterceptor → ApiTraceStore              GrpcMonitorReceiver(EditorConnection)
                           │                          │
                      ApiTraceSender ──USB/ADB──→ ApiTraceStore(接続先の端末の分)
                      (PlayerConnection)              │
-                                                  ApiTraceWindow(「端末」を選ぶと表示)
+                                                  GrpcMonitorWindow(「端末」を選ぶと表示)
 ```
 
 - **端末**: エディタと同じ `ApiTraceInterceptor`・`ApiTraceStore` で記録する(メモリだけ。ファイルには残さない)。`ApiTraceSender` が、記録を足したり埋めたりするたびに、その1件を PlayerConnection で送る。エディタがつながったとき(`RegisterConnection`)は、先に `Reset`(中身の無いメッセージ)を送り、続けて持っている記録をすべて送る(つなぐ前の通信も見られる)。つながっていなければ送らない
-- **エディタ**: `ApiTraceReceiver` が `EditorConnection` で受け取り、端末の分の `ApiTraceStore` に入れる。同じ連番の記録が届いたら置き換える(「送信中」が「成功」に変わる)。`Reset` を受け取ったら、端末の分の記録を消す。連番は端末のアプリを起動するたびに 1 から振り直すので、消さないと前の起動の記録が上書きされて混ざる
+- **エディタ**: `GrpcMonitorReceiver` が `EditorConnection` で受け取り、端末の分の `ApiTraceStore` に入れる。同じ連番の記録が届いたら置き換える(「送信中」が「成功」に変わる)。`Reset` を受け取ったら、端末の分の記録を消す。連番は端末のアプリを起動するたびに 1 から振り直すので、消さないと前の起動の記録が上書きされて混ざる
   - 消すのは、エディタの接続のイベントではなく `Reset` で行う。接続のイベントと、端末から届く記録の順番は決まっていないので、イベントで消すと先に届いた記録まで消すことがある。同じ端末からのメッセージは送った順に届くので、`Reset` は続けて送る記録より先に処理される
 - **送る形**: 1件ずつ、`JsonUtility` で JSON にした UTF-8 のバイト列。メッセージの ID は決まった `Guid` にする。Body が大きすぎるときは切り詰め、切り詰めたことを記録に残す(上限は実装で決める)
 - **ウィンドウ**: Toolbar で、見るものを「Editor」と「接続先の端末」から選ぶ。接続先の端末は、Console・Profiler と同じ Unity の接続先の選択(`PlayerConnectionGUILayout.ConnectionTargetSelectionDropdown`)で選ぶ。これは IMGUI なので、`IMGUIContainer` に入れて Toolbar に置く(UI Toolkit の部品が無いため)
 - 時刻は端末の時計のまま出す
 - iOS の USB 接続は、macOS のエディタで使えるかを実装のときに確かめる。使えなければ、同じネットワークの Wi-Fi でつなぐ(PlayerConnection は Wi-Fi でもつながる)
 
-## ウィンドウ(`ApiTraceWindow`)
+## ウィンドウ(`GrpcMonitorWindow`)
 
 メニュー `Window > VolTech gRPC > gRPC Monitor` で開く。UI Toolkit で、C# のコードだけで組み立てる(USS・UXML は使わない。色や余白は `style` で直接書く)。
 
@@ -132,14 +132,14 @@ ApiTraceInterceptor → ApiTraceStore              ApiTraceReceiver(EditorConnec
 |---|---|---|
 | `ApiTracing`・`ApiTrace`・`ApiTraceStore`・`ApiTraceInterceptor`・`ApiTraceMessages`・`ApiTraceSender` | `Runtime/Tracing/`(asmdef `VolTech.Client.Tracing`。Define Constraints `UNITY_EDITOR \|\| DEVELOPMENT_BUILD`) | 開発ビルドだけに入る |
 | `ApiChannel.CreateCallInvoker`・`AddInterceptor` | `Runtime/Unity/ApiChannel.cs`(asmdef `VolTech.Client.Unity`) | 含む(リリースビルドでは、Interceptor を足す側が入らないので何も付かない) |
-| `ApiTraceWindow`・`ApiTraceReceiver` | `Editor/`(asmdef `VolTech.Client.Editor`。Editor だけ) | 含まない |
+| `GrpcMonitorWindow`・`GrpcMonitorReceiver` | `Editor/`(asmdef `VolTech.Client.Editor`。Editor だけ) | 含まない |
 
 パッケージとして分けるときは、どれも Unity 用の層([構成](structure.md))に入る。
 
 ## 実装で決めたこと
 
 - **エラーのときは、レスポンスの Headers と Trailers が同じ中身になる**。サーバー(tonic)はエラーを Trailers-Only(ヘッダーとトレーラーを1つにまとめた形)で返し、grpc-dotnet はそれをヘッダーとしてもトレーラーとしても返すため。gRPC の仕様どおりなので、そのまま出す
-- エディタで実機の記録を受け取る `ApiTraceReceiver` は、`ScriptableSingleton` にする。`EditorConnection` は呼び出し先が UnityEngine.Object のメソッドでないと登録できず、静的なメソッドやラムダを渡すと「does not derive from UnityEngine.Object」で失敗するため。ウィンドウを開いていなくても受け取るように、スクリプトを読み込むたびに `[InitializeOnLoadMethod]` で作る
+- エディタで実機の記録を受け取る `GrpcMonitorReceiver` は、`ScriptableSingleton` にする。`EditorConnection` は呼び出し先が UnityEngine.Object のメソッドでないと登録できず、静的なメソッドやラムダを渡すと「does not derive from UnityEngine.Object」で失敗するため。ウィンドウを開いていなくても受け取るように、スクリプトを読み込むたびに `[InitializeOnLoadMethod]` で作る
 - 実機の `ApiTraceSender` は、記録の追加を受け取ったら、送るのをメインスレッドに戻してから行う(`SynchronizationContext`)。記録は Interceptor の続き(別のスレッドのことがある)で足されるため。PlayerConnection はメインスレッドでしか使えないので、始めるときに `SynchronizationContext` が無ければ、警告を出して送らない
 - 記録はリクエストの時点の内容で持ち、`ApiTraceStore` に入れた後は書き換えない。結果を受け取ったら、複製(`Clone`)に結果を入れて、同じ Id で置き換える(ウィンドウが別のスレッドから読んでも壊れない)
 - 実機から送るときの Body の上限は 256K 文字(`ApiTraceMessages.MaxBodyLength`)。超えたら切り詰め、詳細に「Body truncated」と出す。切る位置がサロゲートペアの途中なら、その手前で切る(UTF-8 にしたときに化けないように)

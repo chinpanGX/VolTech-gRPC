@@ -17,9 +17,9 @@ namespace VolTech.Client.Editor
     /// </summary>
     /// <remarks>
     /// UI Toolkit で、USS・UXML は使わずに C# だけで組み立てる。見るだけで、送り直しはしない(アプリの操作で送る)。
-    /// 「Editor」はエディタで動かした通信(ApiTraceStore.Shared)、「Player」は USB などでつないだ実機の通信(ApiTraceReceiver.Store)。
+    /// 「Editor」はエディタで動かした通信(ApiTraceStore.Shared)、「Player」は USB などでつないだ実機の通信(GrpcMonitorReceiver.Store)。
     /// </remarks>
-    public sealed class ApiTraceWindow : EditorWindow
+    public sealed class GrpcMonitorWindow : EditorWindow
     {
         private const float HeaderKeyWidth = 180;
         private const long RefreshIntervalMs = 200;
@@ -61,12 +61,12 @@ namespace VolTech.Client.Editor
             Player,
         }
 
-        private ApiTraceStore Store => source == TraceSource.Editor ? ApiTraceStore.Shared : ApiTraceReceiver.Store;
+        private ApiTraceStore Store => source == TraceSource.Editor ? ApiTraceStore.Shared : GrpcMonitorReceiver.Store;
 
         [MenuItem("Window/VolTech gRPC/gRPC Monitor")]
         private static void Open()
         {
-            var window = GetWindow<ApiTraceWindow>("gRPC Monitor");
+            var window = GetWindow<GrpcMonitorWindow>("gRPC Monitor");
             // 小さいままだと詳細(右側)が見えないので、開いたときに広げる。ドッキングしているときは広げない
             if (!window.docked && (window.position.width < initialSize.x || window.position.height < initialSize.y))
             {
@@ -117,8 +117,8 @@ namespace VolTech.Client.Editor
             recordToggle.RegisterValueChangedCallback(change => ApiTraceStore.Shared.Recording = change.newValue);
             toolbar.Add(recordToggle);
 
-            var clearOnPlayToggle = new ToolbarToggle { text = "Clear on Play", value = ApiTraceReceiver.ClearOnPlay };
-            clearOnPlayToggle.RegisterValueChangedCallback(change => ApiTraceReceiver.ClearOnPlay = change.newValue);
+            var clearOnPlayToggle = new ToolbarToggle { text = "Clear on Play", value = GrpcMonitorReceiver.ClearOnPlay };
+            clearOnPlayToggle.RegisterValueChangedCallback(change => GrpcMonitorReceiver.ClearOnPlay = change.newValue);
             toolbar.Add(clearOnPlayToggle);
 
             var followToggle = new ToolbarToggle { text = "Follow latest", value = followLatest };
