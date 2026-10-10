@@ -46,10 +46,6 @@ namespace Sandbox.V1 {
     }
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::Sandbox.V1.SignUpRequest> __Marshaller_sandbox_v1_SignUpRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Sandbox.V1.SignUpRequest.Parser));
-    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::Sandbox.V1.SignUpResponse> __Marshaller_sandbox_v1_SignUpResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Sandbox.V1.SignUpResponse.Parser));
-    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::Sandbox.V1.PingRequest> __Marshaller_sandbox_v1_PingRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Sandbox.V1.PingRequest.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::Sandbox.V1.PingResponse> __Marshaller_sandbox_v1_PingResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Sandbox.V1.PingResponse.Parser));
@@ -61,14 +57,6 @@ namespace Sandbox.V1 {
     static readonly grpc::Marshaller<global::Sandbox.V1.IncrementRequest> __Marshaller_sandbox_v1_IncrementRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Sandbox.V1.IncrementRequest.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::Sandbox.V1.IncrementResponse> __Marshaller_sandbox_v1_IncrementResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Sandbox.V1.IncrementResponse.Parser));
-
-    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::Sandbox.V1.SignUpRequest, global::Sandbox.V1.SignUpResponse> __Method_SignUp = new grpc::Method<global::Sandbox.V1.SignUpRequest, global::Sandbox.V1.SignUpResponse>(
-        grpc::MethodType.Unary,
-        __ServiceName,
-        "SignUp",
-        __Marshaller_sandbox_v1_SignUpRequest,
-        __Marshaller_sandbox_v1_SignUpResponse);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Method<global::Sandbox.V1.PingRequest, global::Sandbox.V1.PingResponse> __Method_Ping = new grpc::Method<global::Sandbox.V1.PingRequest, global::Sandbox.V1.PingResponse>(
@@ -127,58 +115,6 @@ namespace Sandbox.V1 {
       {
       }
 
-      /// <summary>
-      /// プレイヤーを作る。作成済みならエラーにせず、作成済みのプレイヤーを返す。
-      /// 冪等性の対象の RPC(Increment)でロックする行も、ここで作る。
-      /// </summary>
-      /// <param name="request">The request to send to the server.</param>
-      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
-      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
-      /// <param name="cancellationToken">An optional token for canceling the call.</param>
-      /// <returns>The response received from the server.</returns>
-      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::Sandbox.V1.SignUpResponse SignUp(global::Sandbox.V1.SignUpRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
-      {
-        return SignUp(request, new grpc::CallOptions(headers, deadline, cancellationToken));
-      }
-      /// <summary>
-      /// プレイヤーを作る。作成済みならエラーにせず、作成済みのプレイヤーを返す。
-      /// 冪等性の対象の RPC(Increment)でロックする行も、ここで作る。
-      /// </summary>
-      /// <param name="request">The request to send to the server.</param>
-      /// <param name="options">The options for the call.</param>
-      /// <returns>The response received from the server.</returns>
-      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::Sandbox.V1.SignUpResponse SignUp(global::Sandbox.V1.SignUpRequest request, grpc::CallOptions options)
-      {
-        return CallInvoker.BlockingUnaryCall(__Method_SignUp, null, options, request);
-      }
-      /// <summary>
-      /// プレイヤーを作る。作成済みならエラーにせず、作成済みのプレイヤーを返す。
-      /// 冪等性の対象の RPC(Increment)でロックする行も、ここで作る。
-      /// </summary>
-      /// <param name="request">The request to send to the server.</param>
-      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
-      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
-      /// <param name="cancellationToken">An optional token for canceling the call.</param>
-      /// <returns>The call object.</returns>
-      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncUnaryCall<global::Sandbox.V1.SignUpResponse> SignUpAsync(global::Sandbox.V1.SignUpRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
-      {
-        return SignUpAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
-      }
-      /// <summary>
-      /// プレイヤーを作る。作成済みならエラーにせず、作成済みのプレイヤーを返す。
-      /// 冪等性の対象の RPC(Increment)でロックする行も、ここで作る。
-      /// </summary>
-      /// <param name="request">The request to send to the server.</param>
-      /// <param name="options">The options for the call.</param>
-      /// <returns>The call object.</returns>
-      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncUnaryCall<global::Sandbox.V1.SignUpResponse> SignUpAsync(global::Sandbox.V1.SignUpRequest request, grpc::CallOptions options)
-      {
-        return CallInvoker.AsyncUnaryCall(__Method_SignUp, null, options, request);
-      }
       /// <summary>
       /// 認証付きの疎通。サーバー時刻・日付のヘッダーと、共通レスポンス項目の形を確かめる。
       /// プレイヤーがまだ作られていなければ FAILED_PRECONDITION + PLAYER_NOT_FOUND を返す。
@@ -281,6 +217,7 @@ namespace Sandbox.V1 {
       }
       /// <summary>
       /// カウンターに amount を足す。冪等性の対象なので、同じ RequestID で2回呼んでも1回だけ足される。
+      /// プレイヤーがまだ作られていなければ FAILED_PRECONDITION + PLAYER_NOT_FOUND を返す。
       /// </summary>
       /// <param name="request">The request to send to the server.</param>
       /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
@@ -294,6 +231,7 @@ namespace Sandbox.V1 {
       }
       /// <summary>
       /// カウンターに amount を足す。冪等性の対象なので、同じ RequestID で2回呼んでも1回だけ足される。
+      /// プレイヤーがまだ作られていなければ FAILED_PRECONDITION + PLAYER_NOT_FOUND を返す。
       /// </summary>
       /// <param name="request">The request to send to the server.</param>
       /// <param name="options">The options for the call.</param>
@@ -305,6 +243,7 @@ namespace Sandbox.V1 {
       }
       /// <summary>
       /// カウンターに amount を足す。冪等性の対象なので、同じ RequestID で2回呼んでも1回だけ足される。
+      /// プレイヤーがまだ作られていなければ FAILED_PRECONDITION + PLAYER_NOT_FOUND を返す。
       /// </summary>
       /// <param name="request">The request to send to the server.</param>
       /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
@@ -318,6 +257,7 @@ namespace Sandbox.V1 {
       }
       /// <summary>
       /// カウンターに amount を足す。冪等性の対象なので、同じ RequestID で2回呼んでも1回だけ足される。
+      /// プレイヤーがまだ作られていなければ FAILED_PRECONDITION + PLAYER_NOT_FOUND を返す。
       /// </summary>
       /// <param name="request">The request to send to the server.</param>
       /// <param name="options">The options for the call.</param>

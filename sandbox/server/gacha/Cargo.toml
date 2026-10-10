@@ -1,0 +1,12 @@
+[package]
+name = "gacha"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+jiff = { workspace = true }
+player = { workspace = true }
+rand = { workspace = true }
+sqlx = { workspace = true }
+ulid = { workspace = true }

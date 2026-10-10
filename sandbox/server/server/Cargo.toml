@@ -9,6 +9,8 @@ voltech-grpc-auth = { workspace = true }
 voltech-grpc-error = { workspace = true }
 voltech-grpc-status = { workspace = true }
 voltech-grpc-transaction = { workspace = true }
+api = { workspace = true }
+player = { workspace = true }
 proto = { workspace = true }
 dotenvy = { workspace = true }
 sqlx = { workspace = true }
@@ -23,4 +25,6 @@ tracing-subscriber = { workspace = true }
 ulid = { workspace = true }
 
 [dev-dependencies]
+gacha = { workspace = true }
+jiff = { workspace = true }
 tonic-types = { workspace = true }

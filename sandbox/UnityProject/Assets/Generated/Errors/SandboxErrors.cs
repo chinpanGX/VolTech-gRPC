@@ -27,12 +27,24 @@ namespace Sandbox.V1
         public static readonly global::VolTech.Client.ErrorCode PlayerNotFound = new(Domain, "PLAYER_NOT_FOUND");
 
         /// <summary>
+        /// ジェムが足りず、ガチャを引けない。
+        /// </summary>
+        public static readonly global::VolTech.Client.ErrorCode InsufficientGems = new(Domain, "INSUFFICIENT_GEMS");
+
+        /// <summary>
+        /// 今日の無料ガチャはもう引いた。
+        /// </summary>
+        public static readonly global::VolTech.Client.ErrorCode FreeDrawUsed = new(Domain, "FREE_DRAW_USED");
+
+        /// <summary>
         /// この domain のエラーと既定の action の一覧。ErrorPolicyProvider に渡す。
         /// </summary>
         public static readonly IReadOnlyList<global::VolTech.Client.ErrorDefinition> All = new global::VolTech.Client.ErrorDefinition[]
         {
             new global::VolTech.Client.ErrorDefinition(SandboxStay, global::VolTech.Client.ErrorAction.Stay),
             new global::VolTech.Client.ErrorDefinition(PlayerNotFound, global::VolTech.Client.ErrorAction.Title),
+            new global::VolTech.Client.ErrorDefinition(InsufficientGems, global::VolTech.Client.ErrorAction.Stay),
+            new global::VolTech.Client.ErrorDefinition(FreeDrawUsed, global::VolTech.Client.ErrorAction.Stay),
         };
     }
 }

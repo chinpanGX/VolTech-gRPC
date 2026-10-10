@@ -1,0 +1,18 @@
+[package]
+name = "api"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+voltech-grpc-transaction = { workspace = true }
+proto = { workspace = true }
+player = { workspace = true }
+gacha = { workspace = true }
+jiff = { workspace = true }
+voltech-grpc-status = { workspace = true }
+voltech-grpc-auth = { workspace = true }
+voltech-grpc-error = { workspace = true }
+sqlx = { workspace = true }
+tonic = { workspace = true }
+ulid = { workspace = true }

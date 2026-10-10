@@ -1,9 +1,9 @@
 mod config;
-mod players;
-mod sandbox_service;
+mod player_lookup;
 
 use std::future::Future;
 
+use api::{GachaServiceImpl, PlayerServiceImpl, SandboxServiceImpl};
 use sqlx::MySqlPool;
 use tokio::net::TcpListener;
 use tokio_stream::wrappers::TcpListenerStream;
@@ -15,8 +15,7 @@ use voltech_grpc_status::{DateChangeLayer, ServerStatus, ServerStatusLayer};
 use voltech_grpc_transaction::{IdempotencyLevels, RpcMethodLayer, Transactions};
 
 pub use config::Config;
-pub use players::Players;
-pub use sandbox_service::SandboxServiceImpl;
+pub use player_lookup::PlayerLookup;
 
 pub type BoxError = Box<dyn std::error::Error + Send + Sync>;
 
@@ -30,7 +29,6 @@ pub async fn connect_and_migrate(database_url: &str) -> Result<MySqlPool, BoxErr
 }
 
 /// `listener` で受け付けた接続で gRPC サーバーを動かす。`shutdown` が完了すると止まる。
-/// 基盤の Layer の組み方は、アプリ(samples)と同じにする。
 pub async fn serve(
     listener: TcpListener,
     pool: MySqlPool,
@@ -54,7 +52,7 @@ pub async fn serve(
         pool.clone(),
         IdempotencyLevels::from_file_descriptor_set(proto::FILE_DESCRIPTOR_SET)?,
     );
-    let auth = AuthLayer::new(pool.clone(), Players::new(pool.clone()));
+    let auth = AuthLayer::new(pool.clone(), PlayerLookup::new(pool.clone()));
     let date_change = DateChangeLayer::new(status.clone());
 
     Server::builder()
@@ -64,7 +62,18 @@ pub async fn serve(
         // Transactions::run が RPC の名前を読めるように、全サービスの外側に付ける
         .layer(RpcMethodLayer)
         .add_service(DeviceServiceImpl::new(pool.clone()).into_server())
+        // 認証が必要なサービスにだけ AuthLayer を付ける(DeviceService は skip_auth)。
         // 日付変更は認証の後に判定するので、AuthLayer の内側に DateChangeLayer を付ける
+        .add_service(
+            auth.layer(
+                date_change.layer(PlayerServiceImpl::new(transactions.clone()).into_server()),
+            ),
+        )
+        .add_service(
+            auth.layer(
+                date_change.layer(GachaServiceImpl::new(transactions.clone()).into_server()),
+            ),
+        )
         .add_service(
             auth.layer(date_change.layer(SandboxServiceImpl::new(transactions).into_server())),
         )

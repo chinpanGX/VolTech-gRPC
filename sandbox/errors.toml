@@ -3,7 +3,7 @@
 # 書き方は基盤の server/rust/error/errors.toml と同じ。消した reason は使い回さない。
 domain = "sandbox"
 
-# action ごとの扱いを確かめるためだけにある
+# Fail で action ごとの扱いを確かめるためだけにある
 
 [[errors]]
 reason = "SANDBOX_STAY"
@@ -14,3 +14,15 @@ description = "その場に留まるエラー(残高不足などの代わり)。
 reason = "PLAYER_NOT_FOUND"
 action = "title"
 description = "サインインしたがプレイヤーがまだいない。SignUp で作る。"
+
+# ガチャ
+
+[[errors]]
+reason = "INSUFFICIENT_GEMS"
+action = "stay"
+description = "ジェムが足りず、ガチャを引けない。"
+
+[[errors]]
+reason = "FREE_DRAW_USED"
+action = "stay"
+description = "今日の無料ガチャはもう引いた。"

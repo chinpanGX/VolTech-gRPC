@@ -13,7 +13,6 @@ namespace Sandbox.V1
     /// </summary>
     public static class SandboxServiceMethods
     {
-        public const string SignUp = "/sandbox.v1.SandboxService/SignUp";
         public const string Ping = "/sandbox.v1.SandboxService/Ping";
         public const string Fail = "/sandbox.v1.SandboxService/Fail";
         public const string Increment = "/sandbox.v1.SandboxService/Increment";
@@ -24,7 +23,6 @@ namespace Sandbox.V1
     /// </summary>
     public sealed class SandboxApi
     {
-        private static readonly RpcSettings signUpSettings = new(SandboxServiceMethods.SignUp, isIdempotencyTarget: false, requiresAuth: true);
         private static readonly RpcSettings pingSettings = new(SandboxServiceMethods.Ping, isIdempotencyTarget: false, requiresAuth: true);
         private static readonly RpcSettings failSettings = new(SandboxServiceMethods.Fail, isIdempotencyTarget: false, requiresAuth: true);
         private static readonly RpcSettings incrementSettings = new(SandboxServiceMethods.Increment, isIdempotencyTarget: true, requiresAuth: true);
@@ -39,22 +37,6 @@ namespace Sandbox.V1
         {
             this.core = core;
             client = new SandboxService.SandboxServiceClient(callInvoker);
-        }
-
-        /// <summary>
-        /// プレイヤーを作る。作成済みならエラーにせず、作成済みのプレイヤーを返す。
-        /// 冪等性の対象の RPC(Increment)でロックする行も、ここで作る。
-        /// </summary>
-        public UniTask<ApiResult<global::Sandbox.V1.SignUpResponse>> SignUpAsync(
-            global::Sandbox.V1.SignUpRequest request,
-            IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null)
-        {
-            return core.InvokeAsync(
-                signUpSettings,
-                client,
-                request,
-                handledCodes,
-                static (c, r, options) => c.SignUpAsync(r, options));
         }
 
         /// <summary>
@@ -90,6 +72,7 @@ namespace Sandbox.V1
 
         /// <summary>
         /// カウンターに amount を足す。冪等性の対象なので、同じ RequestID で2回呼んでも1回だけ足される。
+        /// プレイヤーがまだ作られていなければ FAILED_PRECONDITION + PLAYER_NOT_FOUND を返す。
         /// </summary>
         public UniTask<ApiResult<global::Sandbox.V1.IncrementResponse>> IncrementAsync(
             global::Sandbox.V1.IncrementRequest request,
@@ -102,30 +85,6 @@ namespace Sandbox.V1
                 handledCodes,
                 static (c, r, options) => c.IncrementAsync(r, options));
         }
-    }
-
-    /// <summary>
-    /// 共通レスポンス項目 player_diff を持つレスポンス。反映処理は、この型で判定して読む。
-    /// </summary>
-    public interface IHasPlayerDiff
-    {
-        global::Sandbox.V1.PlayerDiff PlayerDiff { get; }
-    }
-
-    /// <summary>
-    /// 共通レスポンス項目 badges を持つレスポンス。反映処理は、この型で判定して読む。
-    /// </summary>
-    public interface IHasBadges
-    {
-        global::Google.Protobuf.Collections.RepeatedField<global::Sandbox.V1.Badge> Badges { get; }
-    }
-
-    /// <summary>
-    /// 共通レスポンス項目 notifications を持つレスポンス。反映処理は、この型で判定して読む。
-    /// </summary>
-    public interface IHasNotifications
-    {
-        global::Google.Protobuf.Collections.RepeatedField<global::Sandbox.V1.Notification> Notifications { get; }
     }
 
     public partial class PingResponse : IHasPlayerDiff, IHasBadges, IHasNotifications

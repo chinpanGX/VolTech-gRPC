@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package sandbox.v1;
+
+option csharp_namespace = "Sandbox.V1";
+
+// リクエストの処理中に起きた出来事(共通レスポンス項目 notifications)。
+// クライアントは待ち行列に積み、画面が都合のよいときに出す。古いアプリは知らない種類(event が空)を無視する。
+message Notification {
+  oneof event {
+    RareItemObtained rare_item_obtained = 1;
+    PingReceived ping_received = 2;
+  }
+}
+
+// ガチャでレアのアイテムを手に入れた。
+message RareItemObtained {
+  int32 item_id = 1;
+}
+
+// サーバーが Ping を受け取った。
+message PingReceived {}

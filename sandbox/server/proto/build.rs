@@ -12,7 +12,14 @@ const ERRORS: &str = "../../errors.toml";
 
 fn main() -> Result<(), Box<dyn Error>> {
     // protoc を入れなくてもビルドできるように、Rust 製のコンパイラ(protox)で読み込む
-    let fds = protox::compile(["sandbox/v1/sandbox.proto"], [SANDBOX_PROTO_ROOT])?;
+    let fds = protox::compile(
+        [
+            "sandbox/v1/sandbox.proto",
+            "sandbox/v1/player.proto",
+            "sandbox/v1/gacha.proto",
+        ],
+        [SANDBOX_PROTO_ROOT],
+    )?;
 
     let out_dir = PathBuf::from(env::var("OUT_DIR")?);
     fs::write(out_dir.join("sandbox_descriptor.bin"), fds.encode_to_vec())?;

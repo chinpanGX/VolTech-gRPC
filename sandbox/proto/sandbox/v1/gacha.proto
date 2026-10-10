@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package sandbox.v1;
+
+import "sandbox/v1/badge.proto";
+import "sandbox/v1/notification.proto";
+import "sandbox/v1/player.proto";
+
+option csharp_namespace = "Sandbox.V1";
+
+// ガチャ。基盤の共通処理(業務エラー・冪等性・共通レスポンス項目・トランザクション)を1つの機能で使う例。
+service GachaService {
+  // ジェムを消費してガチャを1回引き、排出されたアイテムを1つ付与する。
+  // ジェムが足りなければ FAILED_PRECONDITION + INSUFFICIENT_GEMS を返し、何も変えない。
+  // free なら、ジェムを使わずに引く(ゲーム内の日付で1日1回)。今日もう引いていれば
+  // FAILED_PRECONDITION + FREE_DRAW_USED を返し、何も変えない。
+  // idempotency_level を書かないので、冪等性の対象(クライアントは RequestID を付け、1つずつ送る)。
+  rpc Draw(DrawRequest) returns (DrawResponse);
+}
+
+message DrawRequest {
+  // 1日1回の無料ガチャとして引くか。
+  bool free = 1;
+}
+
+message DrawResponse {
+  // 排出されたアイテム(引いた後の個数)。演出に使う。
+  PlayerItem item = 1;
+  // 規約: 共通レスポンス項目。引いた後のジェムとアイテムが入る。
+  PlayerDiff player_diff = 2;
+  // 規約: 共通レスポンス項目。無料ガチャを引いたときは、無料ガチャのバッジ(非表示)が入る。
+  repeated Badge badges = 3;
+  // 規約: 共通レスポンス項目。レアのアイテムが出たときは、RareItemObtained が入る。
+  repeated Notification notifications = 4;
+}

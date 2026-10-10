@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package sandbox.v1;
+
+option csharp_namespace = "Sandbox.V1";
+
+// サーバーが計算するバッジの種類(共通レスポンス項目 badges)。
+// クライアントが持っているデータから判定できるものは、ここに足さない。古いアプリは知らない種類を無視する。
+enum BadgeType {
+  BADGE_TYPE_UNSPECIFIED = 0;
+  // 今日の無料ガチャをまだ引いていない。日付はゲーム内の日付(サーバーの時刻)で判定する。
+  BADGE_TYPE_FREE_GACHA = 1;
+  // カウンターが 0 より大きいときに表示する、件数付きのバッジ。
+  BADGE_TYPE_COUNTER = 2;
+}
+
+// バッジの今の状態。レスポンスに含まれない種類は「変化なし」。
+message Badge {
+  BadgeType type = 1;
+  // 表示するか。
+  bool visible = 2;
+  // 件数を出すバッジの件数。件数を出さないバッジは 0。
+  int32 count = 3;
+}

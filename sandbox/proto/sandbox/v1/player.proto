@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package sandbox.v1;
+
+import "sandbox/v1/badge.proto";
+
+option csharp_namespace = "Sandbox.V1";
+
+// プレイヤーの作成(サインアップ)と、所持データの全件の取得(サインイン)。
+service PlayerService {
+  // プレイヤーを作る。作成済みならエラーにせず、作成済みのプレイヤーを返す。
+  // 冪等性の対象の RPC でロックする行も、ここで作る。作った後は、サインインで所持データを全件取る。
+  rpc SignUp(SignUpRequest) returns (SignUpResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+
+  // 所持データを全件返す。クライアントは差分としてではなく、置き換えとして反映する。
+  // プレイヤーがまだ作られていなければ FAILED_PRECONDITION + PLAYER_NOT_FOUND を返す。
+  rpc SignIn(SignInRequest) returns (SignInResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+}
+
+message SignUpRequest {}
+
+message SignUpResponse {
+  Player player = 1;
+}
+
+message SignInRequest {}
+
+message SignInResponse {
+  Player player = 1;
+  // 所持しているアイテムすべて(個数が0のものは含まない)。
+  repeated PlayerItem items = 2;
+  // 規約: 共通レスポンス項目。サインインでは、すべての種類のバッジを返す。
+  repeated Badge badges = 3;
+}
+
+message Player {
+  // ULID(26文字)。例: 01ARZ3NDEKTSV4RRFFQ69G5FAV
+  string player_id = 1;
+  // 所持しているジェム。ガチャを引くのに使う。
+  int64 gems = 2;
+  // 基盤の冪等性を確かめるためのカウンター(SandboxService/Increment で増える)。
+  int64 counter = 3;
+}
+
+// プレイヤーのデータの変更(共通レスポンス項目)。
+// 値は変化量ではなく変更後の値で持つので、同じ差分を2回反映しても結果は変わらない。
+message PlayerDiff {
+  // 変更後のジェム。変わっていなければ無い。
+  optional int64 gems = 1;
+  // アイテムの変更。変わっていなければ無い。
+  ItemsDiff items = 2;
+  // 変更後のカウンター。変わっていなければ無い。
+  optional int64 counter = 3;
+}
+
+// アイテムの変更。
+message ItemsDiff {
+  // 追加・更新されたアイテム(変更後の個数)。
+  repeated PlayerItem upserted = 1;
+  // 無くなったアイテムの item_id。
+  repeated int32 removed = 2;
+}
+
+// 所持しているアイテム。
+message PlayerItem {
+  int32 item_id = 1;
+  int64 count = 2;
+}

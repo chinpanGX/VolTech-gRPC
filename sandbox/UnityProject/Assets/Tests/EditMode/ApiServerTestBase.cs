@@ -33,8 +33,14 @@ namespace Sandbox.Tests.EditMode
         /// <summary>受け取ったエラーを記録するエラーハンドラー。何も足さなければ Stay を返す。</summary>
         protected RecordingErrorHandler ErrorHandler { get; private set; }
 
-        /// <summary>ApiCore が共通レスポンス項目(player_diff・badges・notifications)を反映する先。</summary>
-        protected SandboxState State { get; private set; }
+        /// <summary>ApiCore が player_diff を反映する先。</summary>
+        protected PlayerRepository Repository { get; private set; }
+
+        /// <summary>ApiCore が badges を反映する先。</summary>
+        protected BadgeStore Badges { get; private set; }
+
+        /// <summary>ApiCore が notifications を積む先。</summary>
+        protected NotificationQueue Notifications { get; private set; }
 
         /// <summary>ApiCore に渡したトークンの取得(デバイス登録とトークンの発行をする)。</summary>
         protected DeviceTokenProvider TokenProvider { get; private set; }
@@ -83,18 +89,20 @@ namespace Sandbox.Tests.EditMode
             var options = new ApiCoreOptions(new AppVersion(AppVersion.Windows, 1));
             AccountStore = new InMemoryAccountStore();
             ErrorHandler = new RecordingErrorHandler();
-            State = new SandboxState();
+            Repository = new PlayerRepository();
+            Badges = new BadgeStore();
+            Notifications = new NotificationQueue();
             TokenProvider = new DeviceTokenProvider(CallInvoker, AccountStore, options);
             Core = new ApiCore(
                 options,
                 TokenProvider,
                 new ErrorPolicyProvider(SandboxErrors.All),
                 ErrorHandler,
-                new PlayerDiffApplier(State),
+                new PlayerDiffApplier(Repository),
                 // 何をやり取りしたかを Console で見られるようにする
                 new UnityApiLogger(),
-                badgeApplier: new BadgeApplier(State),
-                notificationApplier: new NotificationApplier(State));
+                badgeApplier: new BadgeApplier(Badges),
+                notificationApplier: new NotificationApplier(Notifications));
         }
 
         /// <summary>

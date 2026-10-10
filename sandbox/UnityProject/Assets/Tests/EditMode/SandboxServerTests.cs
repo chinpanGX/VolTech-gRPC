@@ -11,19 +11,22 @@ namespace Sandbox.Tests.EditMode
 {
     /// <summary>
     /// 起動している sandbox のサーバー(make sandbox-server)に、ApiCore と SandboxApi を通して、基盤の機能(登録・エラー・冪等性)を確かめる。
+    /// サインアップは PlayerApi で行う。
     /// </summary>
     [Description("起動している sandbox のサーバー(make sandbox-server)に、ApiCore と SandboxApi を通して、基盤の機能を確かめる。サーバーを起動してから実行する")]
     public class SandboxServerTests : ApiServerTestBase
     {
         private SandboxApi sandboxApi;
+        private PlayerApi playerApi;
 
         /// <summary>
-        /// テストごとに SandboxApi を作る。
+        /// テストごとに SandboxApi と PlayerApi を作る。
         /// </summary>
         [SetUp]
-        public void CreateSandboxApi()
+        public void CreateApis()
         {
             sandboxApi = new SandboxApi(Core, CallInvoker);
+            playerApi = new PlayerApi(Core, CallInvoker);
         }
 
         /// <summary>
@@ -40,16 +43,17 @@ namespace Sandbox.Tests.EditMode
             Assert.That(saved.DeviceId, Has.Length.EqualTo(26));
             Assert.That(saved.PlayerId, Has.Length.EqualTo(26), "デバイス登録で player_id が保存されていない");
 
-            var signedUp = await sandboxApi.SignUpAsync(new SignUpRequest());
+            var signedUp = await playerApi.SignUpAsync(new SignUpRequest());
             Assert.That(signedUp.IsSuccess, Is.True, signedUp.Error?.ToString());
-            Assert.That(signedUp.Value.PlayerId, Is.EqualTo(saved.PlayerId));
+            Assert.That(signedUp.Value.Player.PlayerId, Is.EqualTo(saved.PlayerId));
 
             var pinged = await sandboxApi.PingAsync(new PingRequest());
             Assert.That(pinged.IsSuccess, Is.True, pinged.Error?.ToString());
             Assert.That(pinged.Value.PlayerId, Is.EqualTo(saved.PlayerId));
-            Assert.That(State.Counter, Is.EqualTo(0));
-            Assert.That(State.Badges.ContainsKey(BadgeType.Counter), Is.True);
-            Assert.That(State.Notifications, Has.Count.EqualTo(1));
+            Assert.That(Repository.Counter, Is.EqualTo(0));
+            Assert.That(Badges.IsVisible(BadgeType.Counter), Is.False, "カウンターが 0 なら非表示");
+            Assert.That(Notifications.TryDequeue(out var notification), Is.True);
+            Assert.That(notification.EventCase, Is.EqualTo(Notification.EventOneofCase.PingReceived));
             Assert.That(Core.ServerClock.IsSynchronized, Is.True);
             // サーバーは同じ PC で動いているので、端末の時計とほぼ同じになる
             Assert.That(Core.ServerClock.Now, Is.EqualTo(DateTimeOffset.UtcNow).Within(TimeSpan.FromMinutes(1)));
@@ -89,7 +93,7 @@ namespace Sandbox.Tests.EditMode
         [Description("Increment を同じ RequestID で2回送ると、カウンターは1回分だけ増える")]
         public IEnumerator IncrementWithSameRequestIdIsAppliedOnce() => UniTask.ToCoroutine(async () =>
         {
-            var signedUp = await sandboxApi.SignUpAsync(new SignUpRequest());
+            var signedUp = await playerApi.SignUpAsync(new SignUpRequest());
             Assert.That(signedUp.IsSuccess, Is.True, signedUp.Error?.ToString());
 
             // ApiCore は再試行のときだけ同じ RequestID で送るので、ヘッダーを自分で付けて直接送る
@@ -111,7 +115,8 @@ namespace Sandbox.Tests.EditMode
             var next = await sandboxApi.IncrementAsync(new IncrementRequest { Amount = 5 });
             Assert.That(next.IsSuccess, Is.True, next.Error?.ToString());
             Assert.That(next.Value.Counter, Is.EqualTo(10));
-            Assert.That(State.Counter, Is.EqualTo(10));
+            Assert.That(Repository.Counter, Is.EqualTo(10));
+            Assert.That(Badges.CountOf(BadgeType.Counter), Is.EqualTo(0), "Increment はバッジを返さない");
         });
     }
 }
