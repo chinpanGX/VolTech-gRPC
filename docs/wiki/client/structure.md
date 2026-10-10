@@ -4,6 +4,7 @@ status: confirmed
 area: client
 related: [repo/current-plan, client/auth-account, client/connection, ops/testing]
 proto: []
+code: [Unity/com.chinpangx.voltech.grpc/package.json, Unity/com.chinpangx.voltech.grpc/Tests/EditMode/ProtobufVersionTests.cs]
 updated: 2026-10-10
 ---
 
@@ -20,6 +21,7 @@ updated: 2026-10-10
 | YetAnotherHttpHandler | UnityでHTTP/2通信を行うためのハンドラー(Unity用の層だけが使う) |
 
 - YetAnotherHttpHandler は OpenUPM、それ以外は Unity NuGet レジストリ(`org.nuget.*`)から入れる
+- **Google.Protobuf の版は、Google.Api.CommonProtos が依存する版にそろえる**(いまは CommonProtos 2.17.0 に合わせて 3.31.1)。Unity のエディタ(6000.6 以降)は別の版の Google.Protobuf を同梱している。版がずれると、エディタの中で CommonProtos がエディタの版に結び付き、`ErrorInfo` を読むところで `MissingMethodException` になる(業務エラーがすべて不明なエラーになる)。ビルドしたアプリでは起きない。ずれたら `ProtobufVersionTests` が失敗する
 - エラー詳細を読む `Grpc.StatusProto` は Unity NuGet レジストリに無いので、トレーラーを読んでパースする処理を自前で書く
 
 ## Unityに依存しない本体(Core)と、Unity用の層

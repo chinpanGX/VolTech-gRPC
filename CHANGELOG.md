@@ -7,3 +7,4 @@
 - Unity の認証と Unity 用の層を `VolTech.Client.Auth`・`VolTech.Client.Unity` のアセンブリに分け、`ProtoErrorPolicyProvider` を基盤に入れる
 - パッケージの `package.json` に依存(UniTask・YetAnotherHttpHandler・gRPC の DLL)を書く。利用側は `scopedRegistries` を足すだけでよい
 - 基盤の動作確認用の sandbox(`.proto`・サーバー・Unity プロジェクト)と CI を足す
+- `Google.Protobuf` を 3.31.1 にし、`Google.Api.CommonProtos` の依存する版にそろえる。Unity 6000.6 のエディタの中で、業務エラーがすべて不明なエラーになっていたのを直す
