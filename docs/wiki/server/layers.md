@@ -12,7 +12,7 @@ updated: 2026-10-06
 # レイヤー構成
 
 ```
-Server/app/gacha/src/         ドメインのクレート(サンプルの例。player も同じ形)
+Server/app/gacha/src/         ドメインのクレート(grpc-foundation-samples の例。player も同じ形)
 ├── service/                   業務ロジック本体。&mut Transaction とコレクター(4.4)を引数で受け取る
 ├── model/                     各エンティティのstruct。モデル自身の状態変化だけで完結する処理
 │                              (経験値からレベルを計算する等)はここのimplブロックに置く

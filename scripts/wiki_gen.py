@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """docs/wiki の API の表を .proto から生成する。標準ライブラリだけで動く。
 
-    python scripts/wiki_gen.py           (Shared フォルダで実行。ページを書き換える)
+    python scripts/wiki_gen.py           (リポジトリのルートで実行。ページを書き換える)
     python scripts/wiki_gen.py --check   (書き換えずに、生成し直すと変わるページがあれば終了コード 1)
 
 ページに次の目印を置くと、その間を RPC の説明・リクエスト・レスポンスの表で置き換える。
@@ -18,7 +18,7 @@ import os
 import re
 import sys
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))  # Shared/
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))  # リポジトリのルート
 WIKI = os.path.join(ROOT, "docs", "wiki")
 SKIP_FILES = {"CLAUDE.md"}
 SKIP_DIRS = {".obsidian", ".trash"}

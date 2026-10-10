@@ -6,7 +6,7 @@ sections: ["5.2"]
 source: "docs/feature-grpc-foundation.md"
 related: [api/codegen, client/connection]
 proto: []
-code: [Unity/UnityProject/Assets/Scripts/Api/Generated/Wrappers]
+code: [sandbox/UnityProject/Assets/Generated/Wrappers]
 updated: 2026-10-10
 ---
 

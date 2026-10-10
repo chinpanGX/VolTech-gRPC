@@ -5,7 +5,7 @@ area: guide
 sections: []
 related: [guide/add-api, client/api-core, client/error-handling, client/response-items, client/auth-account, client/fake-testing, client/structure]
 proto: []
-code: [Unity/UnityProject/Assets/Scripts/VolTech.Grpc.Client, Unity/UnityProject/Assets/Scripts/Api/Auth, Unity/UnityProject/Assets/Scripts/Api/Unity, Unity/UnityProject/Assets/Scripts/Api/Errors, Unity/UnityProject/Assets/Scripts/Sample/SampleLifetimeScope.cs]
+code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client, Unity/com.chinpangx.voltech.grpc/Runtime/Auth, Unity/com.chinpangx.voltech.grpc/Runtime/Unity, Unity/com.chinpangx.voltech.grpc/Runtime/Client/Errors/ProtoErrorPolicyProvider.cs]
 updated: 2026-10-10
 ---
 
@@ -15,13 +15,17 @@ Unity のクライアントで使う、基盤の型の一覧。各型の細か�
 
 | アセンブリ / フォルダ | 名前空間 | 中身 |
 |---|---|---|
-| `VolTech.Grpc.Client`(`Assets/Scripts/VolTech.Grpc.Client/`) | `VolTech.Grpc.Client` | 基盤の本体。Unity に依存しない(No Engine References) |
-| `Api`(`Assets/Scripts/Api/`) | `Api.Auth`・`Api.Unity`・`Api.Errors` など | 認証・Unity 用の層・エラーコードの表。アプリの反映処理と生成コードも同じアセンブリにある(基盤を分けるときに分ける。[当面の実装方針](../repo/current-plan.md)) |
-| 生成コード(`Assets/Scripts/Api/Generated/`) | `App.V1`(アプリ)・`VolTech.Grpc.V1`(基盤) | メッセージ型・gRPC クライアント・ラッパー |
+| `VolTech.Client`(`Runtime/Client/`) | `VolTech.Client` | 基盤の本体と、エラーコードの表(`ProtoErrorPolicyProvider`)。Unity に依存しない(No Engine References) |
+| `VolTech.Client.Auth`(`Runtime/Auth/`) | `VolTech.Client.Auth` | 認証(`DeviceTokenProvider`)とアカウントの保存先 |
+| `VolTech.Client.Unity`(`Runtime/Unity/`) | `VolTech.Client.Unity` | Unity 用の層(`ApiChannel`・`UnityApiLogger` など) |
+| `VolTech.V1`(`Runtime/Generated/`) | `VolTech.V1` | 基盤の `.proto`(デバイス登録・カスタムオプション)から生成した C# |
+| アプリの生成コード(アプリの Unity プロジェクトの中) | `App.V1` など(アプリが決める) | アプリの `.proto` から生成したメッセージ型・gRPC クライアント・ラッパー |
+
+フォルダはパッケージ(`Unity/com.chinpangx.voltech.grpc/`)の中のもの。
 
 ## 組み込み方
 
-サンプルの `SampleLifetimeScope` が実例。必要なものを作って `ApiCore` に渡し、ラッパーに `ApiCore` と `CallInvoker` を渡す。
+samples の `SampleLifetimeScope` と、このリポジトリの sandbox の `ApiServerTestBase` が実例。必要なものを作って `ApiCore` に渡し、ラッパーに `ApiCore` と `CallInvoker` を渡す。
 
 ```csharp
 var options = new ApiCoreOptions(UnityAppVersion.Create(appVersion));
@@ -115,4 +119,4 @@ var gachaApi = new GachaApi(core, invoker);
 
 ## 開発用のツール
 
-`VolTech.Grpc.Client.Tracing`(エディタと開発ビルドだけ)と `VolTech.Grpc.Client.Editor`(エディタだけ)は、通信の Viewer のためのアセンブリ。アプリは何もしなくても、`ApiChannel.CreateCallInvoker` で作った通信が記録される([ツール](tools.md))。
+`VolTech.Client.Tracing`(エディタと開発ビルドだけ)と `VolTech.Client.Editor`(エディタだけ)は、通信の Viewer のためのアセンブリ。アプリは何もしなくても、`ApiChannel.CreateCallInvoker` で作った通信が記録される([ツール](tools.md))。

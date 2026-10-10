@@ -5,14 +5,14 @@ area: server
 sections: ["4.5"]
 source: "docs/feature-grpc-foundation.md"
 related: [repo/boundary, api/auth, api/device-service]
-proto: [../Server/framework/auth/proto/voltech/v1/device.proto]
-code: [Server/framework/auth]
+proto: [server/rust/auth/proto/voltech/v1/device.proto]
+code: [server/rust/auth]
 updated: 2026-10-10
 ---
 
 # 認証(サーバー)
 
-パッケージの `voltech-grpc-auth` クレート(当面は `Server/framework/auth`)が持つ。アプリとのつなぎ目は `PlayerResolver` の trait だけ。クライアントから呼ぶ API の仕様は [API: DeviceService](../api/device-service.md) にある。
+パッケージの `voltech-grpc-auth` クレート(当面は `server/rust/auth`)が持つ。アプリとのつなぎ目は `PlayerResolver` の trait だけ。クライアントから呼ぶ API の仕様は [API: DeviceService](../api/device-service.md) にある。
 
 - テーブル(`devices`・`access_tokens`)のマイグレーションはクレートに埋め込み(sqlx の `migrate!()`)、アプリは起動時に実行する
 - **デバイス登録**: `secret_key` は Argon2 でハッシュ化して保存する(平文は保存しない)

@@ -5,8 +5,8 @@ area: api
 sections: ["3.5"]
 source: "docs/feature-grpc-foundation.md"
 related: [api/auth, server/auth, server/status, client/error-handling, client/response-items, ops/testing]
-proto: [proto/app/v1/error_code.proto]
-code: [Server/framework/error]
+proto: [sandbox/proto/sandbox/v1/error_code.proto]
+code: [server/rust/error]
 updated: 2026-10-10
 ---
 
@@ -36,7 +36,7 @@ message ErrorInfo {
 エラーコードと action は `.proto` の enum で定義し、サーバー・クライアントの両方に生成する(ここが唯一の定義元)。
 
 ```proto
-// voltech/v1/error_options.proto(基盤。Server/framework/error/proto に置く)
+// voltech/v1/error_options.proto(基盤。server/rust/error/proto に置く)
 package voltech.v1;
 
 import "google/protobuf/descriptor.proto";
@@ -55,7 +55,7 @@ extend google.protobuf.EnumValueOptions {
 }
 ```
 
-アプリのエラーコードは [`app/v1/error_code.proto`](../../../proto/app/v1/error_code.proto) の `ErrorCode` に定義する(一覧はそちらを見る。ここには書き写さない)。
+アプリのエラーコードは、アプリの `error_code.proto` の `ErrorCode` に定義する(一覧はそちらを見る。ここには書き写さない)。基盤のリポジトリでは sandbox の [`sandbox/v1/error_code.proto`](../../../sandbox/proto/sandbox/v1/error_code.proto) が例になる。
 
 - 番号: 1〜999 は基盤の予約コード(`NETWORK_ERROR`・`INTERNAL_ERROR`・`MAINTENANCE`・`ACCOUNT_SUSPENDED` など)、1000 以降をアプリが足す。業務エラーは機能ごとに番号の範囲を分け、範囲を `.proto` のコメントに書く
 - 消した番号と名前は `reserved` にする

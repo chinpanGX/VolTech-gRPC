@@ -38,7 +38,7 @@ Unityクライアントと Rust APIサーバー間の通信を、REST(OpenAPI)�
 > リポジトリと名前は、リポジトリを分けた場合の形([2.1](repo/operations.md)〜[2.4](repo/folder-layout.md))。当面は1つのリポジトリで、同じ中身を実装する([2.6](repo/current-plan.md))。
 
 - **パッケージのリポジトリ**(`voltech-grpc`。[2.2](repo/naming.md))。バージョン(タグ)を付けて配る([2.1](repo/operations.md))
-  - クライアントの基盤(UPM の `com.voltech.grpc`)、サーバーの基盤(Rust の `voltech-grpc-*` のクレート)、ラッパー生成の protoc プラグイン
+  - クライアントの基盤(UPM の `com.chinpangx.voltech.grpc`)、サーバーの基盤(Rust の `voltech-grpc-*` のクレート)、ラッパー生成の protoc プラグイン
 - **テンプレート**は、下のサンプルが兼ねる(`grpc-foundation-samples`。[2.2](repo/naming.md))。アプリはこれを clone して作る([2.1](repo/operations.md))
   - アプリの雛形(Unity プロジェクト・サーバー・`.proto`)を含む、そのまま開発を始められる雛形
 - どちらもAtlasとは独立して管理する
@@ -48,7 +48,7 @@ Unityクライアントと Rust APIサーバー間の通信を、REST(OpenAPI)�
   - ガチャのレスポンスの `player_diff` にジェムの残数と入手したものを入れ、クライアントで反映する
   - ガチャの排出物は、コード内の固定テーブル(`gacha::model::ITEMS`)にする。基盤を試すのが目的なので、マスタの仕組みは持たない
   - サインアップを入れる。サインアップは何も受け取らず、サインインはプレイヤーとジェムを返す。未作成なら `PLAYER_NOT_FOUND`(`app/v1/player.proto`)
-  - クライアントに入れるもの(画面は [サンプルのクライアント](client/sample.md)):
+  - クライアントに入れるもの(画面の実装例は grpc-foundation-samples にある):
     - タイトル画面: デバイス登録とトークンの発行(`ApiCore` が自動で行う)の後、サインインで全件を取得する(実装済み)
     - ガチャ画面(ホームを兼ねる): playerDiff でジェムの残数と所持品が更新されるところと、ジェム不足(業務エラー)のダイアログを見せる(実装済み)
     - 基盤のインターフェースの実装例: `IErrorDialogView`・`IErrorNavigator`(実装済み)、`IPlayerDiffApplier`・`IBadgeApplier`・`INotificationApplier`(実装済み)、カスタムエラーハンドラー

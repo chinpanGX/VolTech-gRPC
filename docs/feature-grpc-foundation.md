@@ -1,5 +1,7 @@
 # UniGrpcKit / GameGrpcServer 設計書(ドラフト)
 
+> **注記**: 作成時点の名前で書いた設計ドラフト。現在の名前は VolTech gRPC(リポジトリ `VolTech-gRPC`、パッケージ `com.chinpangx.voltech.grpc`、名前空間 `VolTech.Client`)。決まったことは docs/wiki にある。
+
 > 本書は、Unity と Rust のサーバーを gRPC でつなぐ基盤の設計ドラフト。基盤は、パッケージとテンプレートの2つの形で提供する想定。リポジトリの分け方と名前(UniGrpcKit・GameGrpcServer など)は後で検討し、当面は1つのリポジトリで実装する(2.6)。
 >
 > - **UniGrpcKit**: パッケージ。Unity のクライアントの通信基盤、サーバーの認証と状態の判定、ラッパー生成の protoc プラグイン

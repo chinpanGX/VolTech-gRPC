@@ -5,7 +5,7 @@ area: client
 sections: []
 related: [client/api-core, client/structure, client/connection, ops/debugging, api/metadata, api/errors]
 proto: []
-code: [Unity/UnityProject/Assets/Scripts/VolTech.Grpc.Client.Tracing, Unity/UnityProject/Assets/Scripts/VolTech.Grpc.Client.Editor, Unity/UnityProject/Assets/Scripts/Api/Unity/ApiChannel.cs]
+code: [Unity/com.chinpangx.voltech.grpc/Runtime/Tracing, Unity/com.chinpangx.voltech.grpc/Editor, Unity/com.chinpangx.voltech.grpc/Runtime/Unity/ApiChannel.cs]
 updated: 2026-10-10
 ---
 
@@ -62,10 +62,10 @@ Interceptor は、`AsyncUnaryCall` を同じ形で包み直し、レスポンス
 
 - `ApiChannel.CreateCallInvoker(channel)` で CallInvoker を作る。`ApiChannel.AddInterceptor` で足された Interceptor を付ける。付ける Interceptor は呼ぶたびに決めるので、CallInvoker を作った後に足された Interceptor も付く(登録の順番に頼らない)。サンプル(`SampleLifetimeScope`)とテスト(`ApiServerTestBase`)はこれを使う。アプリは何もしなくても記録される
 - **記録するのはエディタと開発ビルドだけ**。アクセストークンやデバイス登録の `secret_key` がそのまま見えるため(手元の開発用なので、隠さない。Console のログと同じ扱い)
-- **`#if` は使わず、アセンブリで分ける**。記録の部品は `VolTech.Grpc.Client.Tracing` のアセンブリに置き、asmdef の Define Constraints を `UNITY_EDITOR || DEVELOPMENT_BUILD` にする。リリースビルドでは、アセンブリごとビルドに入らない。ウィンドウと実機からの受け取りは、Editor だけの `VolTech.Grpc.Client.Editor` のアセンブリに置く
-- **依存の向き**: `Api`(`ApiChannel`)は `VolTech.Grpc.Client.Tracing` を参照しない(リリースビルドで消えるアセンブリを参照すると、コンパイルできなくなる)。`VolTech.Grpc.Client.Tracing` の側が、起動時に `ApiChannel.AddInterceptor` で記録の Interceptor を登録する(`ApiTracing.Install`)
+- **`#if` は使わず、アセンブリで分ける**。記録の部品は `VolTech.Client.Tracing` のアセンブリに置き、asmdef の Define Constraints を `UNITY_EDITOR || DEVELOPMENT_BUILD` にする。リリースビルドでは、アセンブリごとビルドに入らない。ウィンドウと実機からの受け取りは、Editor だけの `VolTech.Client.Editor` のアセンブリに置く
+- **依存の向き**: `Api`(`ApiChannel`)は `VolTech.Client.Tracing` を参照しない(リリースビルドで消えるアセンブリを参照すると、コンパイルできなくなる)。`VolTech.Client.Tracing` の側が、起動時に `ApiChannel.AddInterceptor` で記録の Interceptor を登録する(`ApiTracing.Install`)
   - Play と実機: `[RuntimeInitializeOnLoadMethod(BeforeSceneLoad)]` で、シーンを読み込む前(`LifetimeScope` が CallInvoker を作る前)に登録する
-  - Play していないエディタ(EditMode テスト): `VolTech.Grpc.Client.Editor` が `[InitializeOnLoadMethod]` で `ApiTracing.Install` を呼ぶ
+  - Play していないエディタ(EditMode テスト): `VolTech.Client.Editor` が `[InitializeOnLoadMethod]` で `ApiTracing.Install` を呼ぶ
   - 何回呼ばれても1回だけ登録する
 - 実機に送る処理(`ApiTraceSender`)は、`#if !UNITY_EDITOR` で分けずに、実行時に `Application.isEditor` で決める。エディタでも毎回コンパイルされるので、壊れたらすぐに気づける
 - EditMode テストの通信も記録される。テストが失敗したときに、何をやり取りしたかを見返せる
@@ -131,9 +131,9 @@ ApiTraceInterceptor → ApiTraceStore              ApiTraceReceiver(EditorConnec
 
 | もの | 置き場所 | ビルド |
 |---|---|---|
-| `ApiTracing`・`ApiTrace`・`ApiTraceStore`・`ApiTraceInterceptor`・`ApiTraceMessages`・`ApiTraceSender` | `Assets/Scripts/VolTech.Grpc.Client.Tracing/`(asmdef `VolTech.Grpc.Client.Tracing`。Define Constraints `UNITY_EDITOR \|\| DEVELOPMENT_BUILD`) | 開発ビルドだけに入る |
-| `ApiChannel.CreateCallInvoker`・`AddInterceptor` | `Assets/Scripts/Api/Unity/ApiChannel.cs`(asmdef `Api`) | 含む(リリースビルドでは、Interceptor を足す側が入らないので何も付かない) |
-| `ApiTraceWindow`・`ApiTraceReceiver` | `Assets/Scripts/VolTech.Grpc.Client.Editor/`(新しい asmdef `VolTech.Grpc.Client.Editor`。Editor だけ) | 含まない |
+| `ApiTracing`・`ApiTrace`・`ApiTraceStore`・`ApiTraceInterceptor`・`ApiTraceMessages`・`ApiTraceSender` | `Runtime/Tracing/`(asmdef `VolTech.Client.Tracing`。Define Constraints `UNITY_EDITOR \|\| DEVELOPMENT_BUILD`) | 開発ビルドだけに入る |
+| `ApiChannel.CreateCallInvoker`・`AddInterceptor` | `Runtime/Unity/ApiChannel.cs`(asmdef `VolTech.Client.Unity`) | 含む(リリースビルドでは、Interceptor を足す側が入らないので何も付かない) |
+| `ApiTraceWindow`・`ApiTraceReceiver` | `Editor/`(asmdef `VolTech.Client.Editor`。Editor だけ) | 含まない |
 
 パッケージとして分けるときは、どれも Unity 用の層([構成](structure.md))に入る。
 
@@ -146,7 +146,7 @@ ApiTraceInterceptor → ApiTraceStore              ApiTraceReceiver(EditorConnec
 - 実機から送るときの Body の上限は 256K 文字(`ApiTraceMessages.MaxBodyLength`)。超えたら切り詰め、詳細に「Body truncated」と出す。切る位置がサロゲートペアの途中なら、その手前で切る(UTF-8 にしたときに化けないように)
 - 詳細の Body の `TextField` に出すのは先頭 64K 文字まで。大きな Body をそのまま入れるとエディタが固まるため。Copy ボタンは全体をコピーする
 - ウィンドウの設定(Follow latest・見るもの)は、ウィンドウのフィールドに持ち、ドメインのリロードをまたいで残す。Clear on Play は、ウィンドウを閉じていても効くように、エディタの設定(`EditorPrefs`)に持つ
-- 開発ビルドとリリースビルドで、スクリプトがコンパイルできること、`VolTech.Grpc.Client.Tracing.dll` が開発ビルドにだけ入ること、`Api.dll` に記録の部品が入らないことは、`PlayerBuildInterface.CompilePlayerScripts` で確かめた
+- 開発ビルドとリリースビルドで、スクリプトがコンパイルできること、`VolTech.Client.Tracing.dll` が開発ビルドにだけ入ること、`Api.dll` に記録の部品が入らないことは、`PlayerBuildInterface.CompilePlayerScripts` で確かめた
 
 ## 実機で確かめる手順
 

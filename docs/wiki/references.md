@@ -79,4 +79,4 @@ updated: 2026-10-06
 
 - [chinpanGX/api-codegen](https://github.com/chinpanGX/api-codegen) — REST時代のコード生成ツール
 - Atlasのコード: サーバーの認証は `Server/src/service/auth_service.rs`・`device_service.rs`・`extractor.rs`、差分は `Server/src/api/scout.rs`・`player.rs`(`build_full_player_diff`)。クライアントは `AccessTokenRefresher.cs`・`PlayerDiffApplier.cs`
-- Atlasの `Shared/docs/design.md`「6.9 通信エラーダイアログ・Loading(設計案)」 — 二重送信で何が壊れるかをエンドポイントごとに調べた表
+- Atlasの `docs/design.md`「6.9 通信エラーダイアログ・Loading(設計案)」 — 二重送信で何が壊れるかをエンドポイントごとに調べた表

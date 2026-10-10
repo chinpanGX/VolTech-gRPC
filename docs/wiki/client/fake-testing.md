@@ -6,7 +6,7 @@ sections: ["5.8"]
 source: "docs/feature-grpc-foundation.md"
 related: [api/codegen]
 proto: []
-code: [Unity/UnityProject/Assets/Scripts/VolTech.Grpc.Client/Testing]
+code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/Testing]
 updated: 2026-10-06
 ---
 

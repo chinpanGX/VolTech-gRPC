@@ -5,7 +5,7 @@ area: api
 sections: ["3.6"]
 source: "docs/feature-grpc-foundation.md"
 related: [server/transaction]
-proto: [proto/app/v1/gacha.proto]
+proto: [sandbox/proto/sandbox/v1/sandbox.proto]
 updated: 2026-10-06
 ---
 

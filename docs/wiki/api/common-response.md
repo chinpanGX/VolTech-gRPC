@@ -5,7 +5,7 @@ area: api
 sections: ["3.9"]
 source: "docs/feature-grpc-foundation.md"
 related: [api/errors, server/transaction]
-proto: [proto/app/v1/player.proto, proto/app/v1/gacha.proto, proto/app/v1/badge.proto, proto/app/v1/notification.proto]
+proto: [sandbox/proto/sandbox/v1/sandbox.proto]
 updated: 2026-10-07
 ---
 

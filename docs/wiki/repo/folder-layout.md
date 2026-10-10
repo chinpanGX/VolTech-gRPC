@@ -5,13 +5,13 @@ area: repo
 sections: ["2.4"]
 source: "docs/feature-grpc-foundation.md"
 related: [repo/current-plan, api/errors]
-proto: [proto/app/v1/error_code.proto]
+proto: [sandbox/proto/sandbox/v1/error_code.proto]
 updated: 2026-10-10
 ---
 
 # フォルダ構成
 
-> リポジトリを分けた場合の形。テンプレートはサンプル(`grpc-foundation-samples`)が兼ねることにした([リポジトリ名と命名](naming.md))。当面のフォルダは [2.6](current-plan.md) のとおりで、下の形には、基盤を `voltech-grpc` に分けるとき(#17)に寄せる。下の `foundation/` は当初の案で、当面は機能ごとのクレート(`voltech-grpc-transaction` など)に分けている
+> リポジトリを分けた場合の形。テンプレートはサンプル(`grpc-foundation-samples`)が兼ねることにした([リポジトリ名と命名](naming.md))。基盤は 2026-10-10 に VolTech-gRPC に分けた(基盤のリポジトリのフォルダは [コードの地図](../dev/code-map.md))。下はアプリ(テンプレート)の形。下の `foundation/` は当初の案で、当面は機能ごとのクレート(`voltech-grpc-transaction` など)に分けている
 
 テンプレート(アプリを作るときのいつもの形に合わせ、一番上を `Client/`・`Server/`・`Shared/` に分ける):
 

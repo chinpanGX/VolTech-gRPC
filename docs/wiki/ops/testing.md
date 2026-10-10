@@ -5,7 +5,7 @@ area: ops
 sections: ["6.3"]
 source: "docs/feature-grpc-foundation.md"
 related: [client/error-handling]
-proto: [proto/app/v1/error_code.proto]
+proto: [sandbox/proto/sandbox/v1/error_code.proto]
 updated: 2026-10-06
 ---
 

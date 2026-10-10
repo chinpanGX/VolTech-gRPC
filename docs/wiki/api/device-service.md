@@ -4,7 +4,7 @@ status: current
 area: api
 sections: []
 related: [api/auth, api/metadata, api/errors, server/auth, client/auth-account]
-proto: [../Server/framework/auth/proto/voltech/v1/device.proto]
+proto: [server/rust/auth/proto/voltech/v1/device.proto]
 updated: 2026-10-10
 ---
 
@@ -12,7 +12,7 @@ updated: 2026-10-10
 
 基盤の `voltech-grpc-auth` クレートが持つ、デバイス登録とアクセストークンの発行の API(`voltech.v1.DeviceService`)。なぜこの形にしたかは [認証](auth.md) にある。
 
-- 定義: `Server/framework/auth/proto/voltech/v1/device.proto`
+- 定義: `server/rust/auth/proto/voltech/v1/device.proto`
 - サービス全体が `skip_auth` なので、`authorization` を付けずに呼ぶ
 - RPC の説明とリクエスト・レスポンスの表は、`.proto` のコメントから生成している(`make wiki-gen`)。表を直すときは、このページではなく `.proto` のコメントを直す
 

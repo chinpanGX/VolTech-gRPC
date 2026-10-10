@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """docs/wiki の簡易 lint。標準ライブラリだけで動く。
 
-    python scripts/wiki_lint.py          (Shared フォルダで実行)
+    python scripts/wiki_lint.py          (リポジトリのルートで実行)
 
 確かめること:
   - 全ページに frontmatter があり、title / status / area があること

@@ -4,14 +4,14 @@ status: current
 area: guide
 sections: []
 related: [guide/client-reference, guide/server-reference, guide/tools, api/codegen, api/errors, api/idempotency, api/common-response]
-proto: [proto/app/v1/gacha.proto, proto/app/v1/error_code.proto]
-code: [Server/app/api/src, Server/app/server/src/lib.rs, Unity/UnityProject/Assets/Scripts/Sample/SampleLifetimeScope.cs, buf.gen.yaml]
+proto: [sandbox/proto/sandbox/v1/sandbox.proto, sandbox/proto/sandbox/v1/error_code.proto]
+code: [sandbox/server/server/src, sandbox/server/server/src/lib.rs, buf.gen.yaml]
 updated: 2026-10-10
 ---
 
 # API を足す
 
-新しい API を足すときの手順。例はサンプルのガチャ(`GachaService/Draw`)。`.proto` が API の唯一の定義元で、サーバー(Rust)とクライアント(C#)のコードはそこから生成する([コード生成](../api/codegen.md))。
+新しい API を足すときの手順。例はサンプルのガチャ(`GachaService/Draw`)で、パスとコマンドは grpc-foundation-samples の構成で書く(アプリは samples を clone して作るため)。`.proto` が API の唯一の定義元で、サーバー(Rust)とクライアント(C#)のコードはそこから生成する([コード生成](../api/codegen.md))。
 
 ## 1. `.proto` を書く
 

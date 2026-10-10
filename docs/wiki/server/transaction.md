@@ -6,7 +6,7 @@ sections: ["4.3"]
 source: "docs/feature-grpc-foundation.md"
 related: [server/collectors, client/api-core]
 proto: []
-code: [Server/framework/transaction]
+code: [server/rust/transaction]
 updated: 2026-10-06
 ---
 
@@ -31,7 +31,7 @@ updated: 2026-10-06
 
 - ロックの対象にするため、プレイヤーの作成時に保存用の行も1行作っておく
 
-実装で決めたこと(`Server/framework/transaction`):
+実装で決めたこと(`server/rust/transaction`):
 
 - `with_transaction()` は `Transactions::run(&request, player_id, handler)` として基盤のクレートに置く。テーブル `last_responses` とマイグレーションもクレートに持つ(履歴は `_transaction_migrations`)
 - 冪等性の表は、起動時にアプリの FileDescriptorSet の `idempotency_level` から作る(`IdempotencyLevels`)。表に無い RPC は対象として扱う

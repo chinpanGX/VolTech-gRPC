@@ -32,7 +32,7 @@ proto と wiki の食い違いに気づいたら、proto を正として wiki �
   - `title`、`status`、`area`(必須)
   - `sections`: 原本の節番号(移行時の対応づけ。新しいページは空でよい)
   - `related`: 関連するページ(wiki ルートからの相対パス、拡張子なし)
-  - `proto`: そのページが説明する `.proto`(`Shared` からの相対パス)
+  - `proto`: そのページが説明する `.proto`(リポジトリのルートからの相対パス)
   - `code`: そのページが説明するコード(リポジトリのルートからの相対パス。フォルダでもよい)。コードが変わったときに、直すべきページを探すのに使う(`make wiki-affected`)。リファレンスと、特定のコードの設計を書いたページには必ず書く
   - `updated`: 最後に内容を変えた日
 - `status` の値
@@ -54,11 +54,11 @@ proto と wiki の食い違いに気づいたら、proto を正として wiki �
 3. 実装の中で新しく決めたことは、該当ページに「実装で決めたこと」として足す
 4. 決まっていなかったこと([open-questions.md](open-questions.md))が決まったら、その行を消し、決めた内容を該当ページに書く
 5. `.proto` のコメントや RPC を変えたら、`make wiki-gen` で API の仕様のページを生成し直す
-6. `make wiki-lint`(`Shared` で `python scripts/wiki_gen.py --check` と `python scripts/wiki_lint.py`)を実行して、生成し直し忘れ・リンク切れ・frontmatter の抜けが無いことを確かめる。`make test` にも入っている
+6. `make wiki-lint`(リポジトリのルートで `python scripts/wiki_gen.py --check` と `python scripts/wiki_lint.py`)を実行して、生成し直し忘れ・リンク切れ・frontmatter の抜けが無いことを確かめる。`make test` にも入っている
 
 ## API の仕様のページ
 
-- RPC の説明とリクエスト・レスポンスの表は、`.proto` から生成する。ページに目印を置き、`make wiki-gen`(`Shared` で `python scripts/wiki_gen.py`)を実行すると、その間が置き換わる。RPC は、そのページの frontmatter の `proto:` のファイルから探す
+- RPC の説明とリクエスト・レスポンスの表は、`.proto` から生成する。ページに目印を置き、`make wiki-gen`(リポジトリのルートで `python scripts/wiki_gen.py`)を実行すると、その間が置き換わる。RPC は、そのページの frontmatter の `proto:` のファイルから探す
 
   ```
   <!-- generated:rpc voltech.v1.DeviceService/Register -->

@@ -5,8 +5,8 @@ frontmatter の形を変えるときは、ここだけを直す(2つのスクリ
 import os
 import re
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))  # Shared/
-REPO = os.path.dirname(ROOT)  # リポジトリのルート。frontmatter の code はここからのパス
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))  # リポジトリのルート
+REPO = ROOT  # frontmatter の code・proto はここからのパス
 WIKI = os.path.join(ROOT, "docs", "wiki")
 SKIP_FILES = {"CLAUDE.md"}
 SKIP_DIRS = {".obsidian", ".trash"}  # Obsidian の設定とゴミ箱

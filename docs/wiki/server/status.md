@@ -5,14 +5,14 @@ area: server
 sections: ["4.6"]
 source: "docs/feature-grpc-foundation.md"
 related: [api/metadata]
-proto: [proto/app/v1/error_code.proto]
-code: [Server/framework/status, Server/app/config/server_status.toml]
+proto: [sandbox/proto/sandbox/v1/error_code.proto]
+code: [server/rust/status, sandbox/server/config/server_status.toml]
 updated: 2026-10-10
 ---
 
 # サーバーの状態(メンテナンス・強制アップデート・日付変更)
 
-パッケージの状態の判定のクレート `status`(`Server/framework/status/`)が持つ。サーバー時刻とゲーム内の日付のレスポンスヘッダー([3.8](../api/metadata.md))も、ここで付ける。
+パッケージの状態の判定のクレート `status`(`server/rust/status/`)が持つ。サーバー時刻とゲーム内の日付のレスポンスヘッダー([3.8](../api/metadata.md))も、ここで付ける。
 
 ## 設定
 
@@ -52,7 +52,7 @@ timezone = "Asia/Tokyo"
 - **Unity のエディタは、OS によらず `editor` を送り、サーバーは強制アップデートを判定しない**。開発中に、最低バージョンを上げたせいでエディタから呼べなくなるのを防ぐため。エディタからの通信をログで見分けられる。強制アップデートの動きは、偽のサーバー(`FakeRpcErrors`)か、ヘッダーを付けたテストで確かめる
 - `MAINTENANCE` の `metadata` のキーは `end_at`。値は設定の時刻を **UTC の RFC 3339**(例: `2026-10-01T06:00:00Z`)に直したもの。設定ではタイムゾーン付きで書けるが、クライアントが解釈する形を1つにするため
 - ゲーム内の日付は、`timezone` の壁時計の時刻から `reset_hour` 時間を引いた日付。ヘッダーの形は `YYYY-MM-DD`。リクエストの日付は文字列のまま比べる(形が違えば日付が違うのと同じで、`DATE_CHANGED` になる)
-- 設定は5秒ごとに読み直す(`server` の `main.rs`)。設定ファイルの場所は環境変数 `SERVER_STATUS_PATH`(既定は、リポジトリのルートからの `Server/app/config/server_status.toml`)
+- 設定は5秒ごとに読み直す(`server` の `main.rs`)。設定ファイルの場所は環境変数 `SERVER_STATUS_PATH`(既定はアプリが決める。samples は `Server/app/config/server_status.toml`、sandbox は `sandbox/server/config/server_status.toml`。どちらもリポジトリのルートからのパス)
 - 設定の読み込みでは、知らないキーや範囲外の値(`reset_hour` が 0〜23 でない、知らないタイムゾーンなど)をエラーにする。書き間違いを、黙って既定値で動かさずに気づけるようにするため。読み直しで失敗したときは、ログに出して直前の設定を使い続ける
 - **リクエストを受けたときのゲーム内の日付は、`ServerStatusLayer` がリクエストの extensions に `voltech_grpc_status::GameDate` として入れる**。ハンドラーは日付で決まる処理(無料ガチャなど)にこれを使い、レスポンスヘッダー `x-game-date` と `DateChangeLayer` の判定も同じ日付を使う。日付が変わる時刻をまたいだリクエストでも、処理に使った日付とクライアントに返す日付がずれないようにするため
 - 読み込み元の trait は `StatusSource`、ファイルから読む実装は `FileStatusSource`。テストでは時計(`Clock`)も差し替えられる

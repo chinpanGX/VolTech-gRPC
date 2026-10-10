@@ -6,7 +6,7 @@ sections: ["5.5"]
 source: "docs/feature-grpc-foundation.md"
 related: [client/structure]
 proto: []
-code: [Unity/UnityProject/Assets/Scripts/Api/Auth]
+code: [Unity/com.chinpangx.voltech.grpc/Runtime/Auth]
 updated: 2026-10-06
 ---
 

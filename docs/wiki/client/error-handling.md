@@ -6,7 +6,7 @@ sections: ["5.4"]
 source: "docs/feature-grpc-foundation.md"
 related: [api/errors, client/auth-account, client/response-items]
 proto: []
-code: [Unity/UnityProject/Assets/Scripts/VolTech.Grpc.Client/Errors, Unity/UnityProject/Assets/Scripts/VolTech.Grpc.Client/ErrorHandling]
+code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/Errors, Unity/com.chinpangx.voltech.grpc/Runtime/Client/ErrorHandling]
 updated: 2026-10-07
 ---
 

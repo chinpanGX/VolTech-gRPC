@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """変わったファイルから、直すべき docs/wiki のページを探す。標準ライブラリだけで動く。
 
-    python scripts/wiki_affected.py              (Shared フォルダで実行。コミットしていない変更を見る)
+    python scripts/wiki_affected.py              (リポジトリのルートで実行。コミットしていない変更を見る)
     python scripts/wiki_affected.py main         (main から分かれた後のこのブランチの変更と、コミットしていない変更を見る)
     python scripts/wiki_affected.py --files A B  (ファイルを直接渡す。リポジトリのルートか今のフォルダからのパス、または絶対パス)
 
-ページの frontmatter の code(リポジトリのルートからのパス)と proto(Shared からのパス)を見て、
+ページの frontmatter の code と proto(どちらもリポジトリのルートからのパス)を見て、
 変わったファイルがそのパスか、その下にあれば、そのページを挙げる。
 移動・名前変更したファイルは、元のパスと新しいパスの両方で探す(元の場所を説明しているページも挙がるように)。
 どのページにも結びついていない変更は「ページの無い変更」として挙げる(新しいページが要るかを決める材料)。
@@ -20,12 +20,12 @@ from wiki_common import REPO, as_list, iter_pages, page_name, parse
 
 # 説明の対象にならない変更
 IGNORE = [
-    re.compile(r"^Shared/docs/"),
+    re.compile(r"^docs/"),
     re.compile(r"\.meta$"),
     re.compile(r"/Generated/"),
     re.compile(r"(^|/)Cargo\.lock$"),
-    re.compile(r"^Unity/UnityProject/(Packages|ProjectSettings|UserSettings)/"),
-    re.compile(r"^Unity/UnityProject/Assets/(Scenes|Settings)/"),
+    re.compile(r"^sandbox/UnityProject/(Packages|ProjectSettings|UserSettings)/"),
+    re.compile(r"^sandbox/UnityProject/Assets/(Scenes|Settings)/"),
     re.compile(r"\.(unity|prefab|asset|png|jpg)$"),
 ]
 
@@ -63,7 +63,7 @@ def normalize(path):
     """--files のパスを、リポジトリのルートからの / 区切りのパスにする。"""
     full = path if os.path.isabs(path) else None
     if full is None:
-        # 今のフォルダ(make から呼ぶと Shared)からのパスとして実在すれば、そちらを使う
+        # 今のフォルダからのパスとして実在すれば、そちらを使う
         candidate = os.path.abspath(path)
         full = candidate if os.path.exists(candidate) else os.path.join(REPO, path)
     rel = os.path.relpath(os.path.normpath(full), REPO)
@@ -77,10 +77,7 @@ def load_pages():
         if fm is None:
             continue
         name = page_name(path)
-        targets = as_list(name, fm, "code")
-        # proto は Shared からのパスなので、リポジトリのルートからのパスに直す
-        for pr in as_list(name, fm, "proto"):
-            targets.append(os.path.normpath(os.path.join("Shared", pr)).replace(os.sep, "/"))
+        targets = as_list(name, fm, "code") + as_list(name, fm, "proto")
         if targets:
             pages[name] = [t.rstrip("/") for t in targets]
     return pages

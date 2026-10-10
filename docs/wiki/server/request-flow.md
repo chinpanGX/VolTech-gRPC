@@ -6,7 +6,7 @@ sections: ["4.2"]
 source: "docs/feature-grpc-foundation.md"
 related: [api/metadata, server/transaction, server/auth, server/status]
 proto: []
-code: [Server/app/server/src/lib.rs]
+code: [sandbox/server/server/src/lib.rs]
 updated: 2026-10-10
 ---
 

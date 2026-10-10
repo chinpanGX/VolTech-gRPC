@@ -5,7 +5,7 @@ area: dev
 sections: []
 related: [dev/code-map, ops/testing, ops/setup]
 proto: []
-code: [Makefile, .claude/skills/wiki-update/SKILL.md, Shared/scripts/wiki_affected.py]
+code: [Makefile, .claude/skills/wiki-update/SKILL.md, scripts/wiki_affected.py]
 updated: 2026-10-10
 ---
 
@@ -14,7 +14,8 @@ updated: 2026-10-10
 ## 1. 直す前に
 
 - 直すところの設計のページを読む(なぜその形にしたか、採らなかった案)。[コードの地図](code-map.md) から、コードと設計のページを辿れる
-- 基盤(`Server/framework/`・`VolTech.Grpc.Client*`)は、アプリ(`Server/app/`・`Api` のアプリの部分・`Sample/`)に依存させない。アプリの都合で基盤を直したくなったら、直接変えずに差し替え口(trait・interface)を足す([当面の実装方針](../repo/current-plan.md))
+- 基盤(`server/rust/`・`Unity/com.chinpangx.voltech.grpc/`)は、sandbox やアプリ(grpc-foundation-samples)に依存させない。アプリの都合で基盤を直したくなったら、直接変えずに差し替え口(trait・interface)を足す([当面の実装方針](../repo/current-plan.md))
+- 直した動きは sandbox で確かめる。確かめたい基盤の機能が sandbox に無ければ、`sandbox.proto` に RPC を足す(業務機能は足さない)
 
 ## 2. 直した後に確かめる
 
@@ -28,16 +29,17 @@ updated: 2026-10-10
 Unity のコンパイルとテストは、Unity のエディタを開いたままでも、Unity CLI で流せる(エディタに Pipeline のパッケージが入っているとき)。
 
 ```
-cd Unity/UnityProject
+cd sandbox/UnityProject
 unity recompile                                    # コンパイルして、エラーを表示する
 unity command run_tests --mode EditMode --result-only
 ```
 
-- サーバーにつなぐテスト(`ApiServerTestBase` を継ぐもの)は、先に `make run` でサーバーを起動しておく
+- サーバーにつなぐテスト(`ApiServerTestBase` を継ぐもの)は、先に `make sandbox-server` でサーバーを起動しておく
+- エディタを閉じているなら `unity test sandbox/UnityProject --mode EditMode` でも流せる
 - エディタを閉じているなら、Test Runner の代わりに batchmode でも流せる(エディタで開いていると batchmode は起動できない)
 - サーバーを動かしたまま Rust をビルドすると、Windows では `server.exe` がロックされて失敗する。先にサーバーを止める
 
-まとめて流すのは `make test`(Rust・プラグイン・wiki の確認。Unity は含まない)。
+まとめて流すのは `make test`(基盤と sandbox の Rust・プラグイン・wiki の確認。Unity は含まない)。
 
 ## 3. wiki を直す
 
@@ -47,7 +49,7 @@ unity command run_tests --mode EditMode --result-only
 2. 挙がったページを読み、ずれていれば直す。どのページにも結びつかない変更があれば、ページを足すか、既存のページの `code:` に足す
 3. `make wiki-gen`(`.proto` を変えたとき) → `make wiki-lint`
 
-ページの書き方は `Shared/docs/wiki/CLAUDE.md`。
+ページの書き方は `docs/wiki/CLAUDE.md`。
 
 ## 4. コミット
 

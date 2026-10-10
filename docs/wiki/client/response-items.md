@@ -6,7 +6,7 @@ sections: ["5.6"]
 source: "docs/feature-grpc-foundation.md"
 related: [api/codegen, api/common-response, client/fake-testing]
 proto: []
-code: [Unity/UnityProject/Assets/Scripts/VolTech.Grpc.Client/Hooks]
+code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/Hooks]
 updated: 2026-10-10
 ---
 

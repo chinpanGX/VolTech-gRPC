@@ -6,7 +6,7 @@ sections: ["5.7"]
 source: "docs/feature-grpc-foundation.md"
 related: [server/request-flow]
 proto: []
-code: [Unity/UnityProject/Assets/Scripts/VolTech.Grpc.Client/ApiCoreOptions.cs, Unity/UnityProject/Assets/Scripts/Api/Unity/ApiChannel.cs]
+code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/ApiCoreOptions.cs, Unity/com.chinpangx.voltech.grpc/Runtime/Unity/ApiChannel.cs]
 updated: 2026-10-06
 ---
 

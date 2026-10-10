@@ -5,17 +5,17 @@ area: dev
 sections: []
 related: [api/codegen, guide/tools, dev/code-map]
 proto: []
-code: [Tools/protoc-gen-voltech-grpc]
+code: [tools/protoc-gen-voltech-grpc]
 updated: 2026-10-10
 ---
 
 # protoc プラグインの中身
 
-`protoc-gen-voltech-grpc`(`Tools/protoc-gen-voltech-grpc/`)を直す人向け。使い方は [ツール](../guide/tools.md)、設計の理由は [コード生成](../api/codegen.md)。
+`protoc-gen-voltech-grpc`(`tools/protoc-gen-voltech-grpc/`)を直す人向け。使い方は [ツール](../guide/tools.md)、設計の理由は [コード生成](../api/codegen.md)。
 
 - .NET 10 のコンソールアプリ。`dotnet publish` で `.tools/voltech-grpc` に入れ、`buf.gen.yaml` の `local: protoc-gen-voltech-grpc` から呼ぶ(`make proto-plugin`)
 - 依存は `Google.Protobuf` だけ(入出力の型 `CodeGeneratorRequest`・`CodeGeneratorResponse` を含む)
-- 生成するコードは、クライアントの基盤(`VolTech.Grpc.Client` の `ApiCore`・`RpcSettings`・`ApiResult`)の API に合わせる。基盤の API を変えたら、プラグインも同時に直す
+- 生成するコードは、クライアントの基盤(`VolTech.Client` の `ApiCore`・`RpcSettings`・`ApiResult`)の API に合わせる。基盤の API を変えたら、プラグインも同時に直す
 
 ## ファイル
 

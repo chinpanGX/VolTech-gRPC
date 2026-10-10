@@ -6,7 +6,7 @@ sections: ["3.4"]
 source: "docs/feature-grpc-foundation.md"
 related: [repo/folder-layout, api/errors, api/idempotency, api/auth, server/transaction, server/auth, client/wrapper, client/response-items, client/fake-testing]
 proto: []
-code: [Tools/protoc-gen-voltech-grpc, buf.gen.yaml]
+code: [tools/protoc-gen-voltech-grpc, buf.gen.yaml]
 updated: 2026-10-10
 ---
 
@@ -39,7 +39,7 @@ updated: 2026-10-10
 
 ## 実装で決めたこと
 
-- プラグインは `Tools/protoc-gen-voltech-grpc/`(`src/` が本体、`tests/` が単体テスト)。`make proto-plugin` で `.tools/voltech-grpc` に入れ、`make proto-gen` の前に自動で入れ直す。テストは `make plugin-test`
+- プラグインは `tools/protoc-gen-voltech-grpc/`(`src/` が本体、`tests/` が単体テスト)。`make proto-plugin` で `.tools/voltech-grpc` に入れ、`make proto-gen` の前に自動で入れ直す。テストは `make plugin-test`
 - **なぜ生成にするか**: `.proto` の情報(RPC の名前、`idempotency_level`、`skip_auth`、共通レスポンス項目のフィールド名)を、実行時に Descriptor から読んだり手で書き写したりすると、タイポや食い違いがコンパイルで見つからない。生成すれば、`.proto` が唯一の定義元のまま、使う側は型と定数で書ける
 - `.proto` のファイルごとに `<ファイル名>Api.cs` を1つ作る(`player.proto` → `App/V1/PlayerApi.cs`)。出力先のフォルダは、protoc 組み込みの C# 生成と同じく名前空間から決める。生成するものが無いファイルは作らない
 - **生成先は、生成するものの種類でフォルダを分ける**(`Generated/Wrappers`・`Generated/Messages`・`Generated/Grpc`。その下は名前空間ごと)。同じフォルダに出すと、1つの `.proto` から `Player.cs`・`PlayerGrpc.cs`・`PlayerApi.cs` が並び、通信するときにどれを見ればよいか分かりにくいため。呼ぶときに見るのは `Wrappers`、フィールドを確かめるのは `Messages`、`Grpc` は `ApiCore` の中でしか使わない

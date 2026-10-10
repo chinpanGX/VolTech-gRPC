@@ -6,7 +6,7 @@ sections: ["5.3"]
 source: "docs/feature-grpc-foundation.md"
 related: [api/metadata, client/error-handling, client/auth-account, client/response-items]
 proto: []
-code: [Unity/UnityProject/Assets/Scripts/VolTech.Grpc.Client/ApiCore.cs]
+code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/ApiCore.cs]
 updated: 2026-10-07
 ---
 

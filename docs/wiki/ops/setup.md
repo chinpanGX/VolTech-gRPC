@@ -3,32 +3,32 @@ title: "環境構築とよく使うコマンド"
 status: current
 area: ops
 sections: []
-related: [ops/proto-management, ops/testing, repo/current-plan, api/codegen]
+related: [ops/proto-management, ops/testing, guide/getting-started, api/codegen]
 proto: []
-code: [Makefile, scripts/proto-tools.sh, .env.example]
+code: [Makefile, scripts/proto-tools.sh, .env.example, buf.gen.yaml, buf.gen.sandbox.yaml]
 updated: 2026-10-10
 ---
 
 # 環境構築とよく使うコマンド
 
-このリポジトリ(`grpc-foundation-samples`)で、サーバーとクライアントを動かすまでの手順。フォルダの分け方は [当面の実装方針](../repo/current-plan.md) にある。
+このリポジトリ(VolTech gRPC)で、基盤を直して確かめるまでの手順。アプリとして動かすのは grpc-foundation-samples で行う([始め方](../guide/getting-started.md))。
 
 | フォルダ | 内容 |
 |---|---|
-| `Server/` | API サーバー(Rust の Cargo ワークスペース) |
-| `Unity/UnityProject/` | Unity クライアント |
-| `Shared/proto/` | アプリの `.proto` |
-| `Shared/docs/wiki/` | 設計(この wiki) |
-| `Tools/protoc-gen-voltech-grpc/` | ラッパーを生成する protoc プラグイン([コード生成](../api/codegen.md)) |
+| `server/rust/` | サーバーの基盤クレート(Cargo ワークスペース) |
+| `Unity/com.chinpangx.voltech.grpc/` | Unity クライアントの UPM パッケージ |
+| `tools/protoc-gen-voltech-grpc/` | ラッパーを生成する protoc プラグイン([コード生成](../api/codegen.md)) |
+| `sandbox/` | 基盤の動作確認用の `.proto`・サーバー・Unity プロジェクト(配布しない) |
+| `docs/wiki/` | 設計(この wiki) |
 
 ## 必須のツール
 
 | ツール | バージョン | 使うところ |
 |---|---|---|
 | Docker Desktop | | MySQL(`make db-up`) |
-| Rust(rustup) | stable | サーバーのビルド・テスト |
-| Unity | 6000.3.17f1 | クライアント |
-| .NET SDK | 10 で確認 | クライアントの書き方のチェック(`make client-lint`) |
+| Rust(rustup) | stable(edition 2024) | サーバーのビルド・テスト |
+| Unity | 6000.3.17f1 | sandbox の Unity プロジェクト(パッケージのコンパイルとテスト) |
+| .NET SDK | 10 で確認 | protoc プラグインと、クライアントの書き方のチェック(`make client-lint`) |
 | GNU Make | | `make` のコマンド |
 | Git for Windows | | Windows では、`make` のコマンドを Git Bash で動かす |
 | Python | 3 | wiki の生成と lint(`make wiki-gen`・`make wiki-lint`) |
@@ -41,10 +41,11 @@ updated: 2026-10-10
 クライアントの C# は `buf generate` で生成し、生成したコードをコミットしている。生成に使うツールは、`make` が必要になったときに `.tools/bin` へ自動で入れる(手で入れたり、PATH を設定したりしなくてよい)。
 
 ```
-make proto-gen
+make proto-gen           # 基盤の .proto → Unity/com.chinpangx.voltech.grpc/Runtime/Generated
+make sandbox-proto-gen   # sandbox の .proto → sandbox/UnityProject/Assets/Generated(ラッパーを含む)
 ```
 
-`Unity/UnityProject/Assets/Scripts/Api/Generated` の下に、種類ごと(`Wrappers`: 呼ぶときに使うラッパー、`Messages`: リクエスト・レスポンスの型、`Grpc`: gRPC クライアント)・名前空間ごとのフォルダで出力される。`.proto` を消したときは、生成済みの `.cs` と `.meta` を手で消す(`buf.gen.yaml` で `clean` を使っていないため)。
+種類ごと(`Wrappers`: 呼ぶときに使うラッパー、`Messages`: リクエスト・レスポンスの型、`Grpc`: gRPC クライアント)・名前空間ごとのフォルダで出力される。基盤のデバイス登録は Auth が直接呼ぶので、基盤の分のラッパーは生成しない。`.proto` を消したときは、生成済みの `.cs` と `.meta` を手で消す(`clean` を使っていないため)。
 
 | ツール | バージョン | 内容 |
 |---|---|---|
@@ -53,7 +54,7 @@ make proto-gen
 | grpc_csharp_plugin | Grpc.Tools 2.84.0 に入っているもの | C# の gRPC クライアントの生成 |
 
 - ツールだけを入れるときは `make proto-tools`。入れ方は `scripts/proto-tools.sh` にある(Windows・macOS・Linux)
-- バージョンを上げるときは `scripts/proto-tools.sh` を書き換える。Grpc.Tools のバージョンは、Unity の `Packages/manifest.json` の `org.nuget.grpc.net.client` と同じにする
+- バージョンを上げるときは `scripts/proto-tools.sh` を書き換える。Grpc.Tools のバージョンは、パッケージの `package.json` の `org.nuget.grpc.net.client` と同じにする
 
 ## よく使うコマンド
 
@@ -61,15 +62,18 @@ make proto-gen
 
 | コマンド | 内容 |
 |---|---|
-| `make run` | MySQL を起動し、サーバーを起動する(`.env` を読む) |
-| `make test` | プッシュ前のテスト一式(全クレートのテスト(MySQL を使う)・プラグインのテスト・wiki の確認) |
-| `make fmt` / `make lint` | rustfmt / Clippy |
-| `make proto-gen` | `.proto` から C# を生成する(プラグインも先にビルドする) |
+| `make sandbox-server` | MySQL を起動し、sandbox のサーバーを起動する(`.env` を読む。DB は `voltech_sandbox`) |
+| `make test` | プッシュ前のテスト一式(基盤と sandbox のクレートのテスト(MySQL を使う)・プラグインのテスト・wiki の確認) |
+| `make fmt` / `make lint` | rustfmt / Clippy(基盤と sandbox の両方) |
+| `make proto-gen` / `make sandbox-proto-gen` | `.proto` から C# を生成する |
 | `make proto-plugin` / `make plugin-test` | protoc プラグインをビルドして `.tools/voltech-grpc` に入れる / プラグインの単体テスト |
 | `make wiki-gen` | wiki の API の表を `.proto` のコメントから生成し直す([API: DeviceService](../api/device-service.md) など) |
 | `make wiki-lint` | wiki のリンク切れ・frontmatter の抜け・生成し忘れを確かめる |
 
 ## クライアントとサーバーの接続を確かめる
 
-1. `.env.example` を `.env` にコピーし、`make run` でサーバーを起動する(`localhost:50051`)
-2. Unity の Test Runner(Window > General > Test Runner)の EditMode で、`Tests.EditMode` を実行する
+1. `.env.example` を `.env` にコピーし、`make sandbox-server` でサーバーを起動する(`localhost:50051`)
+2. Unity で `sandbox/UnityProject` を開く。パッケージは `file:` で参照しているので、パッケージのコードを直すとそのまま反映される
+3. Test Runner(Window > General > Test Runner)の EditMode で、すべてを実行する。パッケージのテスト(`VolTech.Client.Tests.EditMode`。`testables` で出している)と sandbox のテスト(`Sandbox.Tests.EditMode`)が並ぶ。`SandboxServerTests` が起動したサーバーにつなぐ
+
+コマンドラインからは `unity test sandbox/UnityProject --mode EditMode` でも流せる(Unity CLI)。

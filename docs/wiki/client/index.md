@@ -24,4 +24,3 @@ updated: 2026-10-07
 - [接続設定](connection.md) — deadline・タイムアウト・受信サイズ・接続先
 - [サーバーが無いときの差し替えとテスト](fake-testing.md) — FakeCallInvoker と汎用テスト
 - [通信の Viewer(エディタ拡張)](request-viewer.md) — リクエストとレスポンスのヘッダー・Body(JSON)を1件ずつ見るウィンドウ
-- [サンプルのクライアント(画面)](sample.md) — タイトル・ガチャの画面と、エラーダイアログ・画面遷移の実装例

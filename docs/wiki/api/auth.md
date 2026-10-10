@@ -5,7 +5,7 @@ area: api
 sections: ["3.7"]
 source: "docs/feature-grpc-foundation.md"
 related: [server/auth, client/auth-account, repo/boundary, api/device-service]
-proto: [../Server/framework/auth/proto/voltech/v1/device.proto, proto/app/v1/player.proto]
+proto: [server/rust/auth/proto/voltech/v1/device.proto, sandbox/proto/sandbox/v1/sandbox.proto]
 updated: 2026-10-10
 ---
 

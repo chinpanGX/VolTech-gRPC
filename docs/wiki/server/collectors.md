@@ -6,7 +6,7 @@ sections: ["4.4"]
 source: "docs/feature-grpc-foundation.md"
 related: [api/common-response]
 proto: []
-code: [Server/app/player/src/collector.rs, Server/app/player/src/diff.rs, Server/app/player/src/badge.rs, Server/app/player/src/notification.rs]
+code: []
 updated: 2026-10-10
 ---
 
