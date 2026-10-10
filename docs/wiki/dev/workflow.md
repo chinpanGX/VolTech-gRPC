@@ -4,7 +4,7 @@ status: current
 area: dev
 related: [dev/code-map, ops/testing, ops/setup]
 proto: []
-code: [Makefile, .claude/skills/wiki-update/SKILL.md, scripts/wiki_affected.py]
+code: [Makefile, .claude/skills/wiki-update/SKILL.md, .claude/skills/deps-update/SKILL.md, scripts/wiki_affected.py, scripts/deps.py]
 updated: 2026-10-10
 ---
 
@@ -24,6 +24,7 @@ updated: 2026-10-10
 | `.proto` | `make proto-lint` → `make proto-gen`(C# を生成し直してコミットする)。RPC やコメントを変えたら `make wiki-gen` |
 | protoc プラグイン | `make plugin-test` → `make proto-gen` で生成コードの差分を確かめる([protoc プラグインの中身](protoc-plugin.md)) |
 | Unity のコード | `make client-lint`(書き方) → コンパイル → EditMode テスト |
+| 依存のパッケージの版 | `make deps-check`(一緒に上げないと壊れる組み合わせ)。上げる手順はスキル `/deps-update`(`.claude/skills/deps-update/SKILL.md`)。新しい版は `make deps-outdated` で調べる |
 
 Unity のコンパイルとテストは、Unity のエディタを開いたままでも、Unity CLI で流せる(エディタに Pipeline のパッケージが入っているとき)。
 
@@ -38,7 +39,7 @@ unity command run_tests --mode EditMode --result-only
 - エディタを閉じているなら、Test Runner の代わりに batchmode でも流せる(エディタで開いていると batchmode は起動できない)
 - サーバーを動かしたまま Rust をビルドすると、Windows では `server.exe` がロックされて失敗する。先にサーバーを止める
 
-まとめて流すのは `make test`(基盤と sandbox の Rust・プラグイン・wiki の確認。Unity は含まない)。
+まとめて流すのは `make test`(基盤と sandbox の Rust・プラグイン・wiki の確認・依存の組み合わせの確認。Unity は含まない)。
 
 ## 3. wiki を直す
 

@@ -30,7 +30,7 @@ updated: 2026-10-10
 | .NET SDK | 10 で確認 | protoc プラグインと、クライアントの書き方のチェック(`make client-lint`) |
 | GNU Make | | `make` のコマンド |
 | Git for Windows | | Windows では、`make` のコマンドを Git Bash で動かす |
-| Python | 3 | wiki の生成と lint(`make wiki-gen`・`make wiki-lint`) |
+| Python | 3.11 以上 | wiki の生成と lint(`make wiki-gen`・`make wiki-lint`)、依存の確認(`make deps-check`・`make deps-outdated`) |
 
 - `make` は PowerShell からでも Git Bash からでも実行できる。Windows では、PowerShell から実行しても、`make` の中のコマンドは Git Bash で動く(`C:/Program Files/Git/bin/bash.exe`)。Git を別の場所に入れたときは、環境変数 `GIT_BASH` でパスを渡す
 - サーバーのビルドに protoc は要らない(`.proto` は `build.rs` の中で Rust 製のコンパイラが読む)
@@ -62,12 +62,13 @@ make sandbox-proto-gen   # sandbox の .proto → sandbox/UnityProject/Assets/Ge
 | コマンド | 内容 |
 |---|---|
 | `make sandbox-server` | MySQL を起動し、sandbox のサーバーを起動する(`.env` を読む。DB は `voltech_sandbox`) |
-| `make test` | プッシュ前のテスト一式(基盤と sandbox のクレートのテスト(MySQL を使う)・プラグインのテスト・wiki の確認) |
+| `make test` | プッシュ前のテスト一式(基盤と sandbox のクレートのテスト(MySQL を使う)・プラグインのテスト・wiki の確認・依存の組み合わせの確認) |
 | `make fmt` / `make lint` | rustfmt / Clippy(基盤と sandbox の両方) |
 | `make proto-gen` / `make sandbox-proto-gen` | `.proto` から C# を生成する |
 | `make proto-plugin` / `make plugin-test` | protoc プラグインをビルドして `.tools/voltech-grpc` に入れる / プラグインの単体テスト |
 | `make wiki-gen` | wiki の API の表を `.proto` のコメントから生成し直す([API: DeviceService](../api/device-service.md) など) |
 | `make wiki-lint` | wiki のリンク切れ・frontmatter の抜け・生成し忘れを確かめる |
+| `make deps-check` / `make deps-outdated` | 一緒に上げないと壊れる依存の組み合わせを確かめる / 依存の新しい版を調べる(上げる手順はスキル `/deps-update`) |
 
 ## クライアントとサーバーの接続を確かめる
 

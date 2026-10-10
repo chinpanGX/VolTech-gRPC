@@ -55,6 +55,7 @@ Unity エディタで、API のリクエストとレスポンスを1件ずつ見
 | `make test` | プッシュ前のテスト一式 |
 | `make client-lint` | クライアントの書き方の確認 |
 | `make wiki-lint` / `make wiki-affected` | wiki の確認 / 変わったファイルから直すべき wiki のページを探す |
+| `make deps-outdated` / `make deps-check` | 基盤の依存の新しい版を調べる / 一緒に上げないと壊れる組み合わせを確かめる |
 
 ## 外部のツール
 

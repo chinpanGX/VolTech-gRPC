@@ -1,5 +1,5 @@
 # 開発用のコマンド
-.PHONY: help db-up db-down proto-tools proto-plugin plugin-test proto-lint proto-format proto-breaking proto-gen build fmt fmt-check lint client-fmt client-lint wiki-gen wiki-lint wiki-affected sandbox-proto-gen sandbox-server test test-rust
+.PHONY: help db-up db-down proto-tools proto-plugin plugin-test proto-lint proto-format proto-breaking proto-gen build fmt fmt-check lint client-fmt client-lint wiki-gen wiki-lint wiki-affected deps-check deps-outdated sandbox-proto-gen sandbox-server test test-rust
 
 ifeq ($(OS),Windows_NT)
 # PowerShell から make を実行しても、レシピは Git Bash で動かす(既定の cmd.exe では動かないため)。
@@ -85,8 +85,14 @@ wiki-lint: ## docs/wiki のリンク切れ・frontmatter・API の表の生成�
 wiki-affected: ## 変わったファイルから直すべき docs/wiki のページを探す(BASE=main でブランチ全体、FILES="a b" でファイルを直接)
 	python scripts/wiki_affected.py $(if $(FILES),--files $(FILES),$(BASE))
 
+deps-check: ## 一緒に上げないと壊れる依存の組み合わせを確認(ネットワークを使わない)
+	python scripts/deps.py check
+
+deps-outdated: ## 依存の新しい版を各レジストリに問い合わせる
+	python scripts/deps.py outdated
+
 # TODO: Unity の EditMode テスト(クライアントの本体を含む)を足す
-test: test-rust plugin-test wiki-lint ## プッシュ前のテスト一式
+test: test-rust plugin-test wiki-lint deps-check ## プッシュ前のテスト一式
 
 sandbox-server: db-up ## sandbox のサーバーを起動(.env を読む。DB は voltech_sandbox)
 	cargo run --manifest-path sandbox/server/Cargo.toml -p server

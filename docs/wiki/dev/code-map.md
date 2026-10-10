@@ -56,4 +56,5 @@ updated: 2026-10-10
 | `Makefile` | 開発用のコマンド(`make help`) |
 | `scripts/proto-tools.sh` | `.proto` の生成に使うツール(buf・protoc・grpc_csharp_plugin)を `.tools/bin` に入れる |
 | `scripts/wiki_*.py` | `wiki_gen.py`(API の表の生成)、`wiki_lint.py`(wiki の確認)、`wiki_affected.py`(変わったファイルから直すべき wiki のページを探す) |
+| `scripts/deps.py` | 依存の確認。`check`(一緒に上げないと壊れる組み合わせ。`make deps-check`・CI)、`outdated`(新しい版。`make deps-outdated`) |
 | `docker-compose.yml`・`.env.example`・`docker/mysql/init/` | MySQL(基盤のテスト用の `app` と、sandbox の `voltech_sandbox`)と、サーバーの環境変数 |
