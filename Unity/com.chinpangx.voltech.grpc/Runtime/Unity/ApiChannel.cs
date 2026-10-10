@@ -43,7 +43,7 @@ namespace VolTech.Client.Unity
         /// AddInterceptor で足された Interceptor を付ける。
         /// </summary>
         /// <remarks>
-        /// エディタと開発ビルドでは、VolTech.Client.Tracing のアセンブリが記録の Interceptor を足す(通信の Viewer で見る)。
+        /// エディタと開発ビルドでは、VolTech.Client.Tracing のアセンブリが記録の Interceptor を足す(gRPC Monitor で見る)。
         /// リリースビルドには VolTech.Client.Tracing が入らないので、何も付かない。
         /// 付ける Interceptor は呼ぶたびに決めるので、CallInvoker を作った後に足された Interceptor も付く。
         /// </remarks>

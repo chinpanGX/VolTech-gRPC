@@ -42,7 +42,7 @@ voltech-grpc/unity/
 
 - 本体が依存するのは UniTask、Grpc.Net.Client、Google.Protobuf、Google.Api.CommonProtos だけ
 - **asmdef の参照は GUID で書く**(`"GUID:..."`)。名前で書くと、アセンブリの名前を変えたときに参照が切れる。Unity のインスペクターで参照を足したときの形とも同じになる
-- ビルドの種類で入れるかどうかを分けたいもの(開発用のツールなど)は、`#if` で囲まずにアセンブリに分け、asmdef の Define Constraints で決める([通信の Viewer](request-viewer.md))
+- ビルドの種類で入れるかどうかを分けたいもの(開発用のツールなど)は、`#if` で囲まずにアセンブリに分け、asmdef の Define Constraints で決める([gRPC Monitor](grpc-monitor.md))
 - 本体は Unity の外(csproj)ではビルドしない。Unity 以外で使う予定が無いので、asmdef だけで持つ。本体のテストも Unity の EditMode テストで回す([テスト](../ops/testing.md))。Unity のライセンスが要るので、v1 では CI では回らない
 - 認証(デバイス登録・トークンの発行・アカウント情報の保存)は Auth にある([認証とアカウント情報](auth-account.md))。Auth も、下の本体の決まりを守る
 - 生成したラッパーと C# のメッセージ型は、アプリの Unity プロジェクトの中に出力する(sandbox は `sandbox/UnityProject/Assets/Generated/`。`errors.toml` から生成したエラーコードも同じ場所の `Errors/`)。基盤の `.proto`(`voltech.v1`)の C# だけはパッケージの `Runtime/Generated/` にある

@@ -15,9 +15,9 @@ using VolTech.Client.Tracing;
 namespace Sandbox.Tests.EditMode
 {
     /// <summary>
-    /// 通信の Viewer のための記録(ApiTraceInterceptor・ApiTraceStore・実機から送る形)を、サーバーなしで確かめる。
+    /// gRPC Monitor のための記録(ApiTraceInterceptor・ApiTraceStore・実機から送る形)を、サーバーなしで確かめる。
     /// </summary>
-    [Description("通信の Viewer のための記録(ApiTraceInterceptor・ApiTraceStore・実機から送る形)を、サーバーなしで確かめる")]
+    [Description("gRPC Monitor のための記録(ApiTraceInterceptor・ApiTraceStore・実機から送る形)を、サーバーなしで確かめる")]
     public class ApiTraceTests
     {
         private ApiTraceStore store;

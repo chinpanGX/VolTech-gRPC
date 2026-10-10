@@ -82,7 +82,7 @@ namespace Sandbox.Tests.EditMode
         {
             // アプリと同じ作り方(YetAnotherHttpHandler の HTTP/2)でつなぐ
             channel = ApiChannel.Create($"http://{ServerHost}:{ServerPort}");
-            // 通信の Viewer に記録されるので、テストが失敗したときにやり取りを見返せる
+            // gRPC Monitor に記録されるので、テストが失敗したときにやり取りを見返せる
             CallInvoker = ApiChannel.CreateCallInvoker(channel);
 
             // sandbox の server_status.toml の最低バージョン(0)より新しいバージョンとして送る

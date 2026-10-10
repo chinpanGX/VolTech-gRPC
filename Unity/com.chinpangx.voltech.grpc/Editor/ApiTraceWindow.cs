@@ -13,7 +13,7 @@ using VolTech.Client.Tracing;
 namespace VolTech.Client.Editor
 {
     /// <summary>
-    /// 通信の Viewer。API のリクエストとレスポンスを1件ずつ、ヘッダーと Body(JSON)に分けて見る。
+    /// gRPC Monitor。API のリクエストとレスポンスを1件ずつ、ヘッダーと Body(JSON)に分けて見る。
     /// </summary>
     /// <remarks>
     /// UI Toolkit で、USS・UXML は使わずに C# だけで組み立てる。見るだけで、送り直しはしない(アプリの操作で送る)。
@@ -63,10 +63,10 @@ namespace VolTech.Client.Editor
 
         private ApiTraceStore Store => source == TraceSource.Editor ? ApiTraceStore.Shared : ApiTraceReceiver.Store;
 
-        [MenuItem("Window/VolTech gRPC/Request Viewer")]
+        [MenuItem("Window/VolTech gRPC/gRPC Monitor")]
         private static void Open()
         {
-            var window = GetWindow<ApiTraceWindow>("Request Viewer");
+            var window = GetWindow<ApiTraceWindow>("gRPC Monitor");
             // 小さいままだと詳細(右側)が見えないので、開いたときに広げる。ドッキングしているときは広げない
             if (!window.docked && (window.position.width < initialSize.x || window.position.height < initialSize.y))
             {

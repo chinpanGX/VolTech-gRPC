@@ -49,7 +49,7 @@ namespace Sample
             var options = new ApiCoreOptions(UnityAppVersion.Create(appVersion));
             // チャンネルは1つを使い回す
             channel = ApiChannel.Create(serverAddress);
-            // エディタと開発ビルドでは、通信の Viewer に記録される
+            // エディタと開発ビルドでは、gRPC Monitor に記録される
             var callInvoker = ApiChannel.CreateCallInvoker(channel);
             // ApiCore と ServerClockResetter に同じ時計を渡す(前面に戻ったら合わせ直す)
             var clock = new ServerClock();

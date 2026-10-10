@@ -29,7 +29,7 @@ sandbox の `SampleLifetimeScope`(`sandbox/UnityProject/Assets/Scripts/Sample/`�
 ```csharp
 var options = new ApiCoreOptions(UnityAppVersion.Create(appVersion));
 var channel = ApiChannel.Create("http://localhost:50051");     // チャンネルは1つを使い回す
-var callInvoker = ApiChannel.CreateCallInvoker(channel);        // エディタと開発ビルドでは通信の Viewer に記録される
+var callInvoker = ApiChannel.CreateCallInvoker(channel);        // エディタと開発ビルドでは gRPC Monitor に記録される
 var clock = new ServerClock();
 
 var core = new ApiCore(
@@ -119,4 +119,4 @@ var gachaApi = new GachaApi(core, invoker);
 
 ## 開発用のツール
 
-`VolTech.Client.Tracing`(エディタと開発ビルドだけ)と `VolTech.Client.Editor`(エディタだけ)は、通信の Viewer のためのアセンブリ。アプリは何もしなくても、`ApiChannel.CreateCallInvoker` で作った通信が記録される([ツール](tools.md))。
+`VolTech.Client.Tracing`(エディタと開発ビルドだけ)と `VolTech.Client.Editor`(エディタだけ)は、gRPC Monitor のためのアセンブリ。アプリは何もしなくても、`ApiChannel.CreateCallInvoker` で作った通信が記録される([ツール](tools.md))。

@@ -2,7 +2,7 @@
 title: "ツール"
 status: current
 area: guide
-related: [api/codegen, client/request-viewer, ops/setup, ops/debugging]
+related: [api/codegen, client/grpc-monitor, ops/setup, ops/debugging]
 proto: []
 code: [tools/protoc-gen-voltech-grpc/src/GeneratorParameters.cs, buf.gen.yaml, buf.yaml, Makefile, Unity/com.chinpangx.voltech.grpc/Editor, Unity/com.chinpangx.voltech.grpc/Runtime/Tracing]
 updated: 2026-10-11
@@ -31,9 +31,9 @@ updated: 2026-10-11
 
 使い方は `make proto-gen`(プラグインをビルドしてから生成する)。プラグインだけをビルドするのは `make proto-plugin`(`.tools/voltech-grpc` に入る)。設計の理由は [コード生成](../api/codegen.md)、中身は [protoc プラグインの中身](../dev/protoc-plugin.md)。
 
-## 通信の Viewer(Request Viewer)
+## gRPC Monitor
 
-Unity エディタで、API のリクエストとレスポンスを1件ずつ見るウィンドウ。メニュー `Window > VolTech gRPC > Request Viewer` で開く。
+Unity エディタで、API のリクエストとレスポンスを1件ずつ見るウィンドウ。メニュー `Window > VolTech gRPC > gRPC Monitor` で開く。
 
 - 一覧から1件を選ぶと、リクエストとレスポンスのヘッダー・Body(JSON)・トレーラー・エラーの詳細(`ErrorInfo`)を見られる
 - Body の「Copy」で JSON をコピーし、grpcurl や Postman にそのまま貼れる
@@ -41,7 +41,7 @@ Unity エディタで、API のリクエストとレスポンスを1件ずつ見
 - 記録するのはエディタと開発ビルドだけ(リリースビルドにはアセンブリごと入らない)。アクセストークンなどがそのまま見えるため
 - アプリは何もしなくてよい。`ApiChannel.CreateCallInvoker` で作った通信が記録される
 
-設計と実装の詳細は [通信の Viewer](../client/request-viewer.md)。
+設計と実装の詳細は [gRPC Monitor](../client/grpc-monitor.md)。
 
 ## make のコマンド
 

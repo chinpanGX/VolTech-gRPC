@@ -1,5 +1,5 @@
 ---
-title: "通信の Viewer(エディタ拡張)"
+title: "gRPC Monitor(エディタ拡張)"
 status: current
 area: client
 related: [client/api-core, client/structure, client/connection, ops/debugging, api/metadata, api/errors]
@@ -8,7 +8,7 @@ code: [Unity/com.chinpangx.voltech.grpc/Runtime/Tracing, Unity/com.chinpangx.vol
 updated: 2026-10-11
 ---
 
-# 通信の Viewer(エディタ拡張)
+# gRPC Monitor(エディタ拡張)
 
 Unity エディタで、API のリクエストとレスポンスを1件ずつ見るためのウィンドウ。Console のログ(`UnityApiLogger`)は流れて読みにくく、ヘッダーやエラーの詳細(`ErrorInfo`)も見えないので、通信ごとにヘッダーと Body を分けて見られるようにする。
 
@@ -94,7 +94,7 @@ ApiTraceInterceptor → ApiTraceStore              ApiTraceReceiver(EditorConnec
 
 ## ウィンドウ(`ApiTraceWindow`)
 
-メニュー `Window > VolTech gRPC > Request Viewer` で開く。UI Toolkit で、C# のコードだけで組み立てる(USS・UXML は使わない。色や余白は `style` で直接書く)。
+メニュー `Window > VolTech gRPC > gRPC Monitor` で開く。UI Toolkit で、C# のコードだけで組み立てる(USS・UXML は使わない。色や余白は `style` で直接書く)。
 
 ```
 ┌ Toolbar ─────────────────────────────────────────────────────┐
@@ -152,7 +152,7 @@ ApiTraceInterceptor → ApiTraceStore              ApiTraceReceiver(EditorConnec
 USB でつないだ実機からの受け取りは、自動のテストで確かめられない。実機で使い始めるときに、次の手順で確かめる。
 
 1. Build Settings で Development Build にチェックを入れ(Autoconnect Profiler も入れると、起動したときに自動でつながる)、Android の実機に入れる。実機からサーバーに届くように、`SampleLifetimeScope` の接続先を PC のアドレスにする(`localhost` は実機自身を指す)
-2. エディタで `Window > VolTech gRPC > Request Viewer` を開き、見るものを「Player」にして、接続先の選択から実機(`AndroidPlayer(ADB@...)`)を選ぶ
+2. エディタで `Window > VolTech gRPC > gRPC Monitor` を開き、見るものを「Player」にして、接続先の選択から実機(`AndroidPlayer(ADB@...)`)を選ぶ
 3. 実機で「Start」を押し、ガチャを引く。Viewer に通信が並べば届いている
 
 ## テスト

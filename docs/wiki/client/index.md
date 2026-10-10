@@ -2,7 +2,7 @@
 title: "クライアント基盤(C# / Unity)"
 status: index
 area: client
-updated: 2026-10-10
+updated: 2026-10-11
 ---
 
 # クライアント基盤(C# / Unity)
@@ -19,4 +19,4 @@ updated: 2026-10-10
 - [共通レスポンス項目の反映](response-items.md) — Applier の役割と、反映処理で例外が起きたときの後始末
 - [接続設定](connection.md) — deadline・タイムアウト・受信サイズ・接続先
 - [サーバーが無いときの差し替えとテスト](fake-testing.md) — FakeCallInvoker と汎用テスト
-- [通信の Viewer(エディタ拡張)](request-viewer.md) — リクエストとレスポンスのヘッダー・Body(JSON)を1件ずつ見るウィンドウ
+- [gRPC Monitor(エディタ拡張)](grpc-monitor.md) — リクエストとレスポンスのヘッダー・Body(JSON)を1件ずつ見るウィンドウ

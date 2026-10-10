@@ -16,7 +16,7 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 | 再送しても一度だけ処理する(RequestID) | ダイアログの見た目と画面遷移 |
 | 1リクエスト = 1トランザクション | 所持データの差分(`player_diff`)の反映処理 |
 | メンテナンス・強制アップデート・日付変更の判定 | |
-| 通信の記録と、エディタでの確認(Request Viewer) | |
+| 通信の記録と、エディタでの確認(gRPC Monitor) | |
 
 基盤はパッケージとして配り、アプリは自分のプロジェクトからタグで参照する。組み込み方の実例は、このリポジトリの `sandbox/`(基盤の機能を1つずつ試す RPC と、ガチャのサンプル)にある。
 
@@ -37,7 +37,7 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 | メンテナンス・強制アップデートにしたい | [サーバーの状態](server/status.md) |
 | 接続先・タイムアウトを変えたい | [接続設定](client/connection.md) |
 | サーバー無しでクライアントを試したい・テストしたい | [サーバーが無いときの差し替えとテスト](client/fake-testing.md) |
-| 通信の中身を見たい | [ツール](guide/tools.md)(Request Viewer)・[デバッグ](ops/debugging.md)(grpcurl) |
+| 通信の中身を見たい | [ツール](guide/tools.md)(gRPC Monitor)・[デバッグ](ops/debugging.md)(grpcurl) |
 | 環境を作りたい・make のコマンドを知りたい | [環境構築とよく使うコマンド](ops/setup.md) |
 | upstream から基盤を取り込みたい | [運用](repo/operations.md) |
 
@@ -59,7 +59,7 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 | [API を足す](guide/add-api.md) | `current` | `.proto` → 生成 → サーバーのハンドラー → クライアントの呼び出し |
 | [クライアントのリファレンス](guide/client-reference.md) | `current` | `ApiCore`・ラッパー・アプリが実装する interface・テスト用の部品 |
 | [サーバーのリファレンス](guide/server-reference.md) | `current` | `voltech-grpc-*` のクレートと組み込み方 |
-| [ツール](guide/tools.md) | `current` | protoc プラグイン・通信の Viewer・make のコマンド |
+| [ツール](guide/tools.md) | `current` | protoc プラグイン・gRPC Monitor・make のコマンド |
 
 ### [基盤開発者向けガイド](dev/index.md)
 
@@ -122,7 +122,7 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 | [共通レスポンス項目の反映](client/response-items.md) | `confirmed` | Applier の役割と、反映処理で例外が起きたときの後始末 |
 | [接続設定](client/connection.md) | `confirmed` | deadline・タイムアウト・受信サイズ・接続先 |
 | [サーバーが無いときの差し替えとテスト](client/fake-testing.md) | `confirmed` | FakeCallInvoker と汎用テスト |
-| [通信の Viewer(エディタ拡張)](client/request-viewer.md) | `current` | リクエストとレスポンスのヘッダー・Body(JSON)を1件ずつ見るウィンドウ |
+| [gRPC Monitor(エディタ拡張)](client/grpc-monitor.md) | `current` | リクエストとレスポンスのヘッダー・Body(JSON)を1件ずつ見るウィンドウ |
 
 ### [開発運用](ops/index.md)
 

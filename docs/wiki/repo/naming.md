@@ -37,6 +37,6 @@ updated: 2026-10-11
 
 ## 実装で決めたこと
 
-- エディタの通信の Viewer のメニューは `Window > VolTech gRPC > Request Viewer` にする
+- エディタで通信を見るウィンドウの名前は **gRPC Monitor** にし、メニューは `Window > VolTech gRPC > gRPC Monitor` にする(2026-10-11 に Request Viewer から変えた)。リクエストだけでなく、レスポンス・トレーラー・エラーまで、エディタと実機の通信を流れで見るので、Request と Viewer では役割より狭い。映るのは gRPC の通信だけなので Network とは付けない(Unity の Network Profiler などとも紛れる)。ドッキングしたときにタブ名だけで何の道具か分かるように、gRPC を入れる
 - samples の `Api` のアセンブリに混ざっていた基盤の部分は、パッケージにするときに分けた。認証(`DeviceTokenProvider` など)は `VolTech.Client.Auth`、Unity 用の層(`ApiChannel` など)は `VolTech.Client.Unity`、基盤の `.proto` の生成コードは `VolTech.V1`、エラーの既定の action の表は `VolTech.Client`(いまは `ErrorPolicyProvider`。アプリの `errors.toml` から生成した一覧を受け取る。[エラー](../api/errors.md))
 - パッケージのテストのアセンブリは `VolTech.Client.Tests.EditMode` にする(`Tests.EditMode` のままだと、利用側の同じ名前の asmdef とぶつかる)

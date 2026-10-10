@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace VolTech.Client.Tracing
 {
     /// <summary>
-    /// 1回の通信の記録。通信の Viewer(ApiTraceWindow)が表示する。
+    /// 1回の通信の記録。gRPC Monitor(ApiTraceWindow)が表示する。
     /// </summary>
     /// <remarks>
     /// 実機からエディタへ JsonUtility で送るので、値は public なフィールドで持つ。

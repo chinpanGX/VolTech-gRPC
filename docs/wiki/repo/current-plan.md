@@ -51,7 +51,7 @@ grpc-foundation-samples/
 │   └── Assets/Scripts/
 │       ├── VolTech.Client/          クライアントの基盤の本体(ApiCore など。Unity に依存しない)
 │       ├── VolTech.Client.Tracing/  通信の記録(エディタと開発ビルドだけ)
-│       ├── VolTech.Client.Editor/   通信の Viewer(エディタだけ)
+│       ├── VolTech.Client.Editor/   gRPC Monitor(エディタだけ)
 │       ├── Api/                          認証・Unity 用の層・生成コード・アプリの反映処理(基盤とアプリが混ざっている)
 │       └── Sample/                       サンプルの画面
 ├── Shared/proto/               アプリの .proto(error_code.proto など)

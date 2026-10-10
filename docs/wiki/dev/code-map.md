@@ -26,7 +26,7 @@ updated: 2026-10-11
 | `Unity/com.chinpangx.voltech.grpc/Runtime/Unity/` | `VolTech.Client.Unity` | Unity 用の層(`ApiChannel`・`UnityApiLogger` など) | sandbox の結合テスト |
 | `Unity/com.chinpangx.voltech.grpc/Runtime/Generated/` | `VolTech.V1` | 基盤の `.proto`(`voltech.v1`)から生成した C#(コミットする) | — |
 | `Unity/com.chinpangx.voltech.grpc/Runtime/Tracing/` | `VolTech.Client.Tracing` | 通信の記録(Interceptor・記録の置き場所・実機からの送信)。エディタと開発ビルドだけ | sandbox の `ApiTraceTests.cs` |
-| `Unity/com.chinpangx.voltech.grpc/Editor/` | `VolTech.Client.Editor` | 通信の Viewer のウィンドウと、実機の記録の受け取り。エディタだけ | 目で確かめる |
+| `Unity/com.chinpangx.voltech.grpc/Editor/` | `VolTech.Client.Editor` | gRPC Monitor のウィンドウと、実機の記録の受け取り。エディタだけ | 目で確かめる |
 | `tools/protoc-gen-voltech-grpc/` | `protoc-gen-voltech-grpc` | ラッパーを生成する protoc プラグイン([protoc プラグインの中身](protoc-plugin.md)) | `tests/` |
 
 ## sandbox(基盤の動作確認とサンプル。配らない)

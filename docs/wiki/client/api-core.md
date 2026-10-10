@@ -5,12 +5,12 @@ area: client
 related: [api/metadata, client/error-handling, client/auth-account, client/response-items]
 proto: []
 code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/ApiCore.cs]
-updated: 2026-10-10
+updated: 2026-10-11
 ---
 
 # ApiCore の共通処理
 
-クライアントの共通処理は、すべて `ApiCore` に置く。v1では gRPC の Interceptor は使わない(生成したラッパーを必ず通るので、処理の入口を1つにできる)。ログや計測を gRPC の層で取りたくなったら、そのときに足す(エディタの [通信の Viewer](request-viewer.md) は、記録するだけの Interceptor を使う)。
+クライアントの共通処理は、すべて `ApiCore` に置く。v1では gRPC の Interceptor は使わない(生成したラッパーを必ず通るので、処理の入口を1つにできる)。ログや計測を gRPC の層で取りたくなったら、そのときに足す(エディタの [gRPC Monitor](grpc-monitor.md) は、記録するだけの Interceptor を使う)。
 
 | # | 処理 | 補足 |
 |---|---|---|

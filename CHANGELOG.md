@@ -17,3 +17,4 @@
   - Unity: `ApiError.Code` が `ErrorCode`(domain と reason)になる。`ProtoErrorPolicyProvider` の代わりに `ErrorPolicyProvider`(生成した一覧を渡す)を使い、`ReservedErrorCodes` は `ReservedErrors` になる。`handledCodes` は `ErrorCode` で渡す
   - `voltech/v1/error_options.proto` を消す
 - ガチャのサンプルを grpc-foundation-samples から sandbox に移す(サーバー・Unity の画面とシーン・テスト)
+- エディタの通信を見るウィンドウを Request Viewer から gRPC Monitor に改名する(メニューは `Window > VolTech gRPC > gRPC Monitor`)。一覧を4列(Time・API・Result・Duration)にし、開いたときに広げる

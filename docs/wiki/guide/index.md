@@ -19,5 +19,5 @@ VolTech gRPC(基盤)を使ってアプリを作る人向けのページ。「何
 - [API を足す](add-api.md) — `.proto` を書き、コードを生成し、サーバーのハンドラーとクライアントの呼び出しを書くまで
 - [クライアントのリファレンス](client-reference.md) — `ApiCore`・生成したラッパー・アプリが実装する interface・テスト用の部品
 - [サーバーのリファレンス](server-reference.md) — `voltech-grpc-*` のクレートと、サーバーへの組み込み方
-- [ツール](tools.md) — protoc プラグイン・通信の Viewer・`make` のコマンド
+- [ツール](tools.md) — protoc プラグイン・gRPC Monitor・`make` のコマンド
 - API の仕様: [DeviceService(デバイス登録・トークンの発行)](../api/device-service.md)。アプリの API の仕様は、アプリの `.proto` のコメントが正

@@ -55,7 +55,7 @@ voltech-grpc-transaction = { git = "https://github.com/chinpanGX/VolTech-gRPC", 
 
 1. このリポジトリを clone し、`.env.example` を `.env` にコピーして、`make sandbox-server` でサーバーを起動する(MySQL を Docker で起動し、`localhost:50051` で待ち受ける)
 2. Unity で `sandbox/UnityProject` を開き、`Assets/Scenes/Sample.unity` を Play する。Start を押すと、デバイス登録 → サインイン(初回はサインアップ)→ ガチャの画面に進む
-3. `Window > VolTech gRPC > Request Viewer` で、通信ごとのヘッダーと Body を見られる([ツール](tools.md))
+3. `Window > VolTech gRPC > gRPC Monitor` で、通信ごとのヘッダーと Body を見られる([ツール](tools.md))
 
 サーバーの状態(メンテナンス・強制アップデート・日付が変わる時刻)は `sandbox/server/config/server_status.toml` で決める。サーバーが 5 秒ごとに読み直すので、書き換えれば再起動しなくても効く([サーバーの状態](../server/status.md))。
 
