@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package voltech.v1;
+
+import "google/protobuf/descriptor.proto";
+
+option csharp_namespace = "VolTech.Grpc.V1";
+
+// エラーが起きたときにクライアントが取る行動。
+enum ErrorAction {
+  ERROR_ACTION_UNSPECIFIED = 0;
+  ERROR_ACTION_STAY = 1;
+  ERROR_ACTION_RETRY = 2;
+  ERROR_ACTION_HOME = 3;
+  ERROR_ACTION_TITLE = 4;
+  ERROR_ACTION_UPDATE = 5;
+}
+
+extend google.protobuf.EnumValueOptions {
+  // エラーコードの既定の action。付いていない値は ERROR_ACTION_TITLE として扱う。
+  ErrorAction default_action = 50001;
+}

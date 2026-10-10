@@ -1,0 +1,75 @@
+# Unity プロジェクト用 .gitignore
+# このファイルは Unity プロジェクトのルート (Assets/ と同じ階層) に置く。
+# 先頭が / のパターンはこのファイルのあるディレクトリ基準で解決される。
+
+# --- Unity が自動生成するフォルダ ---
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+/ProfilerCaptures/
+
+# Asset Store ツールのアップロード用
+/[Aa]ssets/AssetStoreTools*
+
+# Unity が生成する Gradle / Burst / StreamingAssets のデバッグ情報
+/[Aa]ssets/Plugins/Editor/JetBrains*
+*_BurstDebugInformation_DoNotShip/
+/[Aa]ssets/[Ss]treamingAssets/aa.meta
+/[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# --- IDE / エディタ ---
+.vs/
+.vscode/
+.idea/
+.gradle/
+*.csproj
+*.unityproj
+*.sln
+*.slnx
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+ExportedObj/
+.consulo/
+*.DotSettings.user
+
+# Unity 生成メタ (中身が無いフォルダの .meta は残すため個別指定)
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+
+# クラッシュレポート
+sysinfo.txt
+
+# ビルド成果物
+*.apk
+*.aab
+*.unitypackage
+*.app
+*.ipa
+
+# Gradle / Android
+/[Aa]ssets/Plugins/Android/gradle*.properties.meta
+crashlytics-build.properties
+
+# Addressables のビルド成果物
+/[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/*.bin*
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+Desktop.ini

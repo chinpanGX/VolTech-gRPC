@@ -1,0 +1,109 @@
+# クライアント(Unity / C#)の書き方の設定
+# 文字コード・改行・インデントなどの共通設定は、リポジトリのルートの .editorconfig を引き継ぐ。
+# Unity 6 の C# は 9.0 なので、それ以降の書き方(file-scoped namespace など)は設定しない。
+
+[*.cs]
+# Unity がスクリプトを作るときに BOM を付けるので、それに合わせる
+charset = utf-8-bom
+
+# --- 改行・空白 ---
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+csharp_space_after_cast = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_preserve_single_line_blocks = true
+csharp_preserve_single_line_statements = false
+
+# --- using ---
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+csharp_using_directive_placement = outside_namespace:warning
+
+# --- 書き方 ---
+csharp_style_namespace_declarations = block_scoped:warning
+csharp_prefer_braces = true:warning
+dotnet_style_require_accessibility_modifiers = always:warning
+dotnet_style_readonly_field = true:warning
+dotnet_style_qualification_for_field = false:warning
+dotnet_style_qualification_for_property = false:warning
+dotnet_style_qualification_for_method = false:warning
+dotnet_style_qualification_for_event = false:warning
+dotnet_style_predefined_type_for_locals_parameters_members = true:warning
+dotnet_style_predefined_type_for_member_access = true:warning
+csharp_style_var_for_built_in_types = true:warning
+csharp_style_var_when_type_is_apparent = true:warning
+csharp_style_var_elsewhere = true:warning
+csharp_style_expression_bodied_methods = false:suggestion
+csharp_style_expression_bodied_constructors = false:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
+csharp_style_expression_bodied_accessors = true:suggestion
+
+# --- 命名 ---
+# インターフェース: I + PascalCase
+dotnet_naming_rule.interfaces.symbols = interfaces
+dotnet_naming_rule.interfaces.style = prefix_i_pascal
+dotnet_naming_rule.interfaces.severity = warning
+dotnet_naming_symbols.interfaces.applicable_kinds = interface
+dotnet_naming_style.prefix_i_pascal.required_prefix = I
+dotnet_naming_style.prefix_i_pascal.capitalization = pascal_case
+
+# 型パラメーター: T + PascalCase
+dotnet_naming_rule.type_parameters.symbols = type_parameters
+dotnet_naming_rule.type_parameters.style = prefix_t_pascal
+dotnet_naming_rule.type_parameters.severity = warning
+dotnet_naming_symbols.type_parameters.applicable_kinds = type_parameter
+dotnet_naming_style.prefix_t_pascal.required_prefix = T
+dotnet_naming_style.prefix_t_pascal.capitalization = pascal_case
+
+# async メソッド: PascalCase + Async
+dotnet_naming_rule.async_methods.symbols = async_methods
+dotnet_naming_rule.async_methods.style = pascal_async
+dotnet_naming_rule.async_methods.severity = warning
+dotnet_naming_symbols.async_methods.applicable_kinds = method, local_function
+dotnet_naming_symbols.async_methods.required_modifiers = async
+dotnet_naming_style.pascal_async.required_suffix = Async
+dotnet_naming_style.pascal_async.capitalization = pascal_case
+
+# 定数: PascalCase
+dotnet_naming_rule.constants.symbols = constants
+dotnet_naming_rule.constants.style = pascal
+dotnet_naming_rule.constants.severity = warning
+dotnet_naming_symbols.constants.applicable_kinds = field, local
+dotnet_naming_symbols.constants.required_modifiers = const
+
+# private / internal のフィールド: camelCase([SerializeField] も同じ)
+dotnet_naming_rule.private_fields.symbols = private_fields
+dotnet_naming_rule.private_fields.style = camel
+dotnet_naming_rule.private_fields.severity = warning
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private, internal, private_protected
+
+# 引数・ローカル変数: camelCase
+dotnet_naming_rule.locals_and_parameters.symbols = locals_and_parameters
+dotnet_naming_rule.locals_and_parameters.style = camel
+dotnet_naming_rule.locals_and_parameters.severity = warning
+dotnet_naming_symbols.locals_and_parameters.applicable_kinds = parameter, local
+dotnet_naming_style.camel.capitalization = camel_case
+
+# それ以外(型・メソッド・プロパティ・イベント・public なフィールド・enum の値・名前空間): PascalCase
+dotnet_naming_rule.others.symbols = others
+dotnet_naming_rule.others.style = pascal
+dotnet_naming_rule.others.severity = warning
+dotnet_naming_symbols.others.applicable_kinds = namespace, class, struct, enum, interface, delegate, method, local_function, property, event, field
+dotnet_naming_style.pascal.capitalization = pascal_case
+
+# .proto から生成したコードは対象外
+[Assets/Generated/**.cs]
+generated_code = true
+dotnet_analyzer_diagnostic.severity = none
+
+# サンプルの画面(MonoBehaviour)。[SerializeField] のフィールドは Unity が値を入れるので readonly にできない
+# (Microsoft.Unity.Analyzers があればこの指摘は抑えられるが、dotnet format では使っていない)
+[Assets/Scripts/Sample/**.cs]
+dotnet_diagnostic.IDE0044.severity = none

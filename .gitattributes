@@ -1,0 +1,36 @@
+# リポジトリ全体の .gitattributes
+# Unity プロジェクトの分(LFS を含む)は Unity/UnityProject/.gitattributes にある。
+
+# 既定: テキスト判定は Git に任せ、改行は LF で保存
+* text=auto eol=lf
+
+# --- コード / テキスト ---
+*.rs        text diff=rust
+*.toml      text
+*.proto     text
+*.cs        text diff=csharp
+*.md        text diff=markdown
+*.yml       text
+*.yaml      text
+*.json      text
+*.sql       text
+*.sh        text eol=lf
+Makefile    text eol=lf
+
+# Cargo.lock はマージで手を入れない
+Cargo.lock  text -diff linguist-generated
+
+# Windows 専用ファイルは CRLF を維持
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+*.ps1       text eol=crlf
+*.sln       text eol=crlf
+
+# .proto から生成した C# はレビューの差分で畳む
+Unity/UnityProject/Assets/Scripts/Api/Generated/** linguist-generated
+
+# --- バイナリ ---
+*.png  binary
+*.jpg  binary
+*.ico  binary
+*.zip  binary

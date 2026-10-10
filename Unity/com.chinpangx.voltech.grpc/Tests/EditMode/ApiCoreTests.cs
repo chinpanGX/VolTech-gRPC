@@ -1,0 +1,455 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using Api.Errors;
+using App.V1;
+using Cysharp.Threading.Tasks;
+using Grpc.Core;
+using NUnit.Framework;
+using Tests.EditMode.TestDoubles;
+using UnityEngine.TestTools;
+using VolTech.Grpc.Client;
+
+namespace Tests.EditMode
+{
+    /// <summary>
+    /// ApiCore の共通処理(トークン・ヘッダー・再認証・エラーの変換とハンドラー・順番待ち)を、サーバーなしで確かめる。
+    /// </summary>
+    [Description("ApiCore の共通処理(トークン・ヘッダー・再認証・エラーの変換とハンドラー・順番待ち)を、サーバーなしで確かめる")]
+    public class ApiCoreTests
+    {
+        // 冪等性の対象の RPC はまだ無いので、SignIn を対象として送る設定で代わりにする
+        private static readonly RpcSettings idempotencyTargetSettings =
+            new(PlayerServiceMethods.SignIn, isIdempotencyTarget: true, requiresAuth: true);
+
+        private FakeCallInvoker invoker;
+        private CountingTokenProvider tokenProvider;
+        private RecordingErrorHandler errorHandler;
+        private List<string> applyOrder;
+        private RecordingApplier diffApplier;
+        private RecordingApplier badgeApplier;
+        private RecordingApplier notificationApplier;
+        private ApiCore core;
+        private PlayerApi playerApi;
+
+        /// <summary>
+        /// テストごとに、偽のサーバーと ApiCore を作る。
+        /// </summary>
+        [SetUp]
+        public void SetUp()
+        {
+            invoker = new FakeCallInvoker();
+            tokenProvider = new CountingTokenProvider();
+            errorHandler = new RecordingErrorHandler();
+            applyOrder = new List<string>();
+            diffApplier = new RecordingApplier("player_diff", applyOrder);
+            badgeApplier = new RecordingApplier("badges", applyOrder);
+            notificationApplier = new RecordingApplier("notifications", applyOrder);
+            core = new ApiCore(
+                new ApiCoreOptions(),
+                tokenProvider,
+                ProtoErrorPolicyProvider.ForAppErrorCodes(),
+                errorHandler,
+                diffApplier,
+                badgeApplier: badgeApplier,
+                notificationApplier: notificationApplier);
+            playerApi = new PlayerApi(core, invoker);
+        }
+
+        /// <summary>
+        /// 成功すると、レスポンスが返り、authorization に Bearer トークンが付いている。
+        /// </summary>
+        [UnityTest]
+        [Description("成功すると、レスポンスが返り、authorization に Bearer トークンが付いている")]
+        public IEnumerator SuccessReturnsResponseWithBearerToken() => UniTask.ToCoroutine(async () =>
+        {
+            invoker.Register<SignInRequest, SignInResponse>(PlayerServiceMethods.SignIn, (_, _) => UniTask.FromResult(SignedIn("player-1")));
+
+            var result = await playerApi.SignInAsync(new SignInRequest());
+
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(result.Value.Player.PlayerId, Is.EqualTo("player-1"));
+            Assert.That(invoker.Calls.Single().GetHeader("authorization"), Is.EqualTo("Bearer token-1"));
+        });
+
+        /// <summary>
+        /// UNAUTHENTICATED が返ると、トークンを発行し直して1回だけ送り直し、成功すればエラーハンドラーは呼ばれない。
+        /// </summary>
+        [UnityTest]
+        [Description("UNAUTHENTICATED が返ると、トークンを発行し直して1回だけ送り直し、成功すればエラーハンドラーは呼ばれない")]
+        public IEnumerator UnauthenticatedReissuesTokenAndResendsOnce() => UniTask.ToCoroutine(async () =>
+        {
+            invoker.Register<SignInRequest, SignInResponse>(PlayerServiceMethods.SignIn, (_, headers) =>
+                headers.GetValue("authorization") == "Bearer token-1"
+                    ? throw FakeRpcErrors.Status(StatusCode.Unauthenticated)
+                    : UniTask.FromResult(SignedIn("player-1")));
+
+            var result = await playerApi.SignInAsync(new SignInRequest());
+
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(invoker.Calls.Select(call => call.GetHeader("authorization")),
+                Is.EqualTo(new[] { "Bearer token-1", "Bearer token-2" }));
+            Assert.That(errorHandler.Errors, Is.Empty);
+        });
+
+        /// <summary>
+        /// 送り直しても UNAUTHENTICATED なら、それ以上は送らずにエラーハンドラーに渡す。
+        /// </summary>
+        [UnityTest]
+        [Description("送り直しても UNAUTHENTICATED なら、それ以上は送らずにエラーハンドラーに渡す")]
+        public IEnumerator UnauthenticatedTwiceGoesToErrorHandler() => UniTask.ToCoroutine(async () =>
+        {
+            invoker.Register<SignInRequest, SignInResponse>(PlayerServiceMethods.SignIn, (_, _) =>
+                throw FakeRpcErrors.Status(StatusCode.Unauthenticated));
+
+            var result = await playerApi.SignInAsync(new SignInRequest());
+
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(invoker.Calls, Has.Count.EqualTo(2));
+            Assert.That(errorHandler.Errors.Single().Code, Is.EqualTo((int)ErrorCode.UnknownError));
+        });
+
+        /// <summary>
+        /// handledCodes に入れた業務エラーは、エラーハンドラーを通らずに、そのコードの失敗として返る。
+        /// </summary>
+        [UnityTest]
+        [Description("handledCodes に入れた業務エラーは、エラーハンドラーを通らずに、そのコードの失敗として返る")]
+        public IEnumerator HandledCodeReturnsWithoutErrorHandler() => UniTask.ToCoroutine(async () =>
+        {
+            invoker.Register<SignInRequest, SignInResponse>(PlayerServiceMethods.SignIn, (_, _) =>
+                throw FakeRpcErrors.FailedPrecondition("ERROR_CODE_PLAYER_NOT_FOUND"));
+
+            var result = await playerApi.SignInAsync(new SignInRequest(), new[] { ErrorCode.PlayerNotFound });
+
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Error.Code, Is.EqualTo((int)ErrorCode.PlayerNotFound));
+            Assert.That(result.Error.CodeName, Is.EqualTo("ERROR_CODE_PLAYER_NOT_FOUND"));
+            Assert.That(errorHandler.Errors, Is.Empty);
+            Assert.Throws<InvalidOperationException>(() => _ = result.Value);
+        });
+
+        /// <summary>
+        /// 予約コードは handledCodes に入れても、エラーハンドラーが処理する。
+        /// </summary>
+        [UnityTest]
+        [Description("予約コードは handledCodes に入れても、エラーハンドラーが処理する")]
+        public IEnumerator ReservedCodeGoesToErrorHandlerEvenIfHandled() => UniTask.ToCoroutine(async () =>
+        {
+            invoker.Register<SignInRequest, SignInResponse>(PlayerServiceMethods.SignIn, (_, _) =>
+                throw FakeRpcErrors.Status(StatusCode.Internal));
+
+            var result = await playerApi.SignInAsync(new SignInRequest(), new[] { ErrorCode.InternalError });
+
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(errorHandler.Errors.Single().Code, Is.EqualTo((int)ErrorCode.InternalError));
+        });
+
+        /// <summary>
+        /// 受け取ったエラーは、表のとおりのエラーコードと、error_code.proto の既定の action になる。
+        /// </summary>
+        [UnityTest]
+        [Description("受け取ったエラーは、表のとおりのエラーコードと、error_code.proto の既定の action になる")]
+        public IEnumerator ErrorsAreConvertedToCodesAndDefaultActions() => UniTask.ToCoroutine(async () =>
+        {
+            var cases = new (RpcException Thrown, ErrorCode Code, ErrorAction Action)[]
+            {
+                (FakeRpcErrors.Status(StatusCode.Unavailable), ErrorCode.NetworkError, ErrorAction.Retry),
+                (FakeRpcErrors.Status(StatusCode.DeadlineExceeded), ErrorCode.NetworkError, ErrorAction.Retry),
+                (FakeRpcErrors.Status(StatusCode.Internal), ErrorCode.InternalError, ErrorAction.Retry),
+                (FakeRpcErrors.Status(StatusCode.Unimplemented), ErrorCode.UnknownError, ErrorAction.Title),
+                (FakeRpcErrors.Status(StatusCode.FailedPrecondition), ErrorCode.UnknownError, ErrorAction.Title),
+                (FakeRpcErrors.FailedPrecondition("ERROR_CODE_MAINTENANCE"), ErrorCode.Maintenance, ErrorAction.Title),
+                (FakeRpcErrors.FailedPrecondition("ERROR_CODE_UPDATE_REQUIRED"), ErrorCode.UpdateRequired, ErrorAction.Update),
+                (FakeRpcErrors.FailedPrecondition("ERROR_CODE_INSUFFICIENT_GEMS"), ErrorCode.InsufficientGems, ErrorAction.Stay),
+                (FakeRpcErrors.FailedPrecondition("ERROR_CODE_NOT_IN_THIS_APP"), ErrorCode.UnknownError, ErrorAction.Title),
+            };
+
+            foreach (var (thrown, code, action) in cases)
+            {
+                invoker.Register<SignInRequest, SignInResponse>(PlayerServiceMethods.SignIn, (_, _) => throw thrown);
+
+                var result = await playerApi.SignInAsync(new SignInRequest());
+
+                Assert.That(result.Error.Code, Is.EqualTo((int)code), thrown.ToString());
+                Assert.That(result.Error.Action, Is.EqualTo(action), thrown.ToString());
+            }
+        });
+
+        /// <summary>
+        /// トークンの取得で例外が起きると、CLIENT_ERROR としてエラーハンドラーに渡す。
+        /// </summary>
+        [UnityTest]
+        [Description("トークンの取得で例外が起きると、CLIENT_ERROR としてエラーハンドラーに渡す")]
+        public IEnumerator ClientExceptionIsClientError() => UniTask.ToCoroutine(async () =>
+        {
+            tokenProvider.ThrowOnGet = new InvalidOperationException("broken account file");
+
+            var result = await playerApi.SignInAsync(new SignInRequest());
+
+            Assert.That(result.Error.Code, Is.EqualTo((int)ErrorCode.ClientError));
+            Assert.That(errorHandler.Errors, Has.Count.EqualTo(1));
+            Assert.That(invoker.Calls, Is.Empty);
+        });
+
+        /// <summary>
+        /// 冪等性の対象の RPC は x-request-id を付け、エラーハンドラーが再試行を選ぶと同じ RequestID で送り直す。
+        /// </summary>
+        [UnityTest]
+        [Description("冪等性の対象の RPC は x-request-id を付け、エラーハンドラーが再試行を選ぶと同じ RequestID で送り直す")]
+        public IEnumerator RetryResendsWithSameRequestId() => UniTask.ToCoroutine(async () =>
+        {
+            invoker.Register<SignInRequest, SignInResponse>(PlayerServiceMethods.SignIn, (_, _) =>
+                invoker.Calls.Count == 1
+                    ? throw FakeRpcErrors.Status(StatusCode.Unavailable)
+                    : UniTask.FromResult(SignedIn("player-1")));
+            errorHandler.ThenReturn(ErrorDecision.Retry);
+
+            var result = await InvokeIdempotencyTargetAsync();
+
+            Assert.That(result.IsSuccess, Is.True);
+            var requestIds = invoker.Calls.Select(call => call.GetHeader("x-request-id")).ToArray();
+            Assert.That(requestIds, Has.Length.EqualTo(2));
+            Assert.That(requestIds[0], Has.Length.EqualTo(32));
+            Assert.That(requestIds[1], Is.EqualTo(requestIds[0]));
+        });
+
+        /// <summary>
+        /// 冪等性の対象でない RPC には x-request-id を付けない。
+        /// </summary>
+        [UnityTest]
+        [Description("冪等性の対象でない RPC には x-request-id を付けない")]
+        public IEnumerator NonTargetHasNoRequestId() => UniTask.ToCoroutine(async () =>
+        {
+            invoker.Register<SignInRequest, SignInResponse>(PlayerServiceMethods.SignIn, (_, _) => UniTask.FromResult(SignedIn("player-1")));
+
+            await playerApi.SignInAsync(new SignInRequest());
+
+            Assert.That(invoker.Calls.Single().GetHeader("x-request-id"), Is.Null);
+        });
+
+        /// <summary>
+        /// 冪等性の対象の RPC は1つずつ送り、前の応答を受け取るまで次を送らない。
+        /// </summary>
+        [UnityTest]
+        [Description("冪等性の対象の RPC は1つずつ送り、前の応答を受け取るまで次を送らない")]
+        public IEnumerator IdempotencyTargetsAreSentOneByOne() => UniTask.ToCoroutine(async () =>
+        {
+            var firstResponse = new UniTaskCompletionSource<SignInResponse>();
+            invoker.Register<SignInRequest, SignInResponse>(PlayerServiceMethods.SignIn, (_, _) =>
+                invoker.Calls.Count == 1 ? firstResponse.Task : UniTask.FromResult(SignedIn("player-2")));
+
+            var first = InvokeIdempotencyTargetAsync();
+            var second = InvokeIdempotencyTargetAsync();
+            await UniTask.Yield();
+            Assert.That(invoker.Calls, Has.Count.EqualTo(1), "前の応答の前に次が送られた");
+
+            firstResponse.TrySetResult(SignedIn("player-1"));
+            var (firstResult, secondResult) = await UniTask.WhenAll(first, second);
+
+            Assert.That(firstResult.Value.Player.PlayerId, Is.EqualTo("player-1"));
+            Assert.That(secondResult.Value.Player.PlayerId, Is.EqualTo("player-2"));
+        });
+
+        /// <summary>
+        /// エラーハンドラーがタイトルに戻ると、順番待ちのリクエストは送らずに失敗になり、セッションも破棄される。
+        /// </summary>
+        [UnityTest]
+        [Description("エラーハンドラーがタイトルに戻ると、順番待ちのリクエストは送らずに失敗になり、セッションも破棄される")]
+        public IEnumerator ReturnToTitleDiscardsQueuedRequests() => UniTask.ToCoroutine(async () =>
+        {
+            invoker.Register<SignInRequest, SignInResponse>(PlayerServiceMethods.SignIn, (_, _) =>
+                throw FakeRpcErrors.Status(StatusCode.Internal));
+            var dialogShown = new UniTaskCompletionSource();
+            var closeDialog = new UniTaskCompletionSource();
+            errorHandler.OnHandle = async () =>
+            {
+                dialogShown.TrySetResult();
+                await closeDialog.Task;
+            };
+            errorHandler.ThenReturn(ErrorDecision.ReturnToTitle);
+
+            var first = InvokeIdempotencyTargetAsync();
+            await dialogShown.Task;
+            var queued = InvokeIdempotencyTargetAsync();
+            closeDialog.TrySetResult();
+            var (firstResult, queuedResult) = await UniTask.WhenAll(first, queued);
+
+            Assert.That(firstResult.IsSuccess, Is.False);
+            Assert.That(queuedResult.Error.IsDiscarded, Is.True);
+            Assert.That(invoker.Calls, Has.Count.EqualTo(1), "捨てたリクエストが送られた");
+            Assert.That(tokenProvider.ResetCount, Is.EqualTo(1));
+        });
+
+        /// <summary>
+        /// 成功すると、呼び出し側に返る前に、レスポンスが player_diff → バッジ → 通知の順に反映処理に渡されている。
+        /// </summary>
+        [UnityTest]
+        [Description("成功すると、呼び出し側に返る前に、レスポンスが player_diff → バッジ → 通知の順に反映処理に渡されている")]
+        public IEnumerator SuccessIsAppliedInOrderBeforeReturning() => UniTask.ToCoroutine(async () =>
+        {
+            var response = SignedIn("player-1");
+            invoker.Register<SignInRequest, SignInResponse>(PlayerServiceMethods.SignIn, (_, _) => UniTask.FromResult(response));
+
+            await playerApi.SignInAsync(new SignInRequest());
+
+            Assert.That(applyOrder, Is.EqualTo(new[] { "player_diff", "badges", "notifications" }));
+            Assert.That(diffApplier.Applied, Is.EqualTo(new[] { response }));
+        });
+
+        /// <summary>
+        /// 失敗したときは、反映処理は呼ばれない。
+        /// </summary>
+        [UnityTest]
+        [Description("失敗したときは、反映処理は呼ばれない")]
+        public IEnumerator FailureIsNotApplied() => UniTask.ToCoroutine(async () =>
+        {
+            invoker.Register<SignInRequest, SignInResponse>(PlayerServiceMethods.SignIn, (_, _) =>
+                throw FakeRpcErrors.FailedPrecondition("ERROR_CODE_PLAYER_NOT_FOUND"));
+
+            await playerApi.SignInAsync(new SignInRequest(), new[] { ErrorCode.PlayerNotFound });
+
+            Assert.That(applyOrder, Is.Empty);
+        });
+
+        /// <summary>
+        /// 反映処理で例外が起きると、残りの反映処理は呼ばず、送り直さずに CLIENT_ERROR としてエラーハンドラーに渡して失敗を返し、順番待ちも解放する。
+        /// </summary>
+        [UnityTest]
+        [Description("反映処理で例外が起きると、残りの反映処理は呼ばず、送り直さずに CLIENT_ERROR としてエラーハンドラーに渡して失敗を返し、順番待ちも解放する")]
+        public IEnumerator ApplyExceptionIsClientErrorWithoutResend() => UniTask.ToCoroutine(async () =>
+        {
+            invoker.Register<SignInRequest, SignInResponse>(PlayerServiceMethods.SignIn, (_, _) => UniTask.FromResult(SignedIn("player-1")));
+            badgeApplier.ThrowOnApply = new InvalidOperationException("bug in applier");
+            // ハンドラーが再試行を選んでも、反映処理の失敗では送り直さない
+            errorHandler.ThenReturn(ErrorDecision.Retry);
+
+            var failed = await InvokeIdempotencyTargetAsync();
+
+            Assert.That(failed.IsSuccess, Is.False);
+            Assert.That(failed.Error.Code, Is.EqualTo((int)ErrorCode.ClientError));
+            Assert.That(errorHandler.Errors.Single().Code, Is.EqualTo((int)ErrorCode.ClientError));
+            Assert.That(invoker.Calls, Has.Count.EqualTo(1), "反映処理の失敗で送り直した");
+            Assert.That(applyOrder, Is.EqualTo(new[] { "player_diff", "badges" }), "例外の後の反映処理を呼んだ");
+
+            badgeApplier.ThrowOnApply = null;
+            var next = await InvokeIdempotencyTargetAsync();
+            Assert.That(next.IsSuccess, Is.True, "順番待ちが解放されていない");
+        });
+
+        /// <summary>
+        /// 通信中にセッションを捨てると、後から届いたレスポンスは反映せず、捨てたものとして失敗を返す。
+        /// </summary>
+        [UnityTest]
+        [Description("通信中にセッションを捨てると、後から届いたレスポンスは反映せず、捨てたものとして失敗を返す")]
+        public IEnumerator ResponseAfterResetSessionIsNotApplied() => UniTask.ToCoroutine(async () =>
+        {
+            var response = new UniTaskCompletionSource<SignInResponse>();
+            invoker.Register<SignInRequest, SignInResponse>(PlayerServiceMethods.SignIn, (_, _) => response.Task);
+
+            var pending = playerApi.SignInAsync(new SignInRequest());
+            await UniTask.Yield();
+            core.ResetSession();
+            response.TrySetResult(SignedIn("old-player"));
+            var result = await pending;
+
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Error.IsDiscarded, Is.True);
+            Assert.That(applyOrder, Is.Empty);
+        });
+
+        /// <summary>
+        /// タイトルに戻るときは、遷移より先にセッションを破棄し、順番待ちも解放してから遷移するので、
+        /// 遷移の途中に送った API(冪等性の対象を含む)は新しいセッションで通る。
+        /// </summary>
+        [UnityTest]
+        [Description("タイトルに戻るときは、遷移より先にセッションを破棄し、順番待ちも解放してから遷移するので、遷移の途中に送った API は新しいセッションで通る")]
+        public IEnumerator ApiCalledDuringNavigationUsesNewSession() => UniTask.ToCoroutine(async () =>
+        {
+            var navigator = new RecordingNavigator();
+            core = new ApiCore(
+                new ApiCoreOptions(),
+                tokenProvider,
+                ProtoErrorPolicyProvider.ForAppErrorCodes(),
+                errorHandler,
+                diffApplier,
+                navigator: navigator);
+            playerApi = new PlayerApi(core, invoker);
+            invoker.Register<SignInRequest, SignInResponse>(PlayerServiceMethods.SignIn, (_, _) =>
+                invoker.Calls.Count == 1 ? throw FakeRpcErrors.Status(StatusCode.Internal) : UniTask.FromResult(SignedIn("player-1")));
+            errorHandler.ThenReturn(ErrorDecision.ReturnToTitle);
+
+            var resetCountAtNavigation = -1;
+            var signInDuringNavigation = default(ApiResult<SignInResponse>);
+            var targetDuringNavigation = default(ApiResult<SignInResponse>);
+            navigator.OnGoToTitle = async () =>
+            {
+                resetCountAtNavigation = tokenProvider.ResetCount;
+                signInDuringNavigation = await playerApi.SignInAsync(new SignInRequest());
+                targetDuringNavigation = await InvokeIdempotencyTargetAsync();
+            };
+
+            var failed = await InvokeIdempotencyTargetAsync();
+
+            Assert.That(failed.IsSuccess, Is.False);
+            Assert.That(navigator.Navigated, Is.EqualTo(new[] { "title" }));
+            Assert.That(resetCountAtNavigation, Is.EqualTo(1), "遷移の前にセッションが破棄されていない");
+            Assert.That(signInDuringNavigation.IsSuccess, Is.True, "遷移の途中に送った API が捨てられた");
+            Assert.That(targetDuringNavigation.IsSuccess, Is.True, "遷移の途中に送った冪等性の対象の API が通らない");
+        });
+
+        /// <summary>
+        /// セッションを捨てると、応答を待っている通信は締め切りを待たずに止まり、ダイアログを出さずに捨てたものとして失敗を返す。
+        /// </summary>
+        [UnityTest]
+        [Description("セッションを捨てると、応答を待っている通信は締め切りを待たずに止まり、ダイアログを出さずに捨てたものとして失敗を返す")]
+        public IEnumerator ResetSessionCancelsPendingCall() => UniTask.ToCoroutine(async () =>
+        {
+            var neverResponds = new UniTaskCompletionSource<SignInResponse>();
+            invoker.Register<SignInRequest, SignInResponse>(PlayerServiceMethods.SignIn, (_, _) => neverResponds.Task);
+
+            var pending = playerApi.SignInAsync(new SignInRequest());
+            await UniTask.Yield();
+            core.ResetSession();
+            var result = await pending;
+
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Error.IsDiscarded, Is.True);
+            Assert.That(errorHandler.Errors, Is.Empty, "止めた通信でダイアログを出した");
+        });
+
+        /// <summary>
+        /// エラーの詳細(grpc-status-details-bin)が壊れていても、例外にならずに UNKNOWN_ERROR としてエラーハンドラーに渡る。
+        /// </summary>
+        [UnityTest]
+        [Description("エラーの詳細(grpc-status-details-bin)が壊れていても、例外にならずに UNKNOWN_ERROR としてエラーハンドラーに渡る")]
+        public IEnumerator BrokenErrorDetailsBecomeUnknownError() => UniTask.ToCoroutine(async () =>
+        {
+            // 長さ5の項目と言いながら中身が無い、読めない google.rpc.Status
+            var brokenDetails = new Metadata { { RpcErrorDetails.TrailerKey, new byte[] { 0x0A, 0x05 } } };
+            invoker.Register<SignInRequest, SignInResponse>(PlayerServiceMethods.SignIn, (_, _) =>
+                throw new RpcException(new Status(StatusCode.FailedPrecondition, "broken details"), brokenDetails));
+
+            var result = await playerApi.SignInAsync(new SignInRequest());
+
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Error.Code, Is.EqualTo((int)ErrorCode.UnknownError));
+            Assert.That(errorHandler.Errors.Single().Code, Is.EqualTo((int)ErrorCode.UnknownError));
+        });
+
+        private UniTask<ApiResult<SignInResponse>> InvokeIdempotencyTargetAsync()
+        {
+            return core.InvokeAsync(
+                idempotencyTargetSettings,
+                new PlayerService.PlayerServiceClient(invoker),
+                new SignInRequest(),
+                null,
+                static (c, r, options) => c.SignInAsync(r, options));
+        }
+
+        private static SignInResponse SignedIn(string playerId)
+        {
+            return new SignInResponse { Player = new Player { PlayerId = playerId, Gems = 100 } };
+        }
+    }
+}

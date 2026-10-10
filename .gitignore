@@ -1,0 +1,59 @@
+# リポジトリ全体の .gitignore
+# Unity プロジェクトの分は Unity/UnityProject/.gitignore にある。
+
+# --- Rust ---
+# ビルド成果物(ワークスペース外で個別に cargo build したクレートの target も含む)
+/Server/target/
+/Server/**/target/
+# rustfmt のバックアップ
+**/*.rs.bk
+# Windows の MSVC ビルドで出るデバッグシンボル
+*.pdb
+# カバレッジ(cargo-llvm-cov / grcov / tarpaulin)
+*.profraw
+*.profdata
+lcov.info
+cobertura.xml
+tarpaulin-report.*
+# プロファイリング(cargo-flamegraph / perf)
+flamegraph.svg
+perf.data
+perf.data.old
+# cargo-mutants の出力
+mutants.out/
+mutants.out.old/
+
+# --- .NET(プラグイン・Core のテスト用 csproj など)---
+[Bb]in/
+[Oo]bj/
+*.user
+TestResults/
+
+# --- 秘密情報 / ローカル設定 ---
+.env
+.env.*
+!.env.example
+
+# --- IDE ---
+.idea/
+.vs/
+.vscode/
+*.iml
+.claude/settings.local.json
+
+# --- 開発ツール(make proto-tools が入れる)---
+/.tools/
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# --- Obsidian(docs/wiki を開いたときの、人ごとの画面の状態・プラグイン・ゴミ箱)---
+Shared/docs/wiki/.obsidian/workspace.json
+Shared/docs/wiki/.obsidian/workspace-mobile.json
+Shared/docs/wiki/.obsidian/plugins/
+Shared/docs/wiki/.trash/
+
+# --- Python(wiki のスクリプトを動かすと作られる)---
+__pycache__/

@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- protoc / buf は protoc-gen-<名前> の実行ファイルを探す -->
+    <AssemblyName>protoc-gen-voltech-grpc</AssemblyName>
+    <RootNamespace>ProtocGenVoltechGrpc</RootNamespace>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>protoc-gen-voltech-grpc</ToolCommandName>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Unity の Packages/manifest.json の org.nuget.google.protobuf と同じにする -->
+    <PackageReference Include="Google.Protobuf" Version="3.36.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ProtocGenVoltechGrpc.Tests" />
+  </ItemGroup>
+
+</Project>

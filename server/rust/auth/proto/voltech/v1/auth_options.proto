@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package voltech.v1;
+
+import "google/protobuf/descriptor.proto";
+
+option csharp_namespace = "VolTech.Grpc.V1";
+
+extend google.protobuf.ServiceOptions {
+  // true のサービスは認証なしで呼べる。
+  bool skip_auth = 50002;
+}

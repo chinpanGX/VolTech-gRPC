@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package voltech.v1;
+
+import "google/protobuf/timestamp.proto";
+import "voltech/v1/auth_options.proto";
+
+option csharp_namespace = "VolTech.Grpc.V1";
+
+// デバイス登録とアクセストークンの発行。
+service DeviceService {
+  option (skip_auth) = true;
+
+  // クライアントが生成した secret_key を登録し、device_id と player_id を発行する。
+  // player_id は ID だけで、プレイヤー(初期データ)はアプリのサインアップで作る。
+  // 再送で別の device_id が発行されても、使われない行が残るだけで害はない。
+  rpc Register(RegisterRequest) returns (RegisterResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+
+  // device_id と secret_key を検証し、アクセストークンを発行する。
+  // 発行し直すと、そのデバイスの古いトークンは無効になる。
+  rpc IssueToken(IssueTokenRequest) returns (IssueTokenResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+}
+
+message RegisterRequest {
+  // クライアントが生成した秘密の値。16〜128 文字の、表示できる ASCII 文字(0x21〜0x7E)。
+  // 登録した後は変えられないので、端末に device_id と一緒に保存する。
+  string secret_key = 1;
+}
+
+message RegisterResponse {
+  // デバイスの ID(ULID。大文字の英数字 26 文字)。
+  string device_id = 1;
+  // プレイヤーの ID(ULID)。サインアップの前から持てるので、問い合わせなどに表示できる。
+  string player_id = 2;
+}
+
+message IssueTokenRequest {
+  // Register で受け取った値。
+  string device_id = 1;
+  // Register で送った値。
+  string secret_key = 2;
+}
+
+message IssueTokenResponse {
+  // アクセストークン(256 ビットの乱数を 16 進にした、小文字 64 文字)。
+  // 認証が必要な API に、メタデータ authorization: Bearer <access_token> で付ける。
+  string access_token = 1;
+  // 有効期限。秒単位(nanos は常に 0)。
+  google.protobuf.Timestamp expires_at = 2;
+}

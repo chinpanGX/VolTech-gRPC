@@ -1,0 +1,19 @@
+{
+    "name": "VolTech.Grpc.Client.Tracing",
+    "rootNamespace": "VolTech.Grpc.Client.Tracing",
+    "references": [
+        "GUID:2855d067467c885408fca9fb52cf9f1f",
+        "GUID:a2bb72b22f122374c9fcd20dd5be0031"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_EDITOR || DEVELOPMENT_BUILD"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

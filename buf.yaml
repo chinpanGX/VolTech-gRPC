@@ -1,0 +1,12 @@
+# 基盤(Server/framework)の .proto は、それぞれのクレートに置いている
+version: v2
+modules:
+  - path: Shared/proto
+  - path: Server/framework/auth/proto
+  - path: Server/framework/error/proto
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - FILE

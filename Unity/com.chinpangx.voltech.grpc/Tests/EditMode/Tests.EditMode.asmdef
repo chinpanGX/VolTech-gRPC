@@ -1,0 +1,32 @@
+{
+    "name": "Tests.EditMode",
+    "rootNamespace": "",
+    "references": [
+        "GUID:27619889b8ba8c24980f49ee34dbb44a",
+        "GUID:0acc523941302664db1f4e527237feb3",
+        "GUID:c3bc0afe4a069b54aa23296f3c18a871",
+        "GUID:2855d067467c885408fca9fb52cf9f1f",
+        "GUID:a2bb72b22f122374c9fcd20dd5be0031",
+        "GUID:dd27f16320cc3de4bad3b91bdbc1d1bf",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll",
+        "Google.Protobuf.dll",
+        "Google.Api.CommonProtos.dll",
+        "Grpc.Core.Api.dll",
+        "Grpc.Net.Client.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

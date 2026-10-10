@@ -1,0 +1,18 @@
+[package]
+name = "voltech-grpc-transaction"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+voltech-grpc-error = { workspace = true }
+http = { workspace = true }
+prost = { workspace = true }
+prost-types = { workspace = true }
+sqlx = { workspace = true }
+tonic = { workspace = true }
+tower = { workspace = true }
+ulid = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

@@ -1,0 +1,20 @@
+{
+    "name": "VolTech.Grpc.Client.Editor",
+    "rootNamespace": "VolTech.Grpc.Client.Editor",
+    "references": [
+        "GUID:2855d067467c885408fca9fb52cf9f1f",
+        "GUID:a2bb72b22f122374c9fcd20dd5be0031",
+        "GUID:dd27f16320cc3de4bad3b91bdbc1d1bf"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

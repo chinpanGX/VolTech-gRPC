@@ -1,0 +1,21 @@
+[package]
+name = "voltech-grpc-status"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+voltech-grpc-error = { workspace = true }
+http = { workspace = true }
+jiff = { workspace = true }
+serde = { workspace = true }
+tokio = { workspace = true, features = ["fs", "time"] }
+toml = { workspace = true }
+tonic = { workspace = true }
+tower = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+voltech-grpc-error = { workspace = true }
+tonic-types = { workspace = true }
+tower = { workspace = true, features = ["util"] }

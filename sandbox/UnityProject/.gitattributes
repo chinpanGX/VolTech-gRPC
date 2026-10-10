@@ -1,0 +1,120 @@
+# Unity プロジェクト用 .gitattributes
+# このファイルは Unity プロジェクトのルート (Assets/ と同じ階層) に置く。
+
+# 既定: テキスト判定は Git に任せ、改行は LF で保存
+* text=auto eol=lf
+
+# --- コード / テキスト ---
+*.cs        text diff=csharp
+*.shader    text
+*.hlsl      text
+*.cginc     text
+*.compute   text
+*.uss       text
+*.uxml      text
+*.json      text
+*.xml       text
+*.txt       text
+*.md        text
+*.proto     text
+*.inputactions text
+*.asmdef    text
+*.asmref    text
+
+# Windows 専用ファイルは CRLF を維持
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+*.ps1       text eol=crlf
+
+# --- Unity YAML (Force Text シリアライズ前提) ---
+# merge=unityyamlmerge は git config で merge driver を定義したときのみ有効。
+# 未定義なら通常の 3-way マージにフォールバックする。
+*.meta          text eol=lf merge=unityyamlmerge
+*.unity         text eol=lf merge=unityyamlmerge linguist-generated
+*.prefab        text eol=lf merge=unityyamlmerge linguist-generated
+*.asset         text eol=lf merge=unityyamlmerge linguist-generated
+*.mat           text eol=lf merge=unityyamlmerge linguist-generated
+*.anim          text eol=lf merge=unityyamlmerge linguist-generated
+*.controller    text eol=lf merge=unityyamlmerge linguist-generated
+*.overrideController text eol=lf merge=unityyamlmerge linguist-generated
+*.physicMaterial text eol=lf merge=unityyamlmerge linguist-generated
+*.physicsMaterial2D text eol=lf merge=unityyamlmerge linguist-generated
+*.playable      text eol=lf merge=unityyamlmerge linguist-generated
+*.mask          text eol=lf merge=unityyamlmerge linguist-generated
+*.brush         text eol=lf merge=unityyamlmerge linguist-generated
+*.flare         text eol=lf merge=unityyamlmerge linguist-generated
+*.fontsettings  text eol=lf merge=unityyamlmerge linguist-generated
+*.guiskin       text eol=lf merge=unityyamlmerge linguist-generated
+*.giparams      text eol=lf merge=unityyamlmerge linguist-generated
+*.renderTexture text eol=lf merge=unityyamlmerge linguist-generated
+*.spriteatlas   text eol=lf merge=unityyamlmerge linguist-generated
+*.spriteatlasv2 text eol=lf merge=unityyamlmerge linguist-generated
+*.terrainlayer  text eol=lf merge=unityyamlmerge linguist-generated
+*.mixer         text eol=lf merge=unityyamlmerge linguist-generated
+*.shadervariants text eol=lf merge=unityyamlmerge linguist-generated
+*.preset        text eol=lf merge=unityyamlmerge linguist-generated
+*.signal        text eol=lf merge=unityyamlmerge linguist-generated
+*.lighting      text eol=lf merge=unityyamlmerge linguist-generated
+
+# Unity が生成するバイナリ (LFS 対象外でも diff/merge させない)
+*.cubemap       binary
+*.unitypackage  binary
+
+# --- Git LFS: 大きなバイナリアセット ---
+# 画像
+*.png  filter=lfs diff=lfs merge=lfs -text
+*.jpg  filter=lfs diff=lfs merge=lfs -text
+*.jpeg filter=lfs diff=lfs merge=lfs -text
+*.gif  filter=lfs diff=lfs merge=lfs -text
+*.psd  filter=lfs diff=lfs merge=lfs -text
+*.psb  filter=lfs diff=lfs merge=lfs -text
+*.tga  filter=lfs diff=lfs merge=lfs -text
+*.tif  filter=lfs diff=lfs merge=lfs -text
+*.tiff filter=lfs diff=lfs merge=lfs -text
+*.bmp  filter=lfs diff=lfs merge=lfs -text
+*.exr  filter=lfs diff=lfs merge=lfs -text
+*.hdr  filter=lfs diff=lfs merge=lfs -text
+*.iff  filter=lfs diff=lfs merge=lfs -text
+*.pict filter=lfs diff=lfs merge=lfs -text
+*.webp filter=lfs diff=lfs merge=lfs -text
+*.ai   filter=lfs diff=lfs merge=lfs -text
+# 3D モデル
+*.fbx   filter=lfs diff=lfs merge=lfs -text
+*.obj   filter=lfs diff=lfs merge=lfs -text
+*.blend filter=lfs diff=lfs merge=lfs -text
+*.max   filter=lfs diff=lfs merge=lfs -text
+*.ma    filter=lfs diff=lfs merge=lfs -text
+*.mb    filter=lfs diff=lfs merge=lfs -text
+*.3ds   filter=lfs diff=lfs merge=lfs -text
+*.dae   filter=lfs diff=lfs merge=lfs -text
+*.glb   filter=lfs diff=lfs merge=lfs -text
+*.gltf  filter=lfs diff=lfs merge=lfs -text
+*.usdz  filter=lfs diff=lfs merge=lfs -text
+# オーディオ
+*.wav  filter=lfs diff=lfs merge=lfs -text
+*.mp3  filter=lfs diff=lfs merge=lfs -text
+*.ogg  filter=lfs diff=lfs merge=lfs -text
+*.aif  filter=lfs diff=lfs merge=lfs -text
+*.aiff filter=lfs diff=lfs merge=lfs -text
+*.flac filter=lfs diff=lfs merge=lfs -text
+*.bank filter=lfs diff=lfs merge=lfs -text
+# 動画
+*.mp4  filter=lfs diff=lfs merge=lfs -text
+*.mov  filter=lfs diff=lfs merge=lfs -text
+*.webm filter=lfs diff=lfs merge=lfs -text
+*.avi  filter=lfs diff=lfs merge=lfs -text
+# フォント
+*.ttf filter=lfs diff=lfs merge=lfs -text
+*.otf filter=lfs diff=lfs merge=lfs -text
+# ネイティブプラグイン / アーカイブ
+*.dll   filter=lfs diff=lfs merge=lfs -text
+*.so    filter=lfs diff=lfs merge=lfs -text
+*.a     filter=lfs diff=lfs merge=lfs -text
+*.dylib filter=lfs diff=lfs merge=lfs -text
+*.aar   filter=lfs diff=lfs merge=lfs -text
+*.jar   filter=lfs diff=lfs merge=lfs -text
+*.zip   filter=lfs diff=lfs merge=lfs -text
+*.7z    filter=lfs diff=lfs merge=lfs -text
+# Unity バイナリ (LightingData / NavMesh 等の .asset は YAML 扱いのまま)
+*.cubemap filter=lfs diff=lfs merge=lfs -text
+*.unitypackage filter=lfs diff=lfs merge=lfs -text
