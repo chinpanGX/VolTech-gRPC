@@ -1,4 +1,4 @@
-# 開発用の MySQL(設計書 6.3: cargo test の結合テストでも使う)
+# 開発用の MySQL(設計書 6.3: cargo test の結合テストと、sandbox のサーバーで使う)
 services:
   mysql:
     image: mysql:8.4
@@ -13,6 +13,8 @@ services:
       - "13306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
+      # sandbox のサーバー用の DB(voltech_sandbox)を作る
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
       interval: 5s

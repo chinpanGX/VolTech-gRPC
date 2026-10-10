@@ -1,5 +1,5 @@
 # 開発用のコマンド
-.PHONY: help db-up db-down proto-tools proto-plugin plugin-test proto-lint proto-format proto-breaking proto-gen build fmt fmt-check lint client-fmt client-lint wiki-gen wiki-lint wiki-affected sandbox-proto-gen test test-rust
+.PHONY: help db-up db-down proto-tools proto-plugin plugin-test proto-lint proto-format proto-breaking proto-gen build fmt fmt-check lint client-fmt client-lint wiki-gen wiki-lint wiki-affected sandbox-proto-gen sandbox-server test test-rust
 
 ifeq ($(OS),Windows_NT)
 # PowerShell から make を実行しても、レシピは Git Bash で動かす(既定の cmd.exe では動かないため)。
@@ -16,7 +16,7 @@ endif
 PROTO_ENV := PATH="$$PWD/.tools/bin:$$PWD/.tools/voltech-grpc:$$PATH"
 PLUGIN_DIR := tools/protoc-gen-voltech-grpc
 
-RUST_MANIFESTS := server/rust/Cargo.toml
+RUST_MANIFESTS := server/rust/Cargo.toml sandbox/server/Cargo.toml
 UNITY_SLN := sandbox/UnityProject/UnityProject.sln
 
 # 説明は各ターゲットの行の「## 」の後ろに書く。
@@ -87,3 +87,6 @@ wiki-affected: ## 変わったファイルから直すべき docs/wiki のペー
 
 # TODO: Unity の EditMode テスト(クライアントの本体を含む)を足す
 test: test-rust plugin-test wiki-lint ## プッシュ前のテスト一式
+
+sandbox-server: db-up ## sandbox のサーバーを起動(.env を読む。DB は voltech_sandbox)
+	cargo run --manifest-path sandbox/server/Cargo.toml -p server

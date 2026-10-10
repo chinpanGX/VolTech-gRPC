@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using VolTech.Client;
 
-namespace Tests.EditMode.TestDoubles
+namespace Sandbox.Tests.EditMode.TestDoubles
 {
     /// <summary>
     /// 遷移先を記録するナビゲーター。遷移の途中に動かす処理も差し込める。

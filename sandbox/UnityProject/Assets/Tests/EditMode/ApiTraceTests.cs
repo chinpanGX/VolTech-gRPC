@@ -1,8 +1,8 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using App.V1;
+using Sandbox.V1;
 using Cysharp.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
@@ -12,7 +12,7 @@ using UnityEngine.TestTools;
 using VolTech.Client;
 using VolTech.Client.Tracing;
 
-namespace Tests.EditMode
+namespace Sandbox.Tests.EditMode
 {
     /// <summary>
     /// 通信の Viewer のための記録(ApiTraceInterceptor・ApiTraceStore・実機から送る形)を、サーバーなしで確かめる。
@@ -22,7 +22,7 @@ namespace Tests.EditMode
     {
         private ApiTraceStore store;
         private FakeCallInvoker invoker;
-        private GachaService.GachaServiceClient client;
+        private SandboxService.SandboxServiceClient client;
 
         /// <summary>
         /// テストごとに、空の記録の置き場所と、それに記録する偽のサーバーを作る。
@@ -32,7 +32,7 @@ namespace Tests.EditMode
         {
             store = new ApiTraceStore();
             invoker = new FakeCallInvoker();
-            client = new GachaService.GachaServiceClient(invoker.Intercept(new ApiTraceInterceptor(store)));
+            client = new SandboxService.SandboxServiceClient(invoker.Intercept(new ApiTraceInterceptor(store)));
         }
 
         /// <summary>
@@ -43,25 +43,25 @@ namespace Tests.EditMode
         public IEnumerator SuccessIsRecorded() => UniTask.ToCoroutine(async () =>
         {
             invoker.ResponseHeaders.Add("x-game-date", "2026-10-07");
-            invoker.Register<DrawRequest, DrawResponse>(GachaServiceMethods.Draw, (_, _) =>
-                UniTask.FromResult(new DrawResponse { Item = new PlayerItem { ItemId = 3, Count = 1 } }));
+            invoker.Register<IncrementRequest, IncrementResponse>(SandboxServiceMethods.Increment, (_, _) =>
+                UniTask.FromResult(new IncrementResponse { Counter = 3 }));
 
-            var response = await client.DrawAsync(
-                new DrawRequest(),
+            var response = await client.IncrementAsync(
+                new IncrementRequest(),
                 new Metadata { { "authorization", "Bearer token-1" } });
 
-            Assert.That(response.Item.ItemId, Is.EqualTo(3));
+            Assert.That(response.Counter, Is.EqualTo(3));
             var trace = store.Snapshot().Single();
-            Assert.That(trace.Method, Is.EqualTo(GachaServiceMethods.Draw));
-            Assert.That(trace.ShortMethod, Is.EqualTo("Draw"));
+            Assert.That(trace.Method, Is.EqualTo(SandboxServiceMethods.Increment));
+            Assert.That(trace.ShortMethod, Is.EqualTo("Increment"));
             Assert.That(trace.State, Is.EqualTo(ApiTraceState.Succeeded));
             Assert.That(trace.StatusCode, Is.EqualTo("OK"));
             Assert.That(trace.DurationMs, Is.GreaterThanOrEqualTo(0));
             Assert.That(Header(trace.RequestHeaders, "authorization"), Is.EqualTo("Bearer token-1"));
-            // 既定値(free = false)も出すので、送ったことが分かる
-            Assert.That(trace.RequestBody, Does.Contain("\"free\": false"));
+            // 既定値(amount = 0)も出すので、送ったことが分かる。int64 は JSON では文字列になる
+            Assert.That(trace.RequestBody, Does.Contain("\"amount\": \"0\""));
             Assert.That(Header(trace.ResponseHeaders, "x-game-date"), Is.EqualTo("2026-10-07"));
-            Assert.That(trace.ResponseBody, Does.Contain("\"itemId\": 3"));
+            Assert.That(trace.ResponseBody, Does.Contain("\"counter\": \"3\""));
         });
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace Tests.EditMode
         [Description("業務エラーは、ステータスと ErrorInfo(reason・metadata)が記録され、例外は包まずにそのまま呼び出し側に届く")]
         public IEnumerator BusinessErrorIsRecordedWithErrorInfo() => UniTask.ToCoroutine(async () =>
         {
-            invoker.Register<DrawRequest, DrawResponse>(GachaServiceMethods.Draw, (_, _) =>
+            invoker.Register<IncrementRequest, IncrementResponse>(SandboxServiceMethods.Increment, (_, _) =>
                 throw FakeRpcErrors.FailedPrecondition(
                     "ERROR_CODE_MAINTENANCE",
                     "under maintenance",
@@ -80,7 +80,7 @@ namespace Tests.EditMode
             RpcException thrown = null;
             try
             {
-                await client.DrawAsync(new DrawRequest());
+                await client.IncrementAsync(new IncrementRequest());
             }
             catch (RpcException exception)
             {
@@ -106,10 +106,10 @@ namespace Tests.EditMode
         [Description("記録を止めている間は、通信は通るが記録されない")]
         public IEnumerator NotRecordedWhilePaused() => UniTask.ToCoroutine(async () =>
         {
-            invoker.Register<DrawRequest, DrawResponse>(GachaServiceMethods.Draw, (_, _) => UniTask.FromResult(new DrawResponse()));
+            invoker.Register<IncrementRequest, IncrementResponse>(SandboxServiceMethods.Increment, (_, _) => UniTask.FromResult(new IncrementResponse()));
             store.Recording = false;
 
-            await client.DrawAsync(new DrawRequest());
+            await client.IncrementAsync(new IncrementRequest());
 
             Assert.That(store.Snapshot(), Is.Empty);
         });
@@ -121,14 +121,14 @@ namespace Tests.EditMode
         [Description("記録の処理で例外が起きても(記録の置き場所の購読者が投げるなど)、通信は失敗せず、レスポンスがそのまま返る")]
         public IEnumerator RecordingErrorDoesNotFailCall() => UniTask.ToCoroutine(async () =>
         {
-            invoker.Register<DrawRequest, DrawResponse>(GachaServiceMethods.Draw, (_, _) =>
-                UniTask.FromResult(new DrawResponse { Item = new PlayerItem { ItemId = 3, Count = 1 } }));
+            invoker.Register<IncrementRequest, IncrementResponse>(SandboxServiceMethods.Increment, (_, _) =>
+                UniTask.FromResult(new IncrementResponse { Counter = 3 }));
             store.Changed += _ => throw new System.InvalidOperationException("subscriber failed");
             LogAssert.Expect(LogType.Warning, new Regex(@"\[ApiTrace\].*subscriber failed"));
 
-            var response = await client.DrawAsync(new DrawRequest());
+            var response = await client.IncrementAsync(new IncrementRequest());
 
-            Assert.That(response.Item.ItemId, Is.EqualTo(3));
+            Assert.That(response.Counter, Is.EqualTo(3));
         });
 
         /// <summary>
@@ -187,10 +187,10 @@ namespace Tests.EditMode
             var trace = new ApiTrace
             {
                 Id = 7,
-                Method = GachaServiceMethods.Draw,
+                Method = SandboxServiceMethods.Increment,
                 State = ApiTraceState.Failed,
                 RequestHeaders = { new ApiTraceHeader("x-request-id", "abc") },
-                RequestBody = "{ \"free\": true }",
+                RequestBody = "{ \"amount\": \"1\" }",
                 ErrorReason = "ERROR_CODE_FREE_DRAW_USED",
                 ErrorMetadata = { new ApiTraceHeader("action", "ERROR_ACTION_STAY") },
             };
@@ -198,7 +198,7 @@ namespace Tests.EditMode
             var decoded = ApiTraceMessages.Decode(ApiTraceMessages.Encode(trace));
 
             Assert.That(decoded.Id, Is.EqualTo(7));
-            Assert.That(decoded.Method, Is.EqualTo(GachaServiceMethods.Draw));
+            Assert.That(decoded.Method, Is.EqualTo(SandboxServiceMethods.Increment));
             Assert.That(decoded.State, Is.EqualTo(ApiTraceState.Failed));
             Assert.That(Header(decoded.RequestHeaders, "x-request-id"), Is.EqualTo("abc"));
             Assert.That(decoded.RequestBody, Is.EqualTo(trace.RequestBody));

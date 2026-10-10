@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+// 基盤の機能を1つずつ試す RPC だけを置く。業務機能は入れない(アプリとしての確認は samples の役割)。
+package sandbox.v1;
+
+import "sandbox/v1/error_code.proto";
+
+option csharp_namespace = "Sandbox.V1";
+
+service SandboxService {
+  // プレイヤーを作る。作成済みならエラーにせず、作成済みのプレイヤーを返す。
+  // 冪等性の対象の RPC(Increment)でロックする行も、ここで作る。
+  rpc SignUp(SignUpRequest) returns (SignUpResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+
+  // 認証付きの疎通。サーバー時刻・日付のヘッダーと、共通レスポンス項目の形を確かめる。
+  // プレイヤーがまだ作られていなければ FAILED_PRECONDITION + ERROR_CODE_PLAYER_NOT_FOUND を返す。
+  rpc Ping(PingRequest) returns (PingResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+
+  // 指定したエラーコードで失敗する。action によるエラー処理を確かめる。
+  rpc Fail(FailRequest) returns (FailResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+
+  // カウンターに amount を足す。冪等性の対象なので、同じ RequestID で2回呼んでも1回だけ足される。
+  rpc Increment(IncrementRequest) returns (IncrementResponse);
+}
+
+message SignUpRequest {}
+
+message SignUpResponse {
+  // ULID(26文字)
+  string player_id = 1;
+}
+
+message PingRequest {}
+
+message PingResponse {
+  // ULID(26文字)
+  string player_id = 1;
+  // 規約: 共通レスポンス項目。Ping ではカウンターの現在値を返す
+  PlayerDiff player_diff = 2;
+  // 規約: 共通レスポンス項目。Ping ではすべての種類のバッジを返す
+  repeated Badge badges = 3;
+  // 規約: 共通レスポンス項目。Ping では疎通できたことを通知する
+  repeated Notification notifications = 4;
+}
+
+message FailRequest {
+  // 失敗させるエラーコード。ERROR_CODE_UNSPECIFIED なら ERROR_CODE_INTERNAL_ERROR で失敗する
+  ErrorCode code = 1;
+}
+
+message FailResponse {}
+
+message IncrementRequest {
+  // 足す数
+  int64 amount = 1;
+}
+
+message IncrementResponse {
+  // 足した後のカウンター
+  int64 counter = 1;
+  // 規約: 共通レスポンス項目
+  PlayerDiff player_diff = 2;
+}
+
+// プレイヤーのデータの変更(共通レスポンス項目)。値は変化量ではなく変更後の値で持つ。
+message PlayerDiff {
+  // 変更後のカウンター。変わっていなければ無い。
+  optional int64 counter = 1;
+}
+
+enum BadgeType {
+  BADGE_TYPE_UNSPECIFIED = 0;
+  // カウンターが 0 より大きいときに表示する、カウントバッジ
+  BADGE_TYPE_COUNTER = 1;
+}
+
+message Badge {
+  BadgeType type = 1;
+  bool visible = 2;
+  // カウントバッジだけ。通常バッジは0
+  int32 count = 3;
+}
+
+message Notification {
+  oneof event {
+    PingReceived ping_received = 1;
+  }
+}
+
+// サーバーが Ping を受け取った。
+message PingReceived {}

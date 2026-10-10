@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+// 1〜999 は基盤の予約コード、1000 以降を sandbox が足す。消した番号と名前は reserved にする。
+package sandbox.v1;
+
+import "voltech/v1/error_options.proto";
+
+option csharp_namespace = "Sandbox.V1";
+
+enum ErrorCode {
+  ERROR_CODE_UNSPECIFIED = 0;
+  // 1〜999: 基盤の予約コード
+  ERROR_CODE_NETWORK_ERROR = 1 [(voltech.v1.default_action) = ERROR_ACTION_RETRY]; // クライアント専用
+  ERROR_CODE_INTERNAL_ERROR = 2 [(voltech.v1.default_action) = ERROR_ACTION_RETRY];
+  ERROR_CODE_UNKNOWN_ERROR = 3 [(voltech.v1.default_action) = ERROR_ACTION_TITLE]; // クライアント専用
+  ERROR_CODE_MAINTENANCE = 4 [(voltech.v1.default_action) = ERROR_ACTION_TITLE];
+  ERROR_CODE_UPDATE_REQUIRED = 5 [(voltech.v1.default_action) = ERROR_ACTION_UPDATE];
+  ERROR_CODE_ACCOUNT_SUSPENDED = 6 [(voltech.v1.default_action) = ERROR_ACTION_TITLE];
+  ERROR_CODE_DATE_CHANGED = 7 [(voltech.v1.default_action) = ERROR_ACTION_TITLE];
+  ERROR_CODE_CLIENT_ERROR = 8 [(voltech.v1.default_action) = ERROR_ACTION_TITLE]; // クライアント専用
+  // 1000〜: sandbox の業務エラー。action ごとの扱いを確かめるためだけにある
+  // その場に留まるエラー(残高不足などの代わり)
+  ERROR_CODE_SANDBOX_STAY = 1001 [(voltech.v1.default_action) = ERROR_ACTION_STAY];
+  // サインインしたがプレイヤーがまだいない。SignUp で作る
+  ERROR_CODE_PLAYER_NOT_FOUND = 1101 [(voltech.v1.default_action) = ERROR_ACTION_TITLE];
+}

@@ -1,16 +1,16 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Api.Errors;
-using App.V1;
+using Sandbox;
+using Sandbox.V1;
 using Cysharp.Threading.Tasks;
 using NUnit.Framework;
-using Tests.EditMode.TestDoubles;
+using Sandbox.Tests.EditMode.TestDoubles;
 using UnityEngine.TestTools;
 using VolTech.Client;
 
-namespace Tests.EditMode
+namespace Sandbox.Tests.EditMode
 {
     /// <summary>
     /// ApiCore の、サーバーの状態の判定に使うヘッダー(アプリのバージョン・ゲーム内の日付)と、サーバー時刻の同期を、サーバーなしで確かめる。
@@ -24,26 +24,26 @@ namespace Tests.EditMode
         private RecordingErrorHandler errorHandler;
         private TimeSpan elapsed;
         private ApiCore core;
-        private PlayerApi playerApi;
+        private SandboxApi sandboxApi;
 
         /// <summary>
-        /// テストごとに、Windows のバージョン 120 の ApiCore と、成功を返す偽の SignIn を作る。
+        /// テストごとに、Windows のバージョン 120 の ApiCore と、成功を返す偽の Ping を作る。
         /// </summary>
         [SetUp]
         public void SetUp()
         {
             invoker = new FakeCallInvoker();
-            invoker.Register<SignInRequest, SignInResponse>(PlayerServiceMethods.SignIn, (_, _) =>
-                UniTask.FromResult(new SignInResponse { Player = new Player { PlayerId = "player-1" } }));
+            invoker.Register<PingRequest, PingResponse>(SandboxServiceMethods.Ping, (_, _) =>
+                UniTask.FromResult(new PingResponse { PlayerId = "player-1" }));
             errorHandler = new RecordingErrorHandler();
             elapsed = TimeSpan.Zero;
             core = new ApiCore(
                 new ApiCoreOptions(new AppVersion(AppVersion.Windows, 120)),
                 new CountingTokenProvider(),
-                ProtoErrorPolicyProvider.ForAppErrorCodes(),
+                SandboxErrors.CreatePolicyProvider(),
                 errorHandler,
                 serverClock: new ServerClock(() => elapsed));
-            playerApi = new PlayerApi(core, invoker);
+            sandboxApi = new SandboxApi(core, invoker);
         }
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace Tests.EditMode
         [Description("すべてのリクエストに、プラットフォームとバージョンを付ける")]
         public IEnumerator SendsAppVersion() => UniTask.ToCoroutine(async () =>
         {
-            await playerApi.SignInAsync(new SignInRequest());
+            await sandboxApi.PingAsync(new PingRequest());
 
             var call = invoker.Calls.Single();
             Assert.That(call.GetHeader(ApiHeaders.AppPlatform), Is.EqualTo("windows"));
@@ -68,12 +68,12 @@ namespace Tests.EditMode
         public IEnumerator KeepsFirstGameDateOfSession() => UniTask.ToCoroutine(async () =>
         {
             invoker.ResponseHeaders.Add(ApiHeaders.GameDate, "2026-10-06");
-            await playerApi.SignInAsync(new SignInRequest());
+            await sandboxApi.PingAsync(new PingRequest());
 
             invoker.ResponseHeaders.Clear();
             invoker.ResponseHeaders.Add(ApiHeaders.GameDate, "2026-10-07");
-            await playerApi.SignInAsync(new SignInRequest());
-            await playerApi.SignInAsync(new SignInRequest());
+            await sandboxApi.PingAsync(new PingRequest());
+            await sandboxApi.PingAsync(new PingRequest());
 
             Assert.That(invoker.Calls.Select(call => call.GetHeader(ApiHeaders.GameDate)),
                 Is.EqualTo(new[] { null, "2026-10-06", "2026-10-06" }));
@@ -87,10 +87,10 @@ namespace Tests.EditMode
         public IEnumerator ResetSessionForgetsGameDate() => UniTask.ToCoroutine(async () =>
         {
             invoker.ResponseHeaders.Add(ApiHeaders.GameDate, "2026-10-06");
-            await playerApi.SignInAsync(new SignInRequest());
+            await sandboxApi.PingAsync(new PingRequest());
 
             core.ResetSession();
-            await playerApi.SignInAsync(new SignInRequest());
+            await sandboxApi.PingAsync(new PingRequest());
 
             Assert.That(invoker.Calls.Last().GetHeader(ApiHeaders.GameDate), Is.Null);
         });
@@ -103,16 +103,16 @@ namespace Tests.EditMode
         public IEnumerator DateChangedReturnToTitleForgetsGameDate() => UniTask.ToCoroutine(async () =>
         {
             invoker.ResponseHeaders.Add(ApiHeaders.GameDate, "2026-10-06");
-            await playerApi.SignInAsync(new SignInRequest());
+            await sandboxApi.PingAsync(new PingRequest());
 
-            invoker.Register<SignInRequest, SignInResponse>(PlayerServiceMethods.SignIn, (_, _) =>
+            invoker.Register<PingRequest, PingResponse>(SandboxServiceMethods.Ping, (_, _) =>
                 throw FakeRpcErrors.FailedPrecondition("ERROR_CODE_DATE_CHANGED"));
             errorHandler.ThenReturn(ErrorDecision.ReturnToTitle);
-            var changed = await playerApi.SignInAsync(new SignInRequest());
+            var changed = await sandboxApi.PingAsync(new PingRequest());
             Assert.That(changed.Error.Code, Is.EqualTo((int)ErrorCode.DateChanged));
             Assert.That(changed.Error.Action, Is.EqualTo(ErrorAction.Title));
 
-            await playerApi.SignInAsync(new SignInRequest());
+            await sandboxApi.PingAsync(new PingRequest());
             Assert.That(invoker.Calls.Last().GetHeader(ApiHeaders.GameDate), Is.Null);
         });
 
@@ -126,7 +126,7 @@ namespace Tests.EditMode
             Assert.That(core.ServerClock.IsSynchronized, Is.False);
 
             invoker.ResponseHeaders.Add(ApiHeaders.ServerTime, serverTime.ToUnixTimeMilliseconds().ToString());
-            await playerApi.SignInAsync(new SignInRequest());
+            await sandboxApi.PingAsync(new PingRequest());
             elapsed = TimeSpan.FromSeconds(5);
 
             Assert.That(core.ServerClock.IsSynchronized, Is.True);
@@ -140,15 +140,15 @@ namespace Tests.EditMode
         [Description("MAINTENANCE の終了予定(ErrorInfo.metadata の end_at)を ApiError.Metadata で読める。metadata が無いエラーでは空")]
         public IEnumerator ErrorMetadataIsReadable() => UniTask.ToCoroutine(async () =>
         {
-            invoker.Register<SignInRequest, SignInResponse>(PlayerServiceMethods.SignIn, (_, _) =>
+            invoker.Register<PingRequest, PingResponse>(SandboxServiceMethods.Ping, (_, _) =>
                 throw FakeRpcErrors.FailedPrecondition(
                     "ERROR_CODE_MAINTENANCE",
                     metadata: new Dictionary<string, string> { ["end_at"] = "2026-10-06T06:00:00Z" }));
-            var maintenance = await playerApi.SignInAsync(new SignInRequest());
+            var maintenance = await sandboxApi.PingAsync(new PingRequest());
 
-            invoker.Register<SignInRequest, SignInResponse>(PlayerServiceMethods.SignIn, (_, _) =>
+            invoker.Register<PingRequest, PingResponse>(SandboxServiceMethods.Ping, (_, _) =>
                 throw FakeRpcErrors.FailedPrecondition("ERROR_CODE_UPDATE_REQUIRED"));
-            var updateRequired = await playerApi.SignInAsync(new SignInRequest());
+            var updateRequired = await sandboxApi.PingAsync(new PingRequest());
 
             Assert.That(maintenance.Error.Metadata["end_at"], Is.EqualTo("2026-10-06T06:00:00Z"));
             Assert.That(updateRequired.Error.Metadata, Is.Empty);

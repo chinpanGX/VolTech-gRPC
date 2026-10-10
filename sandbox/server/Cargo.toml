@@ -1,0 +1,36 @@
+# sandbox のサーバー。基盤(server/rust)とは別のワークスペースにし、基盤のクレートを path で参照する。
+# アプリが基盤を使うときと同じ形になり、基盤の依存に sandbox が混ざらない。
+[workspace]
+resolver = "3"
+members = ["proto", "server"]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2024"
+publish = false          # sandbox は公開しない
+
+[workspace.dependencies]
+voltech-grpc-auth = { path = "../../server/rust/auth" }
+voltech-grpc-error = { path = "../../server/rust/error" }
+voltech-grpc-status = { path = "../../server/rust/status" }
+voltech-grpc-transaction = { path = "../../server/rust/transaction" }
+
+proto = { path = "proto" }
+
+# 外部クレートの版は server/rust/Cargo.toml に合わせる
+dotenvy = "0.15"
+prost = "0.14"
+protox = "0.9"
+sqlx = { version = "0.9", default-features = false, features = ["runtime-tokio", "mysql", "mysql-rsa", "migrate", "macros"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal"] }
+tokio-stream = { version = "0.1", features = ["net"] }
+tonic = "0.14"
+tonic-prost = "0.14"
+tonic-prost-build = "0.14"
+tonic-reflection = "0.14"
+tonic-types = "0.14"
+tower = "0.5"
+tower-http = { version = "0.7", features = ["trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+ulid = "3"

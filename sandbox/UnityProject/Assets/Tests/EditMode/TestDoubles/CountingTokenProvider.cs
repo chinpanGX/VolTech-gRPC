@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using Cysharp.Threading.Tasks;
 using VolTech.Client;
 
-namespace Tests.EditMode.TestDoubles
+namespace Sandbox.Tests.EditMode.TestDoubles
 {
     /// <summary>
     /// 発行し直すたびに token-1、token-2 … と番号を上げたトークンを返す ITokenProvider。

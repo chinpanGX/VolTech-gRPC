@@ -3,7 +3,7 @@ version: v2
 modules:
   - path: server/rust/auth/proto
   - path: server/rust/error/proto
-  # - path: sandbox/proto          # Phase 6 で .proto を作ってから、行頭の # を外す
+  - path: sandbox/proto
 lint:
   use:
     - STANDARD

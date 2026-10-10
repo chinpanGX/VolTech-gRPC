@@ -1,21 +1,17 @@
-﻿using System;
+using System;
 using System.Net.Sockets;
-using VolTech.Client.Auth;
-using Api.Badges;
-using Api.Errors;
-using Api.Notifications;
-using Api.Repositories;
-using VolTech.Client.Unity;
 using Grpc.Core;
 using Grpc.Net.Client;
 using NUnit.Framework;
-using Tests.EditMode.TestDoubles;
+using Sandbox.Tests.EditMode.TestDoubles;
 using VolTech.Client;
+using VolTech.Client.Auth;
+using VolTech.Client.Unity;
 
-namespace Tests.EditMode
+namespace Sandbox.Tests.EditMode
 {
     /// <summary>
-    /// 起動しているサーバー(make run)に、ApiCore を通してつなぐテストの土台。テストごとに新しい端末の ApiCore を作る。
+    /// 起動している sandbox のサーバー(make sandbox-server)に、ApiCore を通してつなぐテストの土台。テストごとに新しい端末の ApiCore を作る。
     /// </summary>
     public abstract class ApiServerTestBase
     {
@@ -36,14 +32,11 @@ namespace Tests.EditMode
         /// <summary>受け取ったエラーを記録するエラーハンドラー。何も足さなければ Stay を返す。</summary>
         protected RecordingErrorHandler ErrorHandler { get; private set; }
 
-        /// <summary>ApiCore が player_diff を反映する、プレイヤーのデータ。</summary>
-        protected PlayerRepository PlayerRepository { get; private set; }
+        /// <summary>ApiCore が共通レスポンス項目(player_diff・badges・notifications)を反映する先。</summary>
+        protected SandboxState State { get; private set; }
 
-        /// <summary>ApiCore が badges を反映する、バッジの状態。</summary>
-        protected BadgeStore BadgeStore { get; private set; }
-
-        /// <summary>ApiCore が notifications を積む、通知の待ち行列。</summary>
-        protected NotificationQueue NotificationQueue { get; private set; }
+        /// <summary>ApiCore に渡したトークンの取得(デバイス登録とトークンの発行をする)。</summary>
+        protected DeviceTokenProvider TokenProvider { get; private set; }
 
         /// <summary>テストごとに作る ApiCore。</summary>
         protected ApiCore Core { get; private set; }
@@ -69,7 +62,7 @@ namespace Tests.EditMode
 
                 if (!connected)
                 {
-                    Assert.Fail($"サーバー({ServerHost}:{ServerPort})に接続できない。リポジトリのルートで make run を実行して、サーバーを起動してから実行する");
+                    Assert.Fail($"サーバー({ServerHost}:{ServerPort})に接続できない。リポジトリのルートで make sandbox-server を実行して、サーバーを起動してから実行する");
                 }
             }
         }
@@ -85,24 +78,22 @@ namespace Tests.EditMode
             // 通信の Viewer に記録されるので、テストが失敗したときにやり取りを見返せる
             CallInvoker = ApiChannel.CreateCallInvoker(channel);
 
-            // リポジトリの server_status.toml の最低バージョン(0)より新しいバージョンとして送る
+            // sandbox の server_status.toml の最低バージョン(0)より新しいバージョンとして送る
             var options = new ApiCoreOptions(new AppVersion(AppVersion.Windows, 1));
             AccountStore = new InMemoryAccountStore();
             ErrorHandler = new RecordingErrorHandler();
-            PlayerRepository = new PlayerRepository();
-            BadgeStore = new BadgeStore();
-            NotificationQueue = new NotificationQueue();
-            var tokenProvider = new DeviceTokenProvider(CallInvoker, AccountStore, options);
+            State = new SandboxState();
+            TokenProvider = new DeviceTokenProvider(CallInvoker, AccountStore, options);
             Core = new ApiCore(
                 options,
-                tokenProvider,
-                ProtoErrorPolicyProvider.ForAppErrorCodes(),
+                TokenProvider,
+                SandboxErrors.CreatePolicyProvider(),
                 ErrorHandler,
-                new PlayerDiffApplier(PlayerRepository),
+                new PlayerDiffApplier(State),
                 // 何をやり取りしたかを Console で見られるようにする
                 new UnityApiLogger(),
-                badgeApplier: new BadgeApplier(BadgeStore),
-                notificationApplier: new NotificationApplier(NotificationQueue));
+                badgeApplier: new BadgeApplier(State),
+                notificationApplier: new NotificationApplier(State));
         }
 
         /// <summary>

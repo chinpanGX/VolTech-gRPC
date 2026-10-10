@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using VolTech.Client;
 
-namespace Tests.EditMode.TestDoubles
+namespace Sandbox.Tests.EditMode.TestDoubles
 {
     /// <summary>
     /// 受け取ったエラーを記録し、決めておいた動きを返すエラーハンドラー。

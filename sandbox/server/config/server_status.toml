@@ -1,0 +1,13 @@
+# サーバーの状態(設計書 4.6)。サーバーが数秒おきに読み直す。
+[maintenance]
+enabled = false
+# end_at = "2026-10-01T15:00:00+09:00"   # ダイアログに出す終了予定(省略可)
+
+[min_version]   # プラットフォームごとの最低バージョン(リリースのたびに増やす整数。エディタは判定しない)
+ios = 0
+android = 0
+windows = 0
+
+[game_day]
+reset_hour = 4            # ゲーム内の日付が変わる時刻
+timezone = "Asia/Tokyo"

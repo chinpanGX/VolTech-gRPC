@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Google.Protobuf;
 using VolTech.Client;
 
-namespace Tests.EditMode.TestDoubles
+namespace Sandbox.Tests.EditMode.TestDoubles
 {
     /// <summary>
     /// 渡されたレスポンスを記録する反映処理(player_diff・badges・notifications のどれにも使える)。例外を投げさせることもできる。

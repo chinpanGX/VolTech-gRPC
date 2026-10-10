@@ -1,0 +1,36 @@
+{
+    "name": "Sandbox.Tests.EditMode",
+    "rootNamespace": "Sandbox.Tests.EditMode",
+    "references": [
+        "GUID:27619889b8ba8c24980f49ee34dbb44a",
+        "GUID:0acc523941302664db1f4e527237feb3",
+        "GUID:a2bb72b22f122374c9fcd20dd5be0031",
+        "GUID:5a7785fbb9a243cca8e0d10a345c877a",
+        "GUID:fd31ca8c7d8146fea6344899b61f3d0b",
+        "GUID:dd27f16320cc3de4bad3b91bdbc1d1bf",
+        "GUID:db1877e4d7c645bd9be5ade16ab70fb8",
+        "GUID:7ad25d9de43a45bb961662586f818040",
+        "GUID:c679a82a667546e088f699c8fa8d646b",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:c3bc0afe4a069b54aa23296f3c18a871"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll",
+        "Google.Protobuf.dll",
+        "Google.Api.CommonProtos.dll",
+        "Grpc.Core.Api.dll",
+        "Grpc.Net.Client.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
