@@ -45,7 +45,7 @@ public class GeneratorTests
         var player = Content(Generate("", appFiles, "app/v1/player.proto"), "App/V1/PlayerApi.cs");
 
         // ApiCore などクライアントの基盤の型を使うので、その名前空間を読み込む
-        Assert.Contains("using VolTech.Grpc.Client;", player);
+        Assert.Contains("using VolTech.Client;", player);
         Assert.Contains("public const string SignIn = \"/app.v1.PlayerService/SignIn\";", player);
         Assert.Contains("public sealed class PlayerApi", player);
         Assert.Contains("public UniTask<ApiResult<global::App.V1.SignInResponse>> SignInAsync(", player);

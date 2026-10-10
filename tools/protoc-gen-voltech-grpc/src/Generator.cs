@@ -77,7 +77,7 @@ internal static class Generator
             .Line("using System.Linq;")
             .Line("using Cysharp.Threading.Tasks;")
             .Line("using Grpc.Core;")
-            .Line("using VolTech.Grpc.Client;")
+            .Line("using VolTech.Client;")
             .Line();
 
         using (writer.Block($"namespace {CSharpNames.Namespace(file)}"))
