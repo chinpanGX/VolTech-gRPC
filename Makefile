@@ -79,7 +79,9 @@ lint: ## Clippy(警告はエラー扱い)
 client-fmt: ## dotnet format でクライアントを直す
 	dotnet format $(UNITY_SLN) --severity warn
 
-client-lint: ## クライアントの書き方の違反を確認
+# .sln は Unity が sandbox/UnityProject を開いたときに作る(コミットしない)ので、無ければ理由を出して止める
+client-lint: ## クライアントの書き方の違反を確認(Unity で sandbox/UnityProject を一度開いて .sln を作っておく)
+	@test -f $(UNITY_SLN) || { echo "$(UNITY_SLN) not found. Open sandbox/UnityProject in Unity once to generate it."; exit 1; }
 	dotnet format $(UNITY_SLN) --severity warn --verify-no-changes
 
 test-rust: db-up ## Rust のテスト(MySQL を使う)
@@ -100,8 +102,8 @@ deps-check: ## 一緒に上げないと壊れる依存の組み合わせを確�
 deps-outdated: ## 依存の新しい版を各レジストリに問い合わせる
 	python scripts/deps.py outdated
 
-# TODO: Unity の EditMode テスト(クライアントの本体を含む)を足す
-test: test-rust plugin-test wiki-lint deps-check ## プッシュ前のテスト一式
+# TODO: Unity の EditMode テスト(クライアントの本体を含む)を足す。client-lint は書き方だけを確かめる
+test: test-rust plugin-test client-lint wiki-lint deps-check ## プッシュ前のテスト一式
 
 sandbox-server: db-up ## sandbox のサーバーを起動(.env を読む。DB は voltech_sandbox)
 	cargo run --manifest-path sandbox/server/Cargo.toml -p server

@@ -62,7 +62,7 @@ make sandbox-proto-gen   # sandbox の .proto → sandbox/UnityProject/Assets/Ge
 | コマンド | 内容 |
 |---|---|
 | `make sandbox-server` | MySQL を起動し、sandbox のサーバーを起動する(`.env` を読む。DB は `voltech_sandbox`) |
-| `make test` | プッシュ前のテスト一式(基盤と sandbox のクレートのテスト(MySQL を使う)・プラグインのテスト・wiki の確認・依存の組み合わせの確認) |
+| `make test` | プッシュ前のテスト一式(基盤と sandbox のクレートのテスト(MySQL を使う)・プラグインのテスト・クライアントの書き方の確認(`make client-lint`)・wiki の確認・依存の組み合わせの確認)。`make client-lint` は Unity が作る `sandbox/UnityProject/UnityProject.sln` を使うので、Unity で一度 `sandbox/UnityProject` を開いておく。Windows では、`make sandbox-server` を動かしたままだと `server.exe` を上書きできずに失敗するので、止めてから流す |
 | `make fmt` / `make lint` | rustfmt / Clippy(基盤と sandbox の両方) |
 | `make proto-gen` / `make sandbox-proto-gen` | `.proto` から C# を生成する |
 | `make proto-plugin` / `make plugin-test` | protoc プラグインをビルドして `.tools/voltech-grpc` に入れる / プラグインの単体テスト |
