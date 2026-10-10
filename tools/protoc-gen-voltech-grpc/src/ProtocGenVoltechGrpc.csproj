@@ -14,8 +14,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Unity の Packages/manifest.json の org.nuget.google.protobuf と同じにする -->
-    <PackageReference Include="Google.Protobuf" Version="3.36.2" />
+    <!-- Unity のパッケージ(package.json)の org.nuget.google.protobuf と同じにする(make deps-check が確かめる) -->
+    <PackageReference Include="Google.Protobuf" Version="3.31.1" />
   </ItemGroup>
 
   <ItemGroup>
