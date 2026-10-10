@@ -3,8 +3,6 @@ syntax = "proto3";
 // 基盤の機能を1つずつ試す RPC だけを置く。業務機能は入れない(アプリとしての確認は samples の役割)。
 package sandbox.v1;
 
-import "sandbox/v1/error_code.proto";
-
 option csharp_namespace = "Sandbox.V1";
 
 service SandboxService {
@@ -15,12 +13,12 @@ service SandboxService {
   }
 
   // 認証付きの疎通。サーバー時刻・日付のヘッダーと、共通レスポンス項目の形を確かめる。
-  // プレイヤーがまだ作られていなければ FAILED_PRECONDITION + ERROR_CODE_PLAYER_NOT_FOUND を返す。
+  // プレイヤーがまだ作られていなければ FAILED_PRECONDITION + PLAYER_NOT_FOUND を返す。
   rpc Ping(PingRequest) returns (PingResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
 
-  // 指定したエラーコードで失敗する。action によるエラー処理を確かめる。
+  // 指定したエラーコード(sandbox の業務エラーか基盤の予約エラー)で失敗する。action によるエラー処理を確かめる。
   rpc Fail(FailRequest) returns (FailResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }
@@ -50,8 +48,10 @@ message PingResponse {
 }
 
 message FailRequest {
-  // 失敗させるエラーコード。ERROR_CODE_UNSPECIFIED なら ERROR_CODE_INTERNAL_ERROR で失敗する
-  ErrorCode code = 1;
+  // 失敗させるエラーコードの domain(sandbox か voltech)
+  string domain = 1;
+  // 失敗させるエラーコードの reason。空なら INTERNAL_ERROR(voltech)で失敗する。知らないコードなら INVALID_ARGUMENT
+  string reason = 2;
 }
 
 message FailResponse {}

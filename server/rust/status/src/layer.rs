@@ -104,7 +104,7 @@ fn check(config: &StatusConfig, headers: &HeaderMap) -> Result<(), Status> {
         && version < min_version
     {
         return Err(failed_precondition(
-            voltech_grpc_error::code::UPDATE_REQUIRED,
+            voltech_grpc_error::reserved::UPDATE_REQUIRED,
             "update required",
         ));
     }
@@ -115,7 +115,7 @@ fn check(config: &StatusConfig, headers: &HeaderMap) -> Result<(), Status> {
             metadata.insert(MAINTENANCE_END_AT_KEY.to_owned(), end_at.to_string());
         }
         return Err(failed_precondition_with_metadata(
-            voltech_grpc_error::code::MAINTENANCE,
+            voltech_grpc_error::reserved::MAINTENANCE,
             "under maintenance",
             metadata,
         ));
@@ -205,8 +205,10 @@ where
         if let Some(requested) = requested
             && requested != today.to_string()
         {
-            let error =
-                failed_precondition(voltech_grpc_error::code::DATE_CHANGED, "game date changed");
+            let error = failed_precondition(
+                voltech_grpc_error::reserved::DATE_CHANGED,
+                "game date changed",
+            );
             return Box::pin(async move { Ok(error.into_http()) });
         }
 

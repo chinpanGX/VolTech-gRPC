@@ -52,10 +52,10 @@ namespace VolTech.Client.Tracing
         /// <summary>ステータスの detail(サーバーのメッセージ)。</summary>
         public string StatusDetail;
 
-        /// <summary>ErrorInfo.reason(例: ERROR_CODE_INSUFFICIENT_GEMS)。無ければ空。</summary>
+        /// <summary>ErrorInfo.reason(例: INSUFFICIENT_GEMS)。無ければ空。</summary>
         public string ErrorReason;
 
-        /// <summary>ErrorInfo.domain。</summary>
+        /// <summary>ErrorInfo.domain(例: voltech)。</summary>
         public string ErrorDomain;
 
         /// <summary>ErrorInfo.metadata。</summary>

@@ -2,7 +2,6 @@
 //     protoc-gen-voltech-grpc が sandbox/v1/sandbox.proto から生成した。手で編集しない。
 // </auto-generated>
 using System.Collections.Generic;
-using System.Linq;
 using Cysharp.Threading.Tasks;
 using Grpc.Core;
 using VolTech.Client;
@@ -48,44 +47,44 @@ namespace Sandbox.V1
         /// </summary>
         public UniTask<ApiResult<global::Sandbox.V1.SignUpResponse>> SignUpAsync(
             global::Sandbox.V1.SignUpRequest request,
-            IReadOnlyList<global::Sandbox.V1.ErrorCode> handledCodes = null)
+            IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null)
         {
             return core.InvokeAsync(
                 signUpSettings,
                 client,
                 request,
-                handledCodes?.Select(code => (int)code),
+                handledCodes,
                 static (c, r, options) => c.SignUpAsync(r, options));
         }
 
         /// <summary>
         /// 認証付きの疎通。サーバー時刻・日付のヘッダーと、共通レスポンス項目の形を確かめる。
-        /// プレイヤーがまだ作られていなければ FAILED_PRECONDITION + ERROR_CODE_PLAYER_NOT_FOUND を返す。
+        /// プレイヤーがまだ作られていなければ FAILED_PRECONDITION + PLAYER_NOT_FOUND を返す。
         /// </summary>
         public UniTask<ApiResult<global::Sandbox.V1.PingResponse>> PingAsync(
             global::Sandbox.V1.PingRequest request,
-            IReadOnlyList<global::Sandbox.V1.ErrorCode> handledCodes = null)
+            IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null)
         {
             return core.InvokeAsync(
                 pingSettings,
                 client,
                 request,
-                handledCodes?.Select(code => (int)code),
+                handledCodes,
                 static (c, r, options) => c.PingAsync(r, options));
         }
 
         /// <summary>
-        /// 指定したエラーコードで失敗する。action によるエラー処理を確かめる。
+        /// 指定したエラーコード(sandbox の業務エラーか基盤の予約エラー)で失敗する。action によるエラー処理を確かめる。
         /// </summary>
         public UniTask<ApiResult<global::Sandbox.V1.FailResponse>> FailAsync(
             global::Sandbox.V1.FailRequest request,
-            IReadOnlyList<global::Sandbox.V1.ErrorCode> handledCodes = null)
+            IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null)
         {
             return core.InvokeAsync(
                 failSettings,
                 client,
                 request,
-                handledCodes?.Select(code => (int)code),
+                handledCodes,
                 static (c, r, options) => c.FailAsync(r, options));
         }
 
@@ -94,13 +93,13 @@ namespace Sandbox.V1
         /// </summary>
         public UniTask<ApiResult<global::Sandbox.V1.IncrementResponse>> IncrementAsync(
             global::Sandbox.V1.IncrementRequest request,
-            IReadOnlyList<global::Sandbox.V1.ErrorCode> handledCodes = null)
+            IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null)
         {
             return core.InvokeAsync(
                 incrementSettings,
                 client,
                 request,
-                handledCodes?.Select(code => (int)code),
+                handledCodes,
                 static (c, r, options) => c.IncrementAsync(r, options));
         }
     }

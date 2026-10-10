@@ -1,9 +1,9 @@
 //! 起動したサーバーに gRPC でつなぎ、基盤の機能(認証・エラー・冪等性)が sandbox から使えることを確かめる。
 
+use proto::errors;
 use proto::sandbox::v1::sandbox_service_client::SandboxServiceClient;
 use proto::sandbox::v1::{
-    BadgeType, ErrorCode, FailRequest, IncrementRequest, IncrementResponse, PingRequest,
-    SignUpRequest,
+    BadgeType, FailRequest, IncrementRequest, IncrementResponse, PingRequest, SignUpRequest,
 };
 use tokio::net::TcpListener;
 use tonic::transport::Channel;
@@ -12,6 +12,7 @@ use tonic_types::StatusExt;
 use ulid::Ulid;
 use voltech_grpc_auth::proto::voltech::v1::device_service_client::DeviceServiceClient;
 use voltech_grpc_auth::proto::voltech::v1::{IssueTokenRequest, RegisterRequest};
+use voltech_grpc_error::{ErrorCode, reserved};
 use voltech_grpc_status::{FileStatusSource, ServerStatus, StatusSource};
 
 const DEFAULT_DATABASE_URL: &str = "mysql://app:app@localhost:13306/voltech_sandbox";
@@ -106,10 +107,9 @@ async fn ping_after_sign_up_returns_common_response_fields() {
         .await
         .unwrap_err();
     assert_eq!(status.code(), Code::FailedPrecondition);
-    assert_eq!(
-        status.get_details_error_info().unwrap().reason,
-        ErrorCode::PlayerNotFound.as_str_name()
-    );
+    let info = status.get_details_error_info().unwrap();
+    assert_eq!(info.domain, errors::DOMAIN);
+    assert_eq!(info.reason, errors::PLAYER_NOT_FOUND.reason());
 
     client
         .sign_up(request(SignUpRequest {}, &token, None))
@@ -130,7 +130,7 @@ async fn ping_after_sign_up_returns_common_response_fields() {
     assert_eq!(ping.notifications.len(), 1);
 }
 
-/// Fail は指定したエラーコードの FAILED_PRECONDITION で失敗する。指定が無ければ INTERNAL_ERROR。
+/// Fail は指定したエラーコードの FAILED_PRECONDITION で失敗する。指定が無ければ INTERNAL_ERROR、知らないコードなら INVALID_ARGUMENT。
 #[tokio::test]
 async fn fail_returns_requested_error_code() {
     let channel = start().await;
@@ -138,25 +138,36 @@ async fn fail_returns_requested_error_code() {
     let mut client = SandboxServiceClient::new(channel);
 
     for (requested, expected) in [
-        (ErrorCode::SandboxStay, ErrorCode::SandboxStay),
-        (ErrorCode::Maintenance, ErrorCode::Maintenance),
-        (ErrorCode::Unspecified, ErrorCode::InternalError),
+        (errors::SANDBOX_STAY, errors::SANDBOX_STAY),
+        (reserved::MAINTENANCE, reserved::MAINTENANCE),
+        (ErrorCode::new("", ""), reserved::INTERNAL_ERROR),
     ] {
         let status = client
-            .fail(request(
-                FailRequest {
-                    code: requested.into(),
-                },
-                &token,
-                None,
-            ))
+            .fail(request(fail_request(requested), &token, None))
             .await
             .unwrap_err();
         assert_eq!(status.code(), Code::FailedPrecondition);
-        assert_eq!(
-            status.get_details_error_info().unwrap().reason,
-            expected.as_str_name()
-        );
+        let info = status.get_details_error_info().unwrap();
+        assert_eq!(info.domain, expected.domain());
+        assert_eq!(info.reason, expected.reason());
+    }
+
+    // 基盤の予約エラーの reason でも、domain が違えば別のエラー
+    let status = client
+        .fail(request(
+            fail_request(ErrorCode::new(errors::DOMAIN, "MAINTENANCE")),
+            &token,
+            None,
+        ))
+        .await
+        .unwrap_err();
+    assert_eq!(status.code(), Code::InvalidArgument);
+}
+
+fn fail_request(code: ErrorCode) -> FailRequest {
+    FailRequest {
+        domain: code.domain().to_owned(),
+        reason: code.reason().to_owned(),
     }
 }
 

@@ -6,7 +6,6 @@ namespace ProtocGenVoltechGrpc;
 /// <remarks>
 /// - package=app.v1: 生成する .proto のパッケージ。複数書ける。書かなければ全部を生成する。
 ///   基盤のデバイス登録(voltech.v1)は Auth が直接呼ぶので、ラッパーを作らないように絞る
-/// - error_code=app.v1.ErrorCode: handledCodes に使う enum の完全名。書かなければ、名前が ErrorCode の enum を探す
 /// </remarks>
 internal sealed class GeneratorParameters
 {
@@ -15,9 +14,6 @@ internal sealed class GeneratorParameters
     private GeneratorParameters()
     {
     }
-
-    /// <summary>handledCodes に使う enum の完全名。指定が無ければ null。</summary>
-    public string? ErrorCode { get; private set; }
 
     public static GeneratorParameters Parse(string parameter)
     {
@@ -37,11 +33,8 @@ internal sealed class GeneratorParameters
                 case "package":
                     result.packages.Add(value);
                     break;
-                case "error_code":
-                    result.ErrorCode = value;
-                    break;
                 default:
-                    throw new GeneratorException($"知らないオプション: {key}(使えるのは package・error_code)");
+                    throw new GeneratorException($"知らないオプション: {key}(使えるのは package)");
             }
         }
 

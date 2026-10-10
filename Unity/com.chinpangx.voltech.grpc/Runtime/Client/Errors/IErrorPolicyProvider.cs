@@ -1,23 +1,18 @@
-﻿namespace VolTech.Client
+namespace VolTech.Client
 {
     /// <summary>
-    /// エラーコードの名前と番号の対応と、既定の action を渡す。アプリの error_code.proto から作る。
+    /// アプリが知っているエラーコードと、その既定の action を渡す。基盤の ErrorPolicyProvider が実装する。
     /// </summary>
     public interface IErrorPolicyProvider
     {
         /// <summary>
-        /// ErrorInfo.reason(エラーコードの名前)を番号に変える。知らない名前なら false を返す。
+        /// 知っているエラーコードかを返す。知らないコードは UNKNOWN_ERROR として扱う。
         /// </summary>
-        public bool TryGetCode(string codeName, out int code);
+        public bool IsKnown(ErrorCode code);
 
         /// <summary>
-        /// エラーコードの番号から名前を返す。知らない番号なら番号をそのまま文字列にする。
+        /// エラーコードの既定の action を返す。知らないコードは Title。
         /// </summary>
-        public string GetName(int code);
-
-        /// <summary>
-        /// エラーコードの既定の action を返す。付いていないコードは Title。
-        /// </summary>
-        public ErrorAction GetDefaultAction(int code);
+        public ErrorAction GetDefaultAction(ErrorCode code);
     }
 }

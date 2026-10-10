@@ -34,8 +34,8 @@ namespace Sandbox.Tests.EditMode
         [Description("デバイス登録とトークンの発行が自動で行われ、サインアップ後の Ping で共通レスポンス項目が反映され、サーバー時刻を受け取る")]
         public IEnumerator RegisterSignUpAndPing() => UniTask.ToCoroutine(async () =>
         {
-            var notFound = await sandboxApi.PingAsync(new PingRequest(), new[] { ErrorCode.PlayerNotFound });
-            Assert.That(notFound.Error.Code, Is.EqualTo((int)ErrorCode.PlayerNotFound));
+            var notFound = await sandboxApi.PingAsync(new PingRequest(), new[] { SandboxErrors.PlayerNotFound });
+            Assert.That(notFound.Error.Code, Is.EqualTo(SandboxErrors.PlayerNotFound));
             var saved = await AccountStore.LoadAsync();
             Assert.That(saved.DeviceId, Has.Length.EqualTo(26));
             Assert.That(saved.PlayerId, Has.Length.EqualTo(26), "デバイス登録で player_id が保存されていない");
@@ -57,25 +57,30 @@ namespace Sandbox.Tests.EditMode
         });
 
         /// <summary>
-        /// Fail は指定したエラーコードで失敗し、error_code.proto の既定の action が付く。handledCodes に入れなければエラーハンドラーに渡る。
+        /// Fail は指定したエラーコードで失敗し、errors.toml の既定の action が付く。handledCodes に入れなければエラーハンドラーに渡る。
         /// </summary>
         [UnityTest]
-        [Description("Fail は指定したエラーコードで失敗し、error_code.proto の既定の action が付く")]
+        [Description("Fail は指定したエラーコードで失敗し、errors.toml の既定の action が付く")]
         public IEnumerator FailReturnsCodeAndDefaultAction() => UniTask.ToCoroutine(async () =>
         {
             var handled = await sandboxApi.FailAsync(
-                new FailRequest { Code = ErrorCode.SandboxStay },
-                new[] { ErrorCode.SandboxStay });
+                Fail(SandboxErrors.SandboxStay),
+                new[] { SandboxErrors.SandboxStay });
             Assert.That(handled.IsSuccess, Is.False);
-            Assert.That(handled.Error.Code, Is.EqualTo((int)ErrorCode.SandboxStay));
+            Assert.That(handled.Error.Code, Is.EqualTo(SandboxErrors.SandboxStay));
             Assert.That(handled.Error.Action, Is.EqualTo(ErrorAction.Stay));
             Assert.That(ErrorHandler.Errors, Is.Empty);
 
-            var maintenance = await sandboxApi.FailAsync(new FailRequest { Code = ErrorCode.Maintenance });
-            Assert.That(maintenance.Error.Code, Is.EqualTo((int)ErrorCode.Maintenance));
+            var maintenance = await sandboxApi.FailAsync(Fail(ReservedErrors.Maintenance));
+            Assert.That(maintenance.Error.Code, Is.EqualTo(ReservedErrors.Maintenance));
             Assert.That(maintenance.Error.Action, Is.EqualTo(ErrorAction.Title));
             Assert.That(ErrorHandler.Errors, Has.Count.EqualTo(1));
         });
+
+        private static FailRequest Fail(ErrorCode code)
+        {
+            return new FailRequest { Domain = code.Domain, Reason = code.Reason };
+        }
 
         /// <summary>
         /// Increment を同じ RequestID で2回送ると、2回目は保存済みのレスポンスが返り、カウンターは1回分だけ増える。

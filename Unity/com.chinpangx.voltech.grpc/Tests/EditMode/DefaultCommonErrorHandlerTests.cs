@@ -36,7 +36,7 @@ namespace VolTech.Client.Tests.EditMode
                 var dialog = new ScriptedDialog(pressed);
                 var handler = new DefaultCommonErrorHandler(dialog);
 
-                var result = await handler.HandleAsync(new ApiError(1, "TEST", action, StatusCode.Unknown, ""));
+                var result = await handler.HandleAsync(new ApiError(new ErrorCode("test", "TEST"), action, StatusCode.Unknown, ""));
 
                 var label = $"{action} / {pressed}";
                 Assert.That(dialog.ShownButtons, Is.EqualTo(new[] { buttons }), label);

@@ -58,7 +58,7 @@ jobs:
       # 生成したコードはコミットしているので、生成し直して差分が出ないことを確かめる
       - name: codegen is up to date
         run: |
-          make proto-gen sandbox-proto-gen
+          make proto-gen sandbox-proto-gen errors-gen sandbox-errors-gen
           git diff --exit-code
 
   wiki:

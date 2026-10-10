@@ -11,18 +11,16 @@ namespace VolTech.Client
     /// </summary>
     public static class FakeRpcErrors
     {
-        private const string ErrorDomain = "framework";
-
         /// <summary>
-        /// 業務エラー(FAILED_PRECONDITION + ErrorInfo)を作る。codeName はエラーコードの名前(例: ERROR_CODE_PLAYER_NOT_FOUND)。
+        /// 業務エラー(FAILED_PRECONDITION + ErrorInfo)を作る。code の domain と reason が ErrorInfo に入る。
         /// </summary>
         /// <param name="metadata">ErrorInfo.metadata に入れる値(例: MAINTENANCE の end_at)。</param>
         public static RpcException FailedPrecondition(
-            string codeName,
+            ErrorCode code,
             string message = "",
             IReadOnlyDictionary<string, string> metadata = null)
         {
-            var errorInfo = new ErrorInfo { Reason = codeName, Domain = ErrorDomain };
+            var errorInfo = new ErrorInfo { Reason = code.Reason, Domain = code.Domain };
             if (metadata != null)
             {
                 foreach (var pair in metadata)

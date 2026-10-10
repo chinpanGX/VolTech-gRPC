@@ -4,6 +4,7 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using NUnit.Framework;
 using Sandbox.Tests.EditMode.TestDoubles;
+using Sandbox.V1;
 using VolTech.Client;
 using VolTech.Client.Auth;
 using VolTech.Client.Unity;
@@ -87,7 +88,7 @@ namespace Sandbox.Tests.EditMode
             Core = new ApiCore(
                 options,
                 TokenProvider,
-                SandboxErrors.CreatePolicyProvider(),
+                new ErrorPolicyProvider(SandboxErrors.All),
                 ErrorHandler,
                 new PlayerDiffApplier(State),
                 // 何をやり取りしたかを Console で見られるようにする

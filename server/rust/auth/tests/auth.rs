@@ -241,8 +241,7 @@ async fn suspended_player_is_rejected_with_account_suspended() {
     let status = server.call_protected(Some(&token)).await.unwrap_err();
     assert_eq!(status.code(), Code::FailedPrecondition);
     let error_info = status.get_details_error_info().unwrap();
-    assert_eq!(
-        error_info.reason,
-        voltech_grpc_error::code::ACCOUNT_SUSPENDED
-    );
+    let expected = voltech_grpc_error::reserved::ACCOUNT_SUSPENDED;
+    assert_eq!(error_info.domain, expected.domain());
+    assert_eq!(error_info.reason, expected.reason());
 }

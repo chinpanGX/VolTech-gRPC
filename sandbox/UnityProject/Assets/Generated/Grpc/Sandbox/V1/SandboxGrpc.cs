@@ -181,7 +181,7 @@ namespace Sandbox.V1 {
       }
       /// <summary>
       /// 認証付きの疎通。サーバー時刻・日付のヘッダーと、共通レスポンス項目の形を確かめる。
-      /// プレイヤーがまだ作られていなければ FAILED_PRECONDITION + ERROR_CODE_PLAYER_NOT_FOUND を返す。
+      /// プレイヤーがまだ作られていなければ FAILED_PRECONDITION + PLAYER_NOT_FOUND を返す。
       /// </summary>
       /// <param name="request">The request to send to the server.</param>
       /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
@@ -195,7 +195,7 @@ namespace Sandbox.V1 {
       }
       /// <summary>
       /// 認証付きの疎通。サーバー時刻・日付のヘッダーと、共通レスポンス項目の形を確かめる。
-      /// プレイヤーがまだ作られていなければ FAILED_PRECONDITION + ERROR_CODE_PLAYER_NOT_FOUND を返す。
+      /// プレイヤーがまだ作られていなければ FAILED_PRECONDITION + PLAYER_NOT_FOUND を返す。
       /// </summary>
       /// <param name="request">The request to send to the server.</param>
       /// <param name="options">The options for the call.</param>
@@ -207,7 +207,7 @@ namespace Sandbox.V1 {
       }
       /// <summary>
       /// 認証付きの疎通。サーバー時刻・日付のヘッダーと、共通レスポンス項目の形を確かめる。
-      /// プレイヤーがまだ作られていなければ FAILED_PRECONDITION + ERROR_CODE_PLAYER_NOT_FOUND を返す。
+      /// プレイヤーがまだ作られていなければ FAILED_PRECONDITION + PLAYER_NOT_FOUND を返す。
       /// </summary>
       /// <param name="request">The request to send to the server.</param>
       /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
@@ -221,7 +221,7 @@ namespace Sandbox.V1 {
       }
       /// <summary>
       /// 認証付きの疎通。サーバー時刻・日付のヘッダーと、共通レスポンス項目の形を確かめる。
-      /// プレイヤーがまだ作られていなければ FAILED_PRECONDITION + ERROR_CODE_PLAYER_NOT_FOUND を返す。
+      /// プレイヤーがまだ作られていなければ FAILED_PRECONDITION + PLAYER_NOT_FOUND を返す。
       /// </summary>
       /// <param name="request">The request to send to the server.</param>
       /// <param name="options">The options for the call.</param>
@@ -232,7 +232,7 @@ namespace Sandbox.V1 {
         return CallInvoker.AsyncUnaryCall(__Method_Ping, null, options, request);
       }
       /// <summary>
-      /// 指定したエラーコードで失敗する。action によるエラー処理を確かめる。
+      /// 指定したエラーコード(sandbox の業務エラーか基盤の予約エラー)で失敗する。action によるエラー処理を確かめる。
       /// </summary>
       /// <param name="request">The request to send to the server.</param>
       /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
@@ -245,7 +245,7 @@ namespace Sandbox.V1 {
         return Fail(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      /// 指定したエラーコードで失敗する。action によるエラー処理を確かめる。
+      /// 指定したエラーコード(sandbox の業務エラーか基盤の予約エラー)で失敗する。action によるエラー処理を確かめる。
       /// </summary>
       /// <param name="request">The request to send to the server.</param>
       /// <param name="options">The options for the call.</param>
@@ -256,7 +256,7 @@ namespace Sandbox.V1 {
         return CallInvoker.BlockingUnaryCall(__Method_Fail, null, options, request);
       }
       /// <summary>
-      /// 指定したエラーコードで失敗する。action によるエラー処理を確かめる。
+      /// 指定したエラーコード(sandbox の業務エラーか基盤の予約エラー)で失敗する。action によるエラー処理を確かめる。
       /// </summary>
       /// <param name="request">The request to send to the server.</param>
       /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
@@ -269,7 +269,7 @@ namespace Sandbox.V1 {
         return FailAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      /// 指定したエラーコードで失敗する。action によるエラー処理を確かめる。
+      /// 指定したエラーコード(sandbox の業務エラーか基盤の予約エラー)で失敗する。action によるエラー処理を確かめる。
       /// </summary>
       /// <param name="request">The request to send to the server.</param>
       /// <param name="options">The options for the call.</param>

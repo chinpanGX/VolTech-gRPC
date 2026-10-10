@@ -9,7 +9,6 @@ internal sealed class TypeIndex
 {
     private readonly Dictionary<string, string> csharpNames = new();
     private readonly Dictionary<string, FileDescriptorProto> files = new();
-    private readonly List<(string ProtoName, string CSharpName)> enums = new();
 
     public TypeIndex(IEnumerable<FileDescriptorProto> protoFiles)
     {
@@ -49,21 +48,6 @@ internal sealed class TypeIndex
             : throw new GeneratorException($"{protoFullName} が見つからない");
     }
 
-    /// <summary>
-    /// 名前(パッケージを除いた部分)が name の enum を探す。1つだけあればその C# の型名を返す。
-    /// </summary>
-    public string? FindSingleEnum(string name)
-    {
-        var found = enums.Where(e => e.ProtoName.EndsWith("." + name, StringComparison.Ordinal)).ToList();
-        return found.Count switch
-        {
-            0 => null,
-            1 => found[0].CSharpName,
-            _ => throw new GeneratorException(
-                $"enum {name} が複数ある({string.Join(", ", found.Select(e => e.ProtoName))})。error_code オプションで指定する"),
-        };
-    }
-
     // 入れ子のメッセージは、protoc の C# 生成と同じく Outer.Types.Inner になる
     private void AddMessage(FileDescriptorProto file, DescriptorProto message, string protoPrefix, string csharpPrefix)
     {
@@ -89,6 +73,5 @@ internal sealed class TypeIndex
         var csharpName = $"{csharpPrefix}.{enumType.Name}";
         csharpNames[protoName] = csharpName;
         files[protoName] = file;
-        enums.Add((protoName, csharpName));
     }
 }

@@ -73,7 +73,7 @@ namespace Sandbox.Tests.EditMode
         {
             invoker.Register<IncrementRequest, IncrementResponse>(SandboxServiceMethods.Increment, (_, _) =>
                 throw FakeRpcErrors.FailedPrecondition(
-                    "ERROR_CODE_MAINTENANCE",
+                    ReservedErrors.Maintenance,
                     "under maintenance",
                     new Dictionary<string, string> { ["end_at"] = "2026-10-07T06:00:00Z" }));
 
@@ -93,7 +93,8 @@ namespace Sandbox.Tests.EditMode
             Assert.That(trace.State, Is.EqualTo(ApiTraceState.Failed));
             Assert.That(trace.StatusCode, Is.EqualTo("FailedPrecondition"));
             Assert.That(trace.StatusDetail, Is.EqualTo("under maintenance"));
-            Assert.That(trace.ErrorReason, Is.EqualTo("ERROR_CODE_MAINTENANCE"));
+            Assert.That(trace.ErrorReason, Is.EqualTo("MAINTENANCE"));
+            Assert.That(trace.ErrorDomain, Is.EqualTo(ReservedErrors.Domain));
             Assert.That(Header(trace.ErrorMetadata, "end_at"), Is.EqualTo("2026-10-07T06:00:00Z"));
             // エラーの詳細はバイナリのトレーラーなので、バイト数と base64 で記録される
             Assert.That(Header(trace.Trailers, RpcErrorDetails.TrailerKey), Does.StartWith("("));
@@ -191,7 +192,7 @@ namespace Sandbox.Tests.EditMode
                 State = ApiTraceState.Failed,
                 RequestHeaders = { new ApiTraceHeader("x-request-id", "abc") },
                 RequestBody = "{ \"amount\": \"1\" }",
-                ErrorReason = "ERROR_CODE_FREE_DRAW_USED",
+                ErrorReason = "FREE_DRAW_USED",
                 ErrorMetadata = { new ApiTraceHeader("action", "ERROR_ACTION_STAY") },
             };
 

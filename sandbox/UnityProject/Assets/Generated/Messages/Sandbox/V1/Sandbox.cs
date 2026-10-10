@@ -24,42 +24,41 @@ namespace Sandbox.V1 {
     static SandboxReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "ChhzYW5kYm94L3YxL3NhbmRib3gucHJvdG8SCnNhbmRib3gudjEaG3NhbmRi",
-            "b3gvdjEvZXJyb3JfY29kZS5wcm90byIPCg1TaWduVXBSZXF1ZXN0Ii0KDlNp",
-            "Z25VcFJlc3BvbnNlEhsKCXBsYXllcl9pZBgBIAEoCVIIcGxheWVySWQiDQoL",
-            "UGluZ1JlcXVlc3QizwEKDFBpbmdSZXNwb25zZRIbCglwbGF5ZXJfaWQYASAB",
-            "KAlSCHBsYXllcklkEjcKC3BsYXllcl9kaWZmGAIgASgLMhYuc2FuZGJveC52",
-            "MS5QbGF5ZXJEaWZmUgpwbGF5ZXJEaWZmEikKBmJhZGdlcxgDIAMoCzIRLnNh",
-            "bmRib3gudjEuQmFkZ2VSBmJhZGdlcxI+Cg1ub3RpZmljYXRpb25zGAQgAygL",
-            "Mhguc2FuZGJveC52MS5Ob3RpZmljYXRpb25SDW5vdGlmaWNhdGlvbnMiOAoL",
-            "RmFpbFJlcXVlc3QSKQoEY29kZRgBIAEoDjIVLnNhbmRib3gudjEuRXJyb3JD",
-            "b2RlUgRjb2RlIg4KDEZhaWxSZXNwb25zZSIqChBJbmNyZW1lbnRSZXF1ZXN0",
-            "EhYKBmFtb3VudBgBIAEoA1IGYW1vdW50ImYKEUluY3JlbWVudFJlc3BvbnNl",
-            "EhgKB2NvdW50ZXIYASABKANSB2NvdW50ZXISNwoLcGxheWVyX2RpZmYYAiAB",
-            "KAsyFi5zYW5kYm94LnYxLlBsYXllckRpZmZSCnBsYXllckRpZmYiNwoKUGxh",
-            "eWVyRGlmZhIdCgdjb3VudGVyGAEgASgDSABSB2NvdW50ZXKIAQFCCgoIX2Nv",
-            "dW50ZXIiYgoFQmFkZ2USKQoEdHlwZRgBIAEoDjIVLnNhbmRib3gudjEuQmFk",
-            "Z2VUeXBlUgR0eXBlEhgKB3Zpc2libGUYAiABKAhSB3Zpc2libGUSFAoFY291",
-            "bnQYAyABKAVSBWNvdW50IlgKDE5vdGlmaWNhdGlvbhI/Cg1waW5nX3JlY2Vp",
-            "dmVkGAEgASgLMhguc2FuZGJveC52MS5QaW5nUmVjZWl2ZWRIAFIMcGluZ1Jl",
-            "Y2VpdmVkQgcKBWV2ZW50Ig4KDFBpbmdSZWNlaXZlZCo/CglCYWRnZVR5cGUS",
-            "GgoWQkFER0VfVFlQRV9VTlNQRUNJRklFRBAAEhYKEkJBREdFX1RZUEVfQ09V",
-            "TlRFUhABMqACCg5TYW5kYm94U2VydmljZRJECgZTaWduVXASGS5zYW5kYm94",
-            "LnYxLlNpZ25VcFJlcXVlc3QaGi5zYW5kYm94LnYxLlNpZ25VcFJlc3BvbnNl",
-            "IgOQAgISPgoEUGluZxIXLnNhbmRib3gudjEuUGluZ1JlcXVlc3QaGC5zYW5k",
-            "Ym94LnYxLlBpbmdSZXNwb25zZSIDkAIBEj4KBEZhaWwSFy5zYW5kYm94LnYx",
-            "LkZhaWxSZXF1ZXN0Ghguc2FuZGJveC52MS5GYWlsUmVzcG9uc2UiA5ACARJI",
-            "CglJbmNyZW1lbnQSHC5zYW5kYm94LnYxLkluY3JlbWVudFJlcXVlc3QaHS5z",
-            "YW5kYm94LnYxLkluY3JlbWVudFJlc3BvbnNlQg2qAgpTYW5kYm94LlYxYgZw",
-            "cm90bzM="));
+            "ChhzYW5kYm94L3YxL3NhbmRib3gucHJvdG8SCnNhbmRib3gudjEiDwoNU2ln",
+            "blVwUmVxdWVzdCItCg5TaWduVXBSZXNwb25zZRIbCglwbGF5ZXJfaWQYASAB",
+            "KAlSCHBsYXllcklkIg0KC1BpbmdSZXF1ZXN0Is8BCgxQaW5nUmVzcG9uc2US",
+            "GwoJcGxheWVyX2lkGAEgASgJUghwbGF5ZXJJZBI3CgtwbGF5ZXJfZGlmZhgC",
+            "IAEoCzIWLnNhbmRib3gudjEuUGxheWVyRGlmZlIKcGxheWVyRGlmZhIpCgZi",
+            "YWRnZXMYAyADKAsyES5zYW5kYm94LnYxLkJhZGdlUgZiYWRnZXMSPgoNbm90",
+            "aWZpY2F0aW9ucxgEIAMoCzIYLnNhbmRib3gudjEuTm90aWZpY2F0aW9uUg1u",
+            "b3RpZmljYXRpb25zIj0KC0ZhaWxSZXF1ZXN0EhYKBmRvbWFpbhgBIAEoCVIG",
+            "ZG9tYWluEhYKBnJlYXNvbhgCIAEoCVIGcmVhc29uIg4KDEZhaWxSZXNwb25z",
+            "ZSIqChBJbmNyZW1lbnRSZXF1ZXN0EhYKBmFtb3VudBgBIAEoA1IGYW1vdW50",
+            "ImYKEUluY3JlbWVudFJlc3BvbnNlEhgKB2NvdW50ZXIYASABKANSB2NvdW50",
+            "ZXISNwoLcGxheWVyX2RpZmYYAiABKAsyFi5zYW5kYm94LnYxLlBsYXllckRp",
+            "ZmZSCnBsYXllckRpZmYiNwoKUGxheWVyRGlmZhIdCgdjb3VudGVyGAEgASgD",
+            "SABSB2NvdW50ZXKIAQFCCgoIX2NvdW50ZXIiYgoFQmFkZ2USKQoEdHlwZRgB",
+            "IAEoDjIVLnNhbmRib3gudjEuQmFkZ2VUeXBlUgR0eXBlEhgKB3Zpc2libGUY",
+            "AiABKAhSB3Zpc2libGUSFAoFY291bnQYAyABKAVSBWNvdW50IlgKDE5vdGlm",
+            "aWNhdGlvbhI/Cg1waW5nX3JlY2VpdmVkGAEgASgLMhguc2FuZGJveC52MS5Q",
+            "aW5nUmVjZWl2ZWRIAFIMcGluZ1JlY2VpdmVkQgcKBWV2ZW50Ig4KDFBpbmdS",
+            "ZWNlaXZlZCo/CglCYWRnZVR5cGUSGgoWQkFER0VfVFlQRV9VTlNQRUNJRklF",
+            "RBAAEhYKEkJBREdFX1RZUEVfQ09VTlRFUhABMqACCg5TYW5kYm94U2Vydmlj",
+            "ZRJECgZTaWduVXASGS5zYW5kYm94LnYxLlNpZ25VcFJlcXVlc3QaGi5zYW5k",
+            "Ym94LnYxLlNpZ25VcFJlc3BvbnNlIgOQAgISPgoEUGluZxIXLnNhbmRib3gu",
+            "djEuUGluZ1JlcXVlc3QaGC5zYW5kYm94LnYxLlBpbmdSZXNwb25zZSIDkAIB",
+            "Ej4KBEZhaWwSFy5zYW5kYm94LnYxLkZhaWxSZXF1ZXN0Ghguc2FuZGJveC52",
+            "MS5GYWlsUmVzcG9uc2UiA5ACARJICglJbmNyZW1lbnQSHC5zYW5kYm94LnYx",
+            "LkluY3JlbWVudFJlcXVlc3QaHS5zYW5kYm94LnYxLkluY3JlbWVudFJlc3Bv",
+            "bnNlQg2qAgpTYW5kYm94LlYxYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::Sandbox.V1.ErrorCodeReflection.Descriptor, },
+          new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Sandbox.V1.BadgeType), }, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Sandbox.V1.SignUpRequest), global::Sandbox.V1.SignUpRequest.Parser, null, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Sandbox.V1.SignUpResponse), global::Sandbox.V1.SignUpResponse.Parser, new[]{ "PlayerId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Sandbox.V1.PingRequest), global::Sandbox.V1.PingRequest.Parser, null, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Sandbox.V1.PingResponse), global::Sandbox.V1.PingResponse.Parser, new[]{ "PlayerId", "PlayerDiff", "Badges", "Notifications" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Sandbox.V1.FailRequest), global::Sandbox.V1.FailRequest.Parser, new[]{ "Code" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Sandbox.V1.FailRequest), global::Sandbox.V1.FailRequest.Parser, new[]{ "Domain", "Reason" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Sandbox.V1.FailResponse), global::Sandbox.V1.FailResponse.Parser, null, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Sandbox.V1.IncrementRequest), global::Sandbox.V1.IncrementRequest.Parser, new[]{ "Amount" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Sandbox.V1.IncrementResponse), global::Sandbox.V1.IncrementResponse.Parser, new[]{ "Counter", "PlayerDiff" }, null, null, null, null),
@@ -950,7 +949,8 @@ namespace Sandbox.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public FailRequest(FailRequest other) : this() {
-      code_ = other.code_;
+      domain_ = other.domain_;
+      reason_ = other.reason_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -960,18 +960,33 @@ namespace Sandbox.V1 {
       return new FailRequest(this);
     }
 
-    /// <summary>Field number for the "code" field.</summary>
-    public const int CodeFieldNumber = 1;
-    private global::Sandbox.V1.ErrorCode code_ = global::Sandbox.V1.ErrorCode.Unspecified;
+    /// <summary>Field number for the "domain" field.</summary>
+    public const int DomainFieldNumber = 1;
+    private string domain_ = "";
     /// <summary>
-    /// 失敗させるエラーコード。ERROR_CODE_UNSPECIFIED なら ERROR_CODE_INTERNAL_ERROR で失敗する
+    /// 失敗させるエラーコードの domain(sandbox か voltech)
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::Sandbox.V1.ErrorCode Code {
-      get { return code_; }
+    public string Domain {
+      get { return domain_; }
       set {
-        code_ = value;
+        domain_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "reason" field.</summary>
+    public const int ReasonFieldNumber = 2;
+    private string reason_ = "";
+    /// <summary>
+    /// 失敗させるエラーコードの reason。空なら INTERNAL_ERROR(voltech)で失敗する。知らないコードなら INVALID_ARGUMENT
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Reason {
+      get { return reason_; }
+      set {
+        reason_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -990,7 +1005,8 @@ namespace Sandbox.V1 {
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (Code != other.Code) return false;
+      if (Domain != other.Domain) return false;
+      if (Reason != other.Reason) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -998,7 +1014,8 @@ namespace Sandbox.V1 {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override int GetHashCode() {
       int hash = 1;
-      if (Code != global::Sandbox.V1.ErrorCode.Unspecified) hash ^= Code.GetHashCode();
+      if (Domain.Length != 0) hash ^= Domain.GetHashCode();
+      if (Reason.Length != 0) hash ^= Reason.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1017,9 +1034,13 @@ namespace Sandbox.V1 {
     #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       output.WriteRawMessage(this);
     #else
-      if (Code != global::Sandbox.V1.ErrorCode.Unspecified) {
-        output.WriteRawTag(8);
-        output.WriteEnum((int) Code);
+      if (Domain.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Domain);
+      }
+      if (Reason.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Reason);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -1031,9 +1052,13 @@ namespace Sandbox.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-      if (Code != global::Sandbox.V1.ErrorCode.Unspecified) {
-        output.WriteRawTag(8);
-        output.WriteEnum((int) Code);
+      if (Domain.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Domain);
+      }
+      if (Reason.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Reason);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
@@ -1045,8 +1070,11 @@ namespace Sandbox.V1 {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int CalculateSize() {
       int size = 0;
-      if (Code != global::Sandbox.V1.ErrorCode.Unspecified) {
-        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Code);
+      if (Domain.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Domain);
+      }
+      if (Reason.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Reason);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -1060,8 +1088,11 @@ namespace Sandbox.V1 {
       if (other == null) {
         return;
       }
-      if (other.Code != global::Sandbox.V1.ErrorCode.Unspecified) {
-        Code = other.Code;
+      if (other.Domain.Length != 0) {
+        Domain = other.Domain;
+      }
+      if (other.Reason.Length != 0) {
+        Reason = other.Reason;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -1082,8 +1113,12 @@ namespace Sandbox.V1 {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
-          case 8: {
-            Code = (global::Sandbox.V1.ErrorCode) input.ReadEnum();
+          case 10: {
+            Domain = input.ReadString();
+            break;
+          }
+          case 18: {
+            Reason = input.ReadString();
             break;
           }
         }
@@ -1105,8 +1140,12 @@ namespace Sandbox.V1 {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
-          case 8: {
-            Code = (global::Sandbox.V1.ErrorCode) input.ReadEnum();
+          case 10: {
+            Domain = input.ReadString();
+            break;
+          }
+          case 18: {
+            Reason = input.ReadString();
             break;
           }
         }

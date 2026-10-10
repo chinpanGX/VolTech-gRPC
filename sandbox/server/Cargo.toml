@@ -12,6 +12,7 @@ publish = false          # sandbox は公開しない
 [workspace.dependencies]
 voltech-grpc-auth = { path = "../../server/rust/auth" }
 voltech-grpc-error = { path = "../../server/rust/error" }
+voltech-grpc-error-build = { path = "../../server/rust/error-build" }
 voltech-grpc-status = { path = "../../server/rust/status" }
 voltech-grpc-transaction = { path = "../../server/rust/transaction" }
 

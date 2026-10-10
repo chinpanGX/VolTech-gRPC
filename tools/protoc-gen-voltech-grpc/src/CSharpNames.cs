@@ -57,6 +57,14 @@ internal static class CSharpNames
         return name.Length == 0 ? name : char.ToLowerInvariant(name[0]) + name[1..];
     }
 
+    /// <summary>
+    /// エラーコードの reason の定数名(PLAYER_NOT_FOUND → PlayerNotFound)。
+    /// </summary>
+    public static string ErrorConstantName(string reason)
+    {
+        return PascalCase(reason.ToLowerInvariant());
+    }
+
     // 区切り(_)を消し、その次の文字と先頭を大文字にする。数字の後ろも大文字にする(protoc と同じ)
     private static string PascalCase(string name)
     {

@@ -126,7 +126,7 @@ async fn authenticate<R: PlayerResolver>(
         PlayerStatus::Active => true,
         PlayerStatus::Suspended => {
             return Err(failed_precondition(
-                voltech_grpc_error::code::ACCOUNT_SUSPENDED,
+                voltech_grpc_error::reserved::ACCOUNT_SUSPENDED,
                 "account suspended",
             ));
         }

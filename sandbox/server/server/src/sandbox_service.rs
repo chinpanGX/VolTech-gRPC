@@ -1,14 +1,14 @@
+use proto::errors;
 use proto::sandbox::v1::notification::Event;
 use proto::sandbox::v1::sandbox_service_server::{SandboxService, SandboxServiceServer};
 use proto::sandbox::v1::{
-    Badge, BadgeType, ErrorCode, FailRequest, FailResponse, IncrementRequest, IncrementResponse,
-    Notification, PingReceived, PingRequest, PingResponse, PlayerDiff, SignUpRequest,
-    SignUpResponse,
+    Badge, BadgeType, FailRequest, FailResponse, IncrementRequest, IncrementResponse, Notification,
+    PingReceived, PingRequest, PingResponse, PlayerDiff, SignUpRequest, SignUpResponse,
 };
 use tonic::{Request, Response, Status};
 use ulid::Ulid;
 use voltech_grpc_auth::AuthContext;
-use voltech_grpc_error::{failed_precondition, internal};
+use voltech_grpc_error::{failed_precondition, internal, reserved};
 use voltech_grpc_transaction::Transactions;
 
 use crate::players;
@@ -87,14 +87,20 @@ impl SandboxService for SandboxServiceImpl {
     }
 
     async fn fail(&self, request: Request<FailRequest>) -> Result<Response<FailResponse>, Status> {
-        let code = ErrorCode::try_from(request.get_ref().code).unwrap_or(ErrorCode::Unspecified);
-        let code = if code == ErrorCode::Unspecified {
-            ErrorCode::InternalError
+        let FailRequest { domain, reason } = request.get_ref();
+        let code = if reason.is_empty() {
+            reserved::INTERNAL_ERROR
         } else {
-            code
+            *errors::ALL
+                .iter()
+                .chain(reserved::ALL)
+                .find(|code| code.domain() == domain && code.reason() == reason)
+                .ok_or_else(|| {
+                    Status::invalid_argument(format!("unknown error code: {domain}/{reason}"))
+                })?
         };
         Err(failed_precondition(
-            code.as_str_name(),
+            code,
             "failed on purpose by SandboxService/Fail",
         ))
     }
@@ -147,10 +153,7 @@ fn player_id<T>(request: &Request<T>) -> Result<Ulid, Status> {
 
 /// プレイヤーがまだ作られていないことを表す業務エラーを作る。
 fn player_not_found() -> Status {
-    failed_precondition(
-        ErrorCode::PlayerNotFound.as_str_name(),
-        "player is not created yet",
-    )
+    failed_precondition(errors::PLAYER_NOT_FOUND, "player is not created yet")
 }
 
 /// カウンターのバッジ。0 より大きければ表示し、件数を出す。

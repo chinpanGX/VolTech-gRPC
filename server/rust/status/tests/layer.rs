@@ -83,6 +83,8 @@ fn error_info(headers: &HeaderMap) -> Option<(String, std::collections::HashMap<
     }
     assert_eq!(status.code(), Code::FailedPrecondition);
     let info = status.get_details_error_info().unwrap();
+    // 基盤のレイヤーが返すのは予約エラーだけ
+    assert_eq!(info.domain, voltech_grpc_error::reserved::DOMAIN);
     Some((info.reason, info.metadata))
 }
 
@@ -97,7 +99,10 @@ async fn update_required_below_min_version() {
     )
     .await;
     let (reason, _) = error_info(response.headers()).unwrap();
-    assert_eq!(reason, voltech_grpc_error::code::UPDATE_REQUIRED);
+    assert_eq!(
+        reason,
+        voltech_grpc_error::reserved::UPDATE_REQUIRED.reason()
+    );
 
     for headers in [
         vec![("x-app-platform", "ios"), ("x-app-version", "120")],
@@ -121,7 +126,7 @@ async fn maintenance_returns_end_at() {
     let response = call_status_layer(status_with(&config), request(&[])).await;
 
     let (reason, metadata) = error_info(response.headers()).unwrap();
-    assert_eq!(reason, voltech_grpc_error::code::MAINTENANCE);
+    assert_eq!(reason, voltech_grpc_error::reserved::MAINTENANCE.reason());
     assert_eq!(metadata["end_at"], "2026-10-06T06:00:00Z");
 }
 
@@ -132,7 +137,7 @@ async fn maintenance_without_end_at() {
     let response = call_status_layer(status_with(&config), request(&[])).await;
 
     let (reason, metadata) = error_info(response.headers()).unwrap();
-    assert_eq!(reason, voltech_grpc_error::code::MAINTENANCE);
+    assert_eq!(reason, voltech_grpc_error::reserved::MAINTENANCE.reason());
     assert!(metadata.is_empty(), "{metadata:?}");
 }
 
@@ -147,7 +152,10 @@ async fn update_required_takes_precedence_over_maintenance() {
     .await;
 
     let (reason, _) = error_info(response.headers()).unwrap();
-    assert_eq!(reason, voltech_grpc_error::code::UPDATE_REQUIRED);
+    assert_eq!(
+        reason,
+        voltech_grpc_error::reserved::UPDATE_REQUIRED.reason()
+    );
 }
 
 /// 成功したレスポンスに、サーバー時刻(Unix ミリ秒)と今のゲーム内の日付を付ける。
@@ -170,7 +178,7 @@ async fn date_changed_when_game_date_differs() {
 
     let response = call_date_layer(status.clone(), request(&[("x-game-date", "2026-10-05")])).await;
     let (reason, _) = error_info(response.headers()).unwrap();
-    assert_eq!(reason, voltech_grpc_error::code::DATE_CHANGED);
+    assert_eq!(reason, voltech_grpc_error::reserved::DATE_CHANGED.reason());
 
     for headers in [vec![("x-game-date", "2026-10-06")], vec![]] {
         let response = call_date_layer(status.clone(), request(&headers)).await;

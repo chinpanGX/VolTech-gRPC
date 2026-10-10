@@ -14,26 +14,21 @@ namespace VolTech.Client
         /// エラーの内容を受け取って作る。
         /// </summary>
         public ApiError(
-            int code,
-            string codeName,
+            ErrorCode code,
             ErrorAction action,
             StatusCode statusCode,
             string message,
             IReadOnlyDictionary<string, string> metadata = null)
         {
             Code = code;
-            CodeName = codeName;
             Action = action;
             StatusCode = statusCode;
             Message = message;
             Metadata = metadata ?? emptyMetadata;
         }
 
-        /// <summary>エラーコードの番号(アプリの ErrorCode の値)。</summary>
-        public int Code { get; }
-
-        /// <summary>エラーコードの名前(例: ERROR_CODE_PLAYER_NOT_FOUND)。</summary>
-        public string CodeName { get; }
+        /// <summary>エラーコード(domain と reason の組。例: sandbox/PLAYER_NOT_FOUND)。</summary>
+        public ErrorCode Code { get; }
 
         /// <summary>エラーの後に取る行動。</summary>
         public ErrorAction Action { get; }
@@ -59,7 +54,11 @@ namespace VolTech.Client
         /// </summary>
         public static ApiError Discarded()
         {
-            return new ApiError(0, "DISCARDED", ErrorAction.Unspecified, StatusCode.Cancelled, "discarded before sending")
+            return new ApiError(
+                new ErrorCode(ReservedErrors.Domain, "DISCARDED"),
+                ErrorAction.Unspecified,
+                StatusCode.Cancelled,
+                "discarded before sending")
             {
                 IsDiscarded = true,
             };
@@ -70,7 +69,7 @@ namespace VolTech.Client
         /// </summary>
         public override string ToString()
         {
-            return $"{CodeName}({Code}) action={Action} status={StatusCode} message={Message}";
+            return $"{Code} action={Action} status={StatusCode} message={Message}";
         }
     }
 }

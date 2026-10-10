@@ -1407,6 +1407,7 @@ dependencies = [
  "tonic-prost",
  "tonic-prost-build",
  "voltech-grpc-error",
+ "voltech-grpc-error-build",
 ]
 
 [[package]]
@@ -2464,6 +2465,15 @@ dependencies = [
  "tonic",
  "tonic-types",
  "tracing",
+ "voltech-grpc-error-build",
+]
+
+[[package]]
+name = "voltech-grpc-error-build"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "toml",
 ]
 
 [[package]]

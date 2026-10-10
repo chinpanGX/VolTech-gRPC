@@ -45,14 +45,14 @@ internal static class Protos
     }
 
     /// <summary>
-    /// app/v1/error_code.proto 相当: ErrorCode の enum だけ。
+    /// app/v1/rarity.proto 相当: enum だけで、生成するものが無いファイル。
     /// </summary>
-    public static FileDescriptorProto ErrorCode()
+    public static FileDescriptorProto EnumOnly()
     {
-        var file = File("app/v1/error_code.proto", "app.v1", csharpNamespace: "App.V1");
-        var errorCode = new EnumDescriptorProto { Name = "ErrorCode" };
-        errorCode.Value.Add(new EnumValueDescriptorProto { Name = "ERROR_CODE_UNSPECIFIED", Number = 0 });
-        file.EnumType.Add(errorCode);
+        var file = File("app/v1/rarity.proto", "app.v1", csharpNamespace: "App.V1");
+        var rarity = new EnumDescriptorProto { Name = "Rarity" };
+        rarity.Value.Add(new EnumValueDescriptorProto { Name = "RARITY_UNSPECIFIED", Number = 0 });
+        file.EnumType.Add(rarity);
         return file;
     }
 

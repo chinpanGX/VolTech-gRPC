@@ -40,7 +40,7 @@ namespace Sandbox.Tests.EditMode
             core = new ApiCore(
                 new ApiCoreOptions(new AppVersion(AppVersion.Windows, 120)),
                 new CountingTokenProvider(),
-                SandboxErrors.CreatePolicyProvider(),
+                new ErrorPolicyProvider(SandboxErrors.All),
                 errorHandler,
                 serverClock: new ServerClock(() => elapsed));
             sandboxApi = new SandboxApi(core, invoker);
@@ -106,10 +106,10 @@ namespace Sandbox.Tests.EditMode
             await sandboxApi.PingAsync(new PingRequest());
 
             invoker.Register<PingRequest, PingResponse>(SandboxServiceMethods.Ping, (_, _) =>
-                throw FakeRpcErrors.FailedPrecondition("ERROR_CODE_DATE_CHANGED"));
+                throw FakeRpcErrors.FailedPrecondition(ReservedErrors.DateChanged));
             errorHandler.ThenReturn(ErrorDecision.ReturnToTitle);
             var changed = await sandboxApi.PingAsync(new PingRequest());
-            Assert.That(changed.Error.Code, Is.EqualTo((int)ErrorCode.DateChanged));
+            Assert.That(changed.Error.Code, Is.EqualTo(ReservedErrors.DateChanged));
             Assert.That(changed.Error.Action, Is.EqualTo(ErrorAction.Title));
 
             await sandboxApi.PingAsync(new PingRequest());
@@ -142,12 +142,12 @@ namespace Sandbox.Tests.EditMode
         {
             invoker.Register<PingRequest, PingResponse>(SandboxServiceMethods.Ping, (_, _) =>
                 throw FakeRpcErrors.FailedPrecondition(
-                    "ERROR_CODE_MAINTENANCE",
+                    ReservedErrors.Maintenance,
                     metadata: new Dictionary<string, string> { ["end_at"] = "2026-10-06T06:00:00Z" }));
             var maintenance = await sandboxApi.PingAsync(new PingRequest());
 
             invoker.Register<PingRequest, PingResponse>(SandboxServiceMethods.Ping, (_, _) =>
-                throw FakeRpcErrors.FailedPrecondition("ERROR_CODE_UPDATE_REQUIRED"));
+                throw FakeRpcErrors.FailedPrecondition(ReservedErrors.UpdateRequired));
             var updateRequired = await sandboxApi.PingAsync(new PingRequest());
 
             Assert.That(maintenance.Error.Metadata["end_at"], Is.EqualTo("2026-10-06T06:00:00Z"));

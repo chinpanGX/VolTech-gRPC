@@ -1,5 +1,5 @@
 # 開発用のコマンド
-.PHONY: help db-up db-down proto-tools proto-plugin plugin-test proto-lint proto-format proto-breaking proto-gen build fmt fmt-check lint client-fmt client-lint wiki-gen wiki-lint wiki-affected deps-check deps-outdated sandbox-proto-gen sandbox-server test test-rust
+.PHONY: help db-up db-down proto-tools proto-plugin plugin-test proto-lint proto-format proto-breaking proto-gen build fmt fmt-check lint client-fmt client-lint wiki-gen wiki-lint wiki-affected deps-check deps-outdated sandbox-proto-gen errors-gen sandbox-errors-gen sandbox-server test test-rust
 
 ifeq ($(OS),Windows_NT)
 # PowerShell から make を実行しても、レシピは Git Bash で動かす(既定の cmd.exe では動かないため)。
@@ -18,6 +18,9 @@ PLUGIN_DIR := tools/protoc-gen-voltech-grpc
 
 RUST_MANIFESTS := server/rust/Cargo.toml sandbox/server/Cargo.toml
 UNITY_SLN := sandbox/UnityProject/UnityProject.sln
+# エラーの定義ファイル(errors.toml)から生成する C#
+RESERVED_ERRORS_CS := Unity/com.chinpangx.voltech.grpc/Runtime/Client/Errors/ReservedErrors.cs
+SANDBOX_ERRORS_CS := sandbox/UnityProject/Assets/Generated/Errors/SandboxErrors.cs
 
 # 説明は各ターゲットの行の「## 」の後ろに書く。
 # Windows 版の make は、レシピのコマンドを ANSI コードページ経由で渡すので、日本語を echo すると文字化けする。
@@ -50,10 +53,16 @@ plugin-test: ## 自作の protoc プラグインのテスト
 	dotnet test $(PLUGIN_DIR)/tests --nologo
 
 proto-gen: proto-lint ## 基盤の .proto から C# を生成(UPM パッケージの Runtime/Generated)
-	$(PROTO_ENV) buf generate --path server/rust/auth/proto/voltech --path server/rust/error/proto/voltech
+	$(PROTO_ENV) buf generate --path server/rust/auth/proto/voltech
+
+errors-gen: proto-plugin ## 基盤の予約エラー(server/rust/error/errors.toml)から C# を生成(UPM パッケージの ReservedErrors)
+	$(PROTO_ENV) protoc-gen-voltech-grpc errors server/rust/error/errors.toml $(RESERVED_ERRORS_CS) --namespace VolTech.Client --class ReservedErrors --reserved
 
 sandbox-proto-gen: proto-lint proto-plugin ## sandbox の .proto から C# を生成(sandbox の Unity プロジェクト)
 	$(PROTO_ENV) buf generate --template buf.gen.sandbox.yaml --path sandbox/proto/sandbox
+
+sandbox-errors-gen: proto-plugin ## sandbox の業務エラー(sandbox/errors.toml)から C# を生成(sandbox の Unity プロジェクト)
+	$(PROTO_ENV) protoc-gen-voltech-grpc errors sandbox/errors.toml $(SANDBOX_ERRORS_CS) --namespace Sandbox.V1 --class SandboxErrors
 
 build: ## cargo build
 	$(foreach m,$(RUST_MANIFESTS),cargo build --manifest-path $(m) &&) true

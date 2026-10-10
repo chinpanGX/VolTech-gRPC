@@ -1,7 +1,7 @@
 ﻿namespace VolTech.Client
 {
     /// <summary>
-    /// エラーが起きたときにクライアントが取る行動。値は voltech/v1/error_options.proto の ErrorAction と同じ。
+    /// エラーが起きたときにクライアントが取る行動。エラーの定義ファイル(errors.toml)の action に対応する。
     /// </summary>
     public enum ErrorAction
     {

@@ -1,0 +1,16 @@
+# sandbox の業務エラー(domain: sandbox)。基盤の予約エラー(domain: voltech)は書かない(基盤が持つ)。
+# Rust の定数(proto::errors)と、Unity プロジェクトの C#(Sandbox.SandboxErrors)をここから生成する。
+# 書き方は基盤の server/rust/error/errors.toml と同じ。消した reason は使い回さない。
+domain = "sandbox"
+
+# action ごとの扱いを確かめるためだけにある
+
+[[errors]]
+reason = "SANDBOX_STAY"
+action = "stay"
+description = "その場に留まるエラー(残高不足などの代わり)。"
+
+[[errors]]
+reason = "PLAYER_NOT_FOUND"
+action = "title"
+description = "サインインしたがプレイヤーがまだいない。SignUp で作る。"

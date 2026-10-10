@@ -110,7 +110,7 @@ namespace VolTech.Client
             RpcSettings settings,
             TClient client,
             TRequest request,
-            IEnumerable<int> handledCodes,
+            IEnumerable<ErrorCode> handledCodes,
             Func<TClient, TRequest, CallOptions, AsyncUnaryCall<TResponse>> call)
         {
             // 世代を先に読む。BeginNewSession はキャンセルを入れ替えてから世代を進めるので、
@@ -164,7 +164,7 @@ namespace VolTech.Client
             RpcSettings settings,
             TClient client,
             TRequest request,
-            IEnumerable<int> handledCodes,
+            IEnumerable<ErrorCode> handledCodes,
             Func<TClient, TRequest, CallOptions, AsyncUnaryCall<TResponse>> call,
             int epoch,
             CancellationToken cancellationToken)
@@ -349,9 +349,9 @@ namespace VolTech.Client
         }
 
         // 予約コードは画面ごとに扱いが変わらないように、handledCodes に入っていても共通エラーハンドラーに回す
-        private static bool IsHandledByCaller(ApiError error, IEnumerable<int> handledCodes)
+        private static bool IsHandledByCaller(ApiError error, IEnumerable<ErrorCode> handledCodes)
         {
-            return !ReservedErrorCodes.IsReserved(error.Code) && handledCodes != null && handledCodes.Contains(error.Code);
+            return !error.Code.IsReserved && handledCodes != null && handledCodes.Contains(error.Code);
         }
 
         private Metadata CreateHeaders(string token, string requestId)

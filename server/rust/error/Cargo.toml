@@ -8,3 +8,6 @@ publish.workspace = true
 tonic = { workspace = true }
 tonic-types = { workspace = true }
 tracing = { workspace = true }
+
+[build-dependencies]
+voltech-grpc-error-build = { workspace = true }

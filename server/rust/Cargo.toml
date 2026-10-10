@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["auth", "error", "status", "transaction"]
+members = ["auth", "error", "error-build", "status", "transaction"]
 
 [workspace.package]
 version = "0.1.0"
@@ -10,6 +10,7 @@ publish = false
 [workspace.dependencies]
 voltech-grpc-auth = { path = "auth" }
 voltech-grpc-error = { path = "error" }
+voltech-grpc-error-build = { path = "error-build" }
 voltech-grpc-status = { path = "status" }
 voltech-grpc-transaction = { path = "transaction" }
 

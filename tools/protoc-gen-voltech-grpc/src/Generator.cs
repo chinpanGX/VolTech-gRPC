@@ -41,7 +41,7 @@ internal static class Generator
                 continue;
             }
 
-            var content = GenerateFile(file, types, commonFields, parameters);
+            var content = GenerateFile(file, types, commonFields);
             if (content != null)
             {
                 var path = $"{CSharpNames.Directory(CSharpNames.Namespace(file))}/{CSharpNames.FileBaseName(file)}Api.cs";
@@ -56,8 +56,7 @@ internal static class Generator
     private static string? GenerateFile(
         FileDescriptorProto file,
         TypeIndex types,
-        IReadOnlyDictionary<string, CommonField> commonFields,
-        GeneratorParameters parameters)
+        IReadOnlyDictionary<string, CommonField> commonFields)
     {
         var interfaces = commonFields.Values.Where(field => types.FileOf(field.TypeProtoName) == file).ToList();
         var partials = file.MessageType
@@ -74,7 +73,6 @@ internal static class Generator
             .Line($"//     protoc-gen-voltech-grpc が {file.Name} から生成した。手で編集しない。")
             .Line("// </auto-generated>")
             .Line("using System.Collections.Generic;")
-            .Line("using System.Linq;")
             .Line("using Cysharp.Threading.Tasks;")
             .Line("using Grpc.Core;")
             .Line("using VolTech.Client;")
@@ -99,7 +97,7 @@ internal static class Generator
                 Separate();
                 WriteMethods(writer, file, file.Service[i]);
                 writer.Line();
-                WriteWrapper(writer, file, i, comments, types, ErrorCodeType(types, parameters));
+                WriteWrapper(writer, file, i, comments, types);
             }
 
             foreach (var field in interfaces)
@@ -138,8 +136,7 @@ internal static class Generator
         FileDescriptorProto file,
         int serviceIndex,
         Comments comments,
-        TypeIndex types,
-        string errorCodeType)
+        TypeIndex types)
     {
         var service = file.Service[serviceIndex];
         var requiresAuth = !ProtoOptions.SkipAuth(service);
@@ -181,13 +178,13 @@ internal static class Generator
                     .Summary(comments.ForMethod(serviceIndex, i))
                     .Line($"public UniTask<ApiResult<{responseType}>> {method.Name}Async(")
                     .Line($"    {requestType} request,")
-                    .Line($"    IReadOnlyList<{errorCodeType}> handledCodes = null)")
+                    .Line("    IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null)")
                     .Line("{");
                 writer.Line($"    return core.InvokeAsync(")
                     .Line($"        {SettingsField(method)},")
                     .Line("        client,")
                     .Line("        request,")
-                    .Line("        handledCodes?.Select(code => (int)code),")
+                    .Line("        handledCodes,")
                     .Line($"        static (c, r, options) => c.{method.Name}Async(r, options));")
                     .Line("}");
             }
@@ -248,18 +245,6 @@ internal static class Generator
             .Where(field => commonFields.ContainsKey(field.Name))
             .Select(field => commonFields[field.Name].InterfaceName)
             .ToList();
-    }
-
-    private static string ErrorCodeType(TypeIndex types, GeneratorParameters parameters)
-    {
-        if (parameters.ErrorCode != null)
-        {
-            return types.CSharpName("." + parameters.ErrorCode);
-        }
-
-        return types.FindSingleEnum("ErrorCode")
-            ?? throw new GeneratorException(
-                "エラーコードの enum(ErrorCode)が見つからない。error_code オプションで完全名(例: app.v1.ErrorCode)を指定する");
     }
 
     private static string MethodPath(FileDescriptorProto file, ServiceDescriptorProto service, MethodDescriptorProto method)

@@ -22,21 +22,23 @@ namespace VolTech.Client
             {
                 case StatusCode.FailedPrecondition:
                     var errorInfo = TryGetErrorInfo(exception);
-                    if (errorInfo != null && policy.TryGetCode(errorInfo.Reason, out var code))
+                    var code = new ErrorCode(errorInfo?.Domain, errorInfo?.Reason);
+                    // 知らないコード(このアプリより新しいサーバーが足したものなど)は UNKNOWN_ERROR と同じ扱いにする
+                    if (errorInfo != null && policy.IsKnown(code))
                     {
                         errorInfo.Metadata.TryGetValue(ActionMetadataKey, out var actionOverride);
                         var metadata = new Dictionary<string, string>(errorInfo.Metadata);
                         return Create(code, exception.StatusCode, message, policy, actionOverride, metadata);
                     }
 
-                    return Create(ReservedErrorCodes.UnknownError, exception.StatusCode, message, policy);
+                    return Create(ReservedErrors.UnknownError, exception.StatusCode, message, policy);
                 case StatusCode.Internal:
-                    return Create(ReservedErrorCodes.InternalError, exception.StatusCode, message, policy);
+                    return Create(ReservedErrors.InternalError, exception.StatusCode, message, policy);
                 case StatusCode.Unavailable:
                 case StatusCode.DeadlineExceeded:
-                    return Create(ReservedErrorCodes.NetworkError, exception.StatusCode, message, policy);
+                    return Create(ReservedErrors.NetworkError, exception.StatusCode, message, policy);
                 default:
-                    return Create(ReservedErrorCodes.UnknownError, exception.StatusCode, message, policy);
+                    return Create(ReservedErrors.UnknownError, exception.StatusCode, message, policy);
             }
         }
 
@@ -45,7 +47,7 @@ namespace VolTech.Client
         /// </summary>
         public static ApiError FromClientException(Exception exception, IErrorPolicyProvider policy)
         {
-            return Create(ReservedErrorCodes.ClientError, StatusCode.Unknown, exception.Message, policy);
+            return Create(ReservedErrors.ClientError, StatusCode.Unknown, exception.Message, policy);
         }
 
         // エラーの詳細が壊れていたら(途中の機器が書き換えた、など)、詳細が無いものとして UNKNOWN_ERROR にする
@@ -62,7 +64,7 @@ namespace VolTech.Client
         }
 
         private static ApiError Create(
-            int code,
+            ErrorCode code,
             StatusCode statusCode,
             string message,
             IErrorPolicyProvider policy,
@@ -80,7 +82,7 @@ namespace VolTech.Client
                 action = ErrorAction.Title;
             }
 
-            return new ApiError(code, policy.GetName(code), action, statusCode, message, metadata);
+            return new ApiError(code, action, statusCode, message, metadata);
         }
 
         // サーバーは metadata["action"] に ErrorAction の値の名前を入れる。知らない値なら既定の action を使う

@@ -49,7 +49,7 @@ namespace Sandbox.Tests.EditMode
             core = new ApiCore(
                 new ApiCoreOptions(),
                 tokenProvider,
-                SandboxErrors.CreatePolicyProvider(),
+                new ErrorPolicyProvider(SandboxErrors.All),
                 errorHandler,
                 diffApplier,
                 badgeApplier: badgeApplier,
@@ -107,7 +107,7 @@ namespace Sandbox.Tests.EditMode
 
             Assert.That(result.IsSuccess, Is.False);
             Assert.That(invoker.Calls, Has.Count.EqualTo(2));
-            Assert.That(errorHandler.Errors.Single().Code, Is.EqualTo((int)ErrorCode.UnknownError));
+            Assert.That(errorHandler.Errors.Single().Code, Is.EqualTo(ReservedErrors.UnknownError));
         });
 
         /// <summary>
@@ -118,13 +118,13 @@ namespace Sandbox.Tests.EditMode
         public IEnumerator HandledCodeReturnsWithoutErrorHandler() => UniTask.ToCoroutine(async () =>
         {
             invoker.Register<PingRequest, PingResponse>(SandboxServiceMethods.Ping, (_, _) =>
-                throw FakeRpcErrors.FailedPrecondition("ERROR_CODE_PLAYER_NOT_FOUND"));
+                throw FakeRpcErrors.FailedPrecondition(SandboxErrors.PlayerNotFound));
 
-            var result = await sandboxApi.PingAsync(new PingRequest(), new[] { ErrorCode.PlayerNotFound });
+            var result = await sandboxApi.PingAsync(new PingRequest(), new[] { SandboxErrors.PlayerNotFound });
 
             Assert.That(result.IsSuccess, Is.False);
-            Assert.That(result.Error.Code, Is.EqualTo((int)ErrorCode.PlayerNotFound));
-            Assert.That(result.Error.CodeName, Is.EqualTo("ERROR_CODE_PLAYER_NOT_FOUND"));
+            Assert.That(result.Error.Code, Is.EqualTo(SandboxErrors.PlayerNotFound));
+            Assert.That(result.Error.Code.Reason, Is.EqualTo("PLAYER_NOT_FOUND"));
             Assert.That(errorHandler.Errors, Is.Empty);
             Assert.Throws<InvalidOperationException>(() => _ = result.Value);
         });
@@ -139,30 +139,32 @@ namespace Sandbox.Tests.EditMode
             invoker.Register<PingRequest, PingResponse>(SandboxServiceMethods.Ping, (_, _) =>
                 throw FakeRpcErrors.Status(StatusCode.Internal));
 
-            var result = await sandboxApi.PingAsync(new PingRequest(), new[] { ErrorCode.InternalError });
+            var result = await sandboxApi.PingAsync(new PingRequest(), new[] { ReservedErrors.InternalError });
 
             Assert.That(result.IsSuccess, Is.False);
-            Assert.That(errorHandler.Errors.Single().Code, Is.EqualTo((int)ErrorCode.InternalError));
+            Assert.That(errorHandler.Errors.Single().Code, Is.EqualTo(ReservedErrors.InternalError));
         });
 
         /// <summary>
-        /// 受け取ったエラーは、表のとおりのエラーコードと、error_code.proto の既定の action になる。
+        /// 受け取ったエラーは、表のとおりのエラーコードと、errors.toml の既定の action になる。
         /// </summary>
         [UnityTest]
-        [Description("受け取ったエラーは、表のとおりのエラーコードと、error_code.proto の既定の action になる")]
+        [Description("受け取ったエラーは、表のとおりのエラーコードと、errors.toml の既定の action になる")]
         public IEnumerator ErrorsAreConvertedToCodesAndDefaultActions() => UniTask.ToCoroutine(async () =>
         {
             var cases = new (RpcException Thrown, ErrorCode Code, ErrorAction Action)[]
             {
-                (FakeRpcErrors.Status(StatusCode.Unavailable), ErrorCode.NetworkError, ErrorAction.Retry),
-                (FakeRpcErrors.Status(StatusCode.DeadlineExceeded), ErrorCode.NetworkError, ErrorAction.Retry),
-                (FakeRpcErrors.Status(StatusCode.Internal), ErrorCode.InternalError, ErrorAction.Retry),
-                (FakeRpcErrors.Status(StatusCode.Unimplemented), ErrorCode.UnknownError, ErrorAction.Title),
-                (FakeRpcErrors.Status(StatusCode.FailedPrecondition), ErrorCode.UnknownError, ErrorAction.Title),
-                (FakeRpcErrors.FailedPrecondition("ERROR_CODE_MAINTENANCE"), ErrorCode.Maintenance, ErrorAction.Title),
-                (FakeRpcErrors.FailedPrecondition("ERROR_CODE_UPDATE_REQUIRED"), ErrorCode.UpdateRequired, ErrorAction.Update),
-                (FakeRpcErrors.FailedPrecondition("ERROR_CODE_SANDBOX_STAY"), ErrorCode.SandboxStay, ErrorAction.Stay),
-                (FakeRpcErrors.FailedPrecondition("ERROR_CODE_NOT_IN_THIS_APP"), ErrorCode.UnknownError, ErrorAction.Title),
+                (FakeRpcErrors.Status(StatusCode.Unavailable), ReservedErrors.NetworkError, ErrorAction.Retry),
+                (FakeRpcErrors.Status(StatusCode.DeadlineExceeded), ReservedErrors.NetworkError, ErrorAction.Retry),
+                (FakeRpcErrors.Status(StatusCode.Internal), ReservedErrors.InternalError, ErrorAction.Retry),
+                (FakeRpcErrors.Status(StatusCode.Unimplemented), ReservedErrors.UnknownError, ErrorAction.Title),
+                (FakeRpcErrors.Status(StatusCode.FailedPrecondition), ReservedErrors.UnknownError, ErrorAction.Title),
+                (FakeRpcErrors.FailedPrecondition(ReservedErrors.Maintenance), ReservedErrors.Maintenance, ErrorAction.Title),
+                (FakeRpcErrors.FailedPrecondition(ReservedErrors.UpdateRequired), ReservedErrors.UpdateRequired, ErrorAction.Update),
+                (FakeRpcErrors.FailedPrecondition(SandboxErrors.SandboxStay), SandboxErrors.SandboxStay, ErrorAction.Stay),
+                (FakeRpcErrors.FailedPrecondition(new ErrorCode(SandboxErrors.Domain, "NOT_IN_THIS_APP")), ReservedErrors.UnknownError, ErrorAction.Title),
+                // reason が予約エラーと同じでも、domain が違えば知らないエラー
+                (FakeRpcErrors.FailedPrecondition(new ErrorCode(SandboxErrors.Domain, "MAINTENANCE")), ReservedErrors.UnknownError, ErrorAction.Title),
             };
 
             foreach (var (thrown, code, action) in cases)
@@ -171,7 +173,7 @@ namespace Sandbox.Tests.EditMode
 
                 var result = await sandboxApi.PingAsync(new PingRequest());
 
-                Assert.That(result.Error.Code, Is.EqualTo((int)code), thrown.ToString());
+                Assert.That(result.Error.Code, Is.EqualTo(code), thrown.ToString());
                 Assert.That(result.Error.Action, Is.EqualTo(action), thrown.ToString());
             }
         });
@@ -187,7 +189,7 @@ namespace Sandbox.Tests.EditMode
 
             var result = await sandboxApi.PingAsync(new PingRequest());
 
-            Assert.That(result.Error.Code, Is.EqualTo((int)ErrorCode.ClientError));
+            Assert.That(result.Error.Code, Is.EqualTo(ReservedErrors.ClientError));
             Assert.That(errorHandler.Errors, Has.Count.EqualTo(1));
             Assert.That(invoker.Calls, Is.Empty);
         });
@@ -305,9 +307,9 @@ namespace Sandbox.Tests.EditMode
         public IEnumerator FailureIsNotApplied() => UniTask.ToCoroutine(async () =>
         {
             invoker.Register<PingRequest, PingResponse>(SandboxServiceMethods.Ping, (_, _) =>
-                throw FakeRpcErrors.FailedPrecondition("ERROR_CODE_PLAYER_NOT_FOUND"));
+                throw FakeRpcErrors.FailedPrecondition(SandboxErrors.PlayerNotFound));
 
-            await sandboxApi.PingAsync(new PingRequest(), new[] { ErrorCode.PlayerNotFound });
+            await sandboxApi.PingAsync(new PingRequest(), new[] { SandboxErrors.PlayerNotFound });
 
             Assert.That(applyOrder, Is.Empty);
         });
@@ -327,8 +329,8 @@ namespace Sandbox.Tests.EditMode
             var failed = await InvokeIdempotencyTargetAsync();
 
             Assert.That(failed.IsSuccess, Is.False);
-            Assert.That(failed.Error.Code, Is.EqualTo((int)ErrorCode.ClientError));
-            Assert.That(errorHandler.Errors.Single().Code, Is.EqualTo((int)ErrorCode.ClientError));
+            Assert.That(failed.Error.Code, Is.EqualTo(ReservedErrors.ClientError));
+            Assert.That(errorHandler.Errors.Single().Code, Is.EqualTo(ReservedErrors.ClientError));
             Assert.That(invoker.Calls, Has.Count.EqualTo(1), "反映処理の失敗で送り直した");
             Assert.That(applyOrder, Is.EqualTo(new[] { "player_diff", "badges" }), "例外の後の反映処理を呼んだ");
 
@@ -370,7 +372,7 @@ namespace Sandbox.Tests.EditMode
             core = new ApiCore(
                 new ApiCoreOptions(),
                 tokenProvider,
-                SandboxErrors.CreatePolicyProvider(),
+                new ErrorPolicyProvider(SandboxErrors.All),
                 errorHandler,
                 diffApplier,
                 navigator: navigator);
@@ -433,8 +435,8 @@ namespace Sandbox.Tests.EditMode
             var result = await sandboxApi.PingAsync(new PingRequest());
 
             Assert.That(result.IsSuccess, Is.False);
-            Assert.That(result.Error.Code, Is.EqualTo((int)ErrorCode.UnknownError));
-            Assert.That(errorHandler.Errors.Single().Code, Is.EqualTo((int)ErrorCode.UnknownError));
+            Assert.That(result.Error.Code, Is.EqualTo(ReservedErrors.UnknownError));
+            Assert.That(errorHandler.Errors.Single().Code, Is.EqualTo(ReservedErrors.UnknownError));
         });
 
         private UniTask<ApiResult<PingResponse>> InvokeIdempotencyTargetAsync()

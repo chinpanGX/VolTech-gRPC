@@ -8,11 +8,10 @@ publish.workspace = true
 prost = { workspace = true }
 tonic = { workspace = true }
 tonic-prost = { workspace = true }
+voltech-grpc-error = { workspace = true }
 
 [build-dependencies]
 prost = { workspace = true }
 protox = { workspace = true }
 tonic-prost-build = { workspace = true }
-
-[dev-dependencies]
-voltech-grpc-error = { workspace = true }
+voltech-grpc-error-build = { workspace = true }

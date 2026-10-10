@@ -5,15 +5,15 @@ namespace ProtocGenVoltechGrpc.Tests;
 
 public class GeneratorTests
 {
-    private static readonly FileDescriptorProto[] appFiles = [Protos.ErrorCode(), Protos.Player(), Protos.Gacha()];
+    private static readonly FileDescriptorProto[] appFiles = [Protos.EnumOnly(), Protos.Player(), Protos.Gacha()];
 
     [Fact]
     public void GeneratesOneFilePerProtoIntoNamespaceFolder()
     {
-        var response = Generate("", appFiles, "app/v1/player.proto", "app/v1/gacha.proto", "app/v1/error_code.proto");
+        var response = Generate("", appFiles, "app/v1/player.proto", "app/v1/gacha.proto", "app/v1/rarity.proto");
 
         Assert.Equal("", response.Error);
-        // error_code.proto は生成するものが無いので作らない
+        // rarity.proto は生成するものが無いので作らない
         Assert.Equal(["App/V1/PlayerApi.cs", "App/V1/GachaApi.cs"], response.File.Select(file => file.Name));
     }
 
@@ -31,7 +31,7 @@ public class GeneratorTests
     [Fact]
     public void SkipAuthServiceDoesNotRequireAuth()
     {
-        var files = new[] { Protos.ErrorCode(), Protos.Device() };
+        var files = new[] { Protos.Device() };
         var device = Content(Generate("", files, "voltech/v1/device.proto"), "Voltech/V1/DeviceApi.cs");
 
         // csharp_namespace が無ければ、パッケージ名から名前空間を作る(protoc と同じ)
@@ -49,7 +49,9 @@ public class GeneratorTests
         Assert.Contains("public const string SignIn = \"/app.v1.PlayerService/SignIn\";", player);
         Assert.Contains("public sealed class PlayerApi", player);
         Assert.Contains("public UniTask<ApiResult<global::App.V1.SignInResponse>> SignInAsync(", player);
-        Assert.Contains("IReadOnlyList<global::App.V1.ErrorCode> handledCodes = null)", player);
+        // handledCodes は基盤の ErrorCode(domain と reason の組)で受け取り、そのまま ApiCore に渡す
+        Assert.Contains("IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null)", player);
+        Assert.Contains("        handledCodes,", player);
     }
 
     [Fact]
@@ -83,16 +85,8 @@ public class GeneratorTests
         player.Service[0].Method.Add(streaming);
 
         var exception = Assert.Throws<GeneratorException>(
-            () => Generate("", [Protos.ErrorCode(), player], "app/v1/player.proto"));
+            () => Generate("", [player], "app/v1/player.proto"));
         Assert.Contains("ストリーミング", exception.Message);
-    }
-
-    [Fact]
-    public void MissingErrorCodeIsError()
-    {
-        var exception = Assert.Throws<GeneratorException>(
-            () => Generate("", [Protos.Player()], "app/v1/player.proto"));
-        Assert.Contains("error_code", exception.Message);
     }
 
     [Fact]

@@ -2,7 +2,6 @@
 version: v2
 modules:
   - path: server/rust/auth/proto
-  - path: server/rust/error/proto
   - path: sandbox/proto
 lint:
   use:

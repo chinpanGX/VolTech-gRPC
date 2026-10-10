@@ -1,0 +1,52 @@
+# 基盤の予約エラー(domain: voltech)。
+# Rust の定数(voltech_grpc_error::reserved)と、Unity のパッケージの C#(VolTech.Client.ReservedErrors)をここから生成する。
+# アプリは domain voltech を使えないので、アプリのエラーとはぶつからない。
+#
+# - reason: ErrorInfo.reason に入れる名前(大文字のスネークケース、63文字以内)
+# - action: 既定の action(stay・retry・home・title・update)
+# - client_only: クライアントだけが使う(サーバーは返さない)。Rust の定数を作らない
+# - description: 用途。生成するコードのコメントになる
+domain = "voltech"
+
+[[errors]]
+reason = "NETWORK_ERROR"
+action = "retry"
+client_only = true
+description = "通信断・タイムアウト。"
+
+[[errors]]
+reason = "INTERNAL_ERROR"
+action = "retry"
+description = "サーバー内部エラー。一時的な障害は再試行で直り得る。"
+
+[[errors]]
+reason = "UNKNOWN_ERROR"
+action = "title"
+client_only = true
+description = "想定外のステータス、知らないエラー。"
+
+[[errors]]
+reason = "MAINTENANCE"
+action = "title"
+description = "メンテナンス中。終了予定時刻を metadata の end_at に入れる。"
+
+[[errors]]
+reason = "UPDATE_REQUIRED"
+action = "update"
+description = "強制アップデート。"
+
+[[errors]]
+reason = "ACCOUNT_SUSPENDED"
+action = "title"
+description = "BAN・アカウント停止。"
+
+[[errors]]
+reason = "DATE_CHANGED"
+action = "title"
+description = "日付変更。サインインし直し、所持データを全件取り直す。"
+
+[[errors]]
+reason = "CLIENT_ERROR"
+action = "title"
+client_only = true
+description = "クライアントのバグ(共通レスポンス項目の反映処理での例外など)。"
