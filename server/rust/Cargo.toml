@@ -1,18 +1,6 @@
 [workspace]
 resolver = "3"
-members = [
-    # アプリごとに変更しないもの。app/ には依存しない
-    "framework/auth",
-    "framework/error",
-    "framework/status",
-    "framework/transaction",
-    # アプリごとに変更するもの
-    "app/proto",
-    "app/player",
-    "app/gacha",
-    "app/api",
-    "app/server",
-]
+members = ["auth", "error", "status", "transaction"]
 
 [workspace.package]
 version = "0.1.0"
@@ -20,18 +8,12 @@ edition = "2024"
 publish = false
 
 [workspace.dependencies]
-voltech-grpc-auth = { path = "framework/auth" }
-voltech-grpc-error = { path = "framework/error" }
-voltech-grpc-status = { path = "framework/status" }
-voltech-grpc-transaction = { path = "framework/transaction" }
-
-proto = { path = "app/proto" }
-player = { path = "app/player" }
-gacha = { path = "app/gacha" }
-api = { path = "app/api" }
+voltech-grpc-auth = { path = "auth" }
+voltech-grpc-error = { path = "error" }
+voltech-grpc-status = { path = "status" }
+voltech-grpc-transaction = { path = "transaction" }
 
 argon2 = "0.6"
-dotenvy = "0.15"
 http = "1"
 jiff = "0.2"
 prost = "0.14"
@@ -47,10 +29,7 @@ tonic = "0.14"
 tonic-health = "0.14"
 tonic-prost = "0.14"
 tonic-prost-build = "0.14"
-tonic-reflection = "0.14"
 tonic-types = "0.14"
 tower = "0.5"
-tower-http = { version = "0.7", features = ["trace"] }
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 ulid = "3"
