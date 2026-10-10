@@ -4,7 +4,7 @@ status: confirmed
 area: overview
 related: [repo/operations, repo/naming, repo/folder-layout, repo/current-plan, api/errors, api/idempotency, api/common-response, server/transaction, client/fake-testing, appendix/atlas-migration]
 proto: []
-updated: 2026-10-10
+updated: 2026-10-11
 ---
 
 # 概要(目的・範囲・成果物・進め方・全体構成)
@@ -33,28 +33,27 @@ Unityクライアントと Rust APIサーバー間の通信を、REST(OpenAPI)�
 
 ### 成果物
 
-- **テンプレート**(`VolTech-gRPC`。[リポジトリ名と命名](repo/naming.md))。アプリはこれを clone して作る([運用](repo/operations.md))
-  - 基盤: クライアントの基盤(UPM の `com.chinpangx.voltech.grpc`)、サーバーの基盤(Rust の `voltech-grpc-*` のクレート)、ラッパー生成の protoc プラグイン。パッケージの形にしてあり、既存のアプリ(Atlas)からはタグで参照できる
-  - アプリの雛形(`sandbox/`。Unity プロジェクト・サーバー・`.proto`)。基盤を手元のパスで参照し、そのまま開発を始められる
+- **パッケージ**(`VolTech-gRPC`。[リポジトリ名と命名](repo/naming.md))。バージョン(タグ)を付けて配り、アプリは自分のプロジェクトから参照する([運用](repo/operations.md))
+  - クライアントの基盤(UPM の `com.chinpangx.voltech.grpc`)、サーバーの基盤(Rust の `voltech-grpc-*` のクレート)、ラッパー生成の protoc プラグイン
 - Atlasとは独立して管理する
-- **サンプルのリポジトリ**(`grpc-foundation-samples`)。テンプレートを使う最初のアプリとして、普通のアプリと同じ手順([運用](repo/operations.md))で作る
+- **サンプル**(このリポジトリの `sandbox/`)。基盤の組み込み方の実例として、アプリと同じ形で作る
   - 中身は **簡略化したガチャ**で、**サーバーとクライアント(Unityプロジェクト)の両方**を用意する
   - API: 基盤のデバイス登録・認証に加えて、サインイン(所持データの全件取得)と、ガチャを1回引く(ジェムを消費して何か1つを付与する)
   - ガチャのレスポンスの `player_diff` にジェムの残数と入手したものを入れ、クライアントで反映する
   - ガチャの排出物は、コード内の固定テーブル(`gacha::model::ITEMS`)にする。基盤を試すのが目的なので、マスタの仕組みは持たない
-  - サインアップを入れる。サインアップは何も受け取らず、サインインはプレイヤーとジェムを返す。未作成なら `PLAYER_NOT_FOUND`(`app/v1/player.proto`)
-  - クライアントに入れるもの(画面の実装例は grpc-foundation-samples にある):
+  - サインアップを入れる。サインアップは何も受け取らず、サインインはプレイヤーとジェムを返す。未作成なら `PLAYER_NOT_FOUND`(`sandbox/v1/player.proto`)
+  - クライアントに入れるもの(画面の実装例は `sandbox/UnityProject/Assets/Scripts/Sample/` にある):
     - タイトル画面: デバイス登録とトークンの発行(`ApiCore` が自動で行う)の後、サインインで全件を取得する(実装済み)
     - ガチャ画面(ホームを兼ねる): playerDiff でジェムの残数と所持品が更新されるところと、ジェム不足(業務エラー)のダイアログを見せる(実装済み)
     - 基盤のインターフェースの実装例: `IErrorDialogView`・`IErrorNavigator`(実装済み)、`IPlayerDiffApplier`・`IBadgeApplier`・`INotificationApplier`(実装済み)、カスタムエラーハンドラー
-    - テスト: 偽のサーバー(`FakeGachaServer` など)と、基盤の汎用のテスト([サーバーが無いときの差し替えとテスト](client/fake-testing.md))
+    - テスト: 反映処理の単体テストと、起動したサーバーにつなぐテスト(`GachaApiConnectionTests` など)、基盤の汎用のテスト([サーバーが無いときの差し替えとテスト](client/fake-testing.md))
 - REST時代の成果物の残し方
   - `api-codegen`(OpenAPI → Unity向けDTO・通信クライアントの生成ツール)は、独立したリポジトリとして残す
   - AtlasのREST版(サーバーとクライアント)は、乗せ換えを始める前の状態をブランチとして残す
 
 ### 進め方
 
-1. **テンプレートを作る**: 続けて、テンプレートからサンプルのリポジトリを作り、ガチャを書く
+1. **パッケージを作る**: 続けて、sandbox にガチャのサンプルを書く
 2. **AtlasのREST版を残す**: 乗せ換えを始める前のコミットから、REST版を残すブランチを作る
 3. **Atlasを乗せ換える**: Atlasから基盤をタグで参照し、APIを順にgRPCへ移す([付録: Atlasの乗せ換え](appendix/atlas-migration.md))
 

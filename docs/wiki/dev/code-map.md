@@ -5,7 +5,7 @@ area: dev
 related: [repo/current-plan, dev/workflow, guide/client-reference, guide/server-reference]
 proto: []
 code: [server/rust/Cargo.toml, server/rust, sandbox/server, Unity/com.chinpangx.voltech.grpc, tools/protoc-gen-voltech-grpc, sandbox/proto, scripts, buf.yaml, buf.gen.yaml]
-updated: 2026-10-10
+updated: 2026-10-11
 ---
 
 # コードの地図
@@ -17,10 +17,11 @@ updated: 2026-10-10
 | 置き場所 | 名前 | 中身 | テスト |
 |---|---|---|---|
 | `server/rust/auth/` | `voltech-grpc-auth` | `device_service.rs`(デバイス登録・トークンの発行)、`layer.rs`(`AuthLayer`)、`resolver.rs`(`PlayerResolver`)、`token.rs`(アクセストークンの値の生成)、`migrations/`、`proto/voltech/v1/`(`device.proto`・`auth_options.proto`) | `tests/`(MySQL を使う) |
-| `server/rust/error/` | `voltech-grpc-error` | `lib.rs`(エラーのレスポンスの作り方)、`code.rs`(予約エラーコードの名前)、`proto/voltech/v1/error_options.proto` | — |
+| `server/rust/error/` | `voltech-grpc-error` | `lib.rs`(`ErrorCode` とエラーのレスポンスの作り方)、`errors.toml`(基盤の予約エラーの定義。`build.rs` で `reserved` を生成する) | `tests/` |
+| `server/rust/error-build/` | `voltech-grpc-error-build` | `errors.toml` の検証と、Rust の定数の生成(アプリと基盤の `build.rs` から使う) | `tests/` |
 | `server/rust/status/` | `voltech-grpc-status` | `config.rs`(`server_status.toml` の読み込みと検証)、`status.rs`(`ServerStatus`・時計)、`source.rs`(読み込み元)、`layer.rs`(`ServerStatusLayer`・`DateChangeLayer`) | `tests/` |
 | `server/rust/transaction/` | `voltech-grpc-transaction` | `lib.rs`(`Transactions::run`)、`idempotency.rs`(`idempotency_level` の表)、`method.rs`(`RpcMethodLayer`)、`migrations/` | `tests/`(MySQL を使う) |
-| `Unity/com.chinpangx.voltech.grpc/Runtime/Client/` | `VolTech.Client` | `ApiCore.cs`(共通処理)、`Errors/`(エラーの変換と、`ProtoErrorPolicyProvider`)、`ErrorHandling/`(エラーハンドラー)、`Hooks/`(アプリが実装する interface)、`Clock/`(サーバー時刻)、`Testing/`(`FakeCallInvoker`) | `Tests/EditMode/`、sandbox の `ApiCoreTests` など |
+| `Unity/com.chinpangx.voltech.grpc/Runtime/Client/` | `VolTech.Client` | `ApiCore.cs`(共通処理)、`Errors/`(エラーの変換、`ErrorCode`、`ErrorPolicyProvider`、生成した予約エラー `ReservedErrors`)、`ErrorHandling/`(エラーハンドラー)、`Hooks/`(アプリが実装する interface)、`Clock/`(サーバー時刻)、`Testing/`(`FakeCallInvoker`) | `Tests/EditMode/`、sandbox の `ApiCoreTests` など |
 | `Unity/com.chinpangx.voltech.grpc/Runtime/Auth/` | `VolTech.Client.Auth` | 認証(`DeviceTokenProvider`)とアカウントの保存先 | `Tests/EditMode/DeviceTokenProviderTests.cs` |
 | `Unity/com.chinpangx.voltech.grpc/Runtime/Unity/` | `VolTech.Client.Unity` | Unity 用の層(`ApiChannel`・`UnityApiLogger` など) | sandbox の結合テスト |
 | `Unity/com.chinpangx.voltech.grpc/Runtime/Generated/` | `VolTech.V1` | 基盤の `.proto`(`voltech.v1`)から生成した C#(コミットする) | — |
@@ -28,24 +29,28 @@ updated: 2026-10-10
 | `Unity/com.chinpangx.voltech.grpc/Editor/` | `VolTech.Client.Editor` | 通信の Viewer のウィンドウと、実機の記録の受け取り。エディタだけ | 目で確かめる |
 | `tools/protoc-gen-voltech-grpc/` | `protoc-gen-voltech-grpc` | ラッパーを生成する protoc プラグイン([protoc プラグインの中身](protoc-plugin.md)) | `tests/` |
 
-## sandbox(アプリの雛形。基盤の動作確認も兼ねる)
+## sandbox(基盤の動作確認とサンプル。配らない)
 
-テンプレートから作ったアプリは、sandbox を書き換えてアプリにする([始め方](../guide/getting-started.md))。このリポジトリでは、基盤の機能を1つずつ試す RPC だけを置く(業務機能は入れない。アプリとしての確認は grpc-foundation-samples で行う)。
+基盤の機能を1つずつ試す RPC(`SandboxService`)と、組み込み方の実例のガチャのサンプルを置く。基盤は手元のパスで参照する。
 
 | 置き場所 | 中身 |
 |---|---|
-| `sandbox/proto/sandbox/v1/` | `sandbox.proto`(`SignUp`・`Ping`・`Fail`・`Increment`)、`error_code.proto` |
-| `sandbox/server/proto/` | sandbox の `.proto` から生成した Rust(`build.rs` で生成する) |
-| `sandbox/server/server/` | バイナリ。Layer とサービスの組み立て(`lib.rs`)、`SandboxService` の実装、`PlayerResolver` の実装(`players.rs`)。結合テストは `tests/` |
+| `sandbox/proto/sandbox/v1/` | `sandbox.proto`(`Ping`・`Fail`・`Increment`)、`player.proto`(`SignUp`・`SignIn`、`PlayerDiff`)、`gacha.proto`(`Draw`)、`badge.proto`・`notification.proto` |
+| `sandbox/errors.toml` | sandbox の業務エラー(domain `sandbox`) |
+| `sandbox/server/proto/` | sandbox の `.proto` と `errors.toml` から生成した Rust(`build.rs` で生成する) |
+| `sandbox/server/player/`・`gacha/` | ドメインのクレート。`service/`(業務の本体)・`model/`、共通レスポンス項目のコレクター(`player` の `diff.rs`・`badge.rs`・`notification.rs`) |
+| `sandbox/server/api/` | gRPC のハンドラー(`player.rs`・`gacha.rs`・`sandbox.rs`)と、コレクターからレスポンスへの変換 |
+| `sandbox/server/server/` | バイナリ。Layer とサービスの組み立て(`lib.rs`)、`PlayerResolver` の実装(`player_lookup.rs`)。結合テストは `tests/` |
 | `sandbox/server/migrations/`・`config/` | sandbox のテーブルのマイグレーション、`server_status.toml` |
 | `sandbox/UnityProject/Assets/Generated/` | sandbox の `.proto` から生成した C#(コミットする) |
-| `sandbox/UnityProject/Assets/Scripts/Sandbox/` | 共通レスポンス項目の反映処理(`SandboxState` など) |
-| `sandbox/UnityProject/Assets/Tests/EditMode/` | `ApiCore` などのテストと、起動したサーバーへの結合テスト(`SandboxServerTests`) |
+| `sandbox/UnityProject/Assets/Scripts/Sandbox/` | アプリのデータ(`PlayerRepository`・`BadgeStore`・`NotificationQueue`)と、共通レスポンス項目の反映処理 |
+| `sandbox/UnityProject/Assets/Scripts/Sample/`・`Assets/Scenes/Sample.unity` | ガチャのサンプルの画面(タイトル・ガチャ・エラーダイアログ)と、VContainer の組み立て(`SampleLifetimeScope`) |
+| `sandbox/UnityProject/Assets/Tests/EditMode/` | `ApiCore`・反映処理などのテストと、起動したサーバーへの結合テスト(`SandboxServerTests`・`PlayerApiConnectionTests`・`GachaApiConnectionTests`) |
 
 ## 依存の向き
 
-- サーバー: `server/rust/` のクレートは sandbox やアプリに依存しない。`voltech-grpc-auth`・`-status`・`-transaction` は `voltech-grpc-error` に依存する。sandbox は別のワークスペースから `path` で基盤を参照する(テンプレートから作ったアプリも同じ形)
-- クライアント: `VolTech.Client` は Unity に依存しない(asmdef の No Engine References)。`VolTech.V1` を `VolTech.Client`・`VolTech.Client.Auth` が参照し、`VolTech.Client.Auth` を `VolTech.Client.Unity` が参照する。`VolTech.Client.Unity` は `VolTech.Client.Tracing` を参照しない(`Tracing` の側が起動時に `ApiChannel.AddInterceptor` で登録する。リリースビルドで消えるアセンブリを参照しないため)
+- サーバー: `server/rust/` のクレートは sandbox やアプリに依存しない。`voltech-grpc-auth`・`-status`・`-transaction` は `voltech-grpc-error` に依存する。sandbox は別のワークスペースから `path` で基盤を参照する(アプリは `git` とタグで参照する。それ以外は同じ形)
+- クライアント: `VolTech.Client` は Unity に依存しない(asmdef の No Engine References)。`VolTech.V1` を `VolTech.Client.Auth` が参照し(`VolTech.Client` は参照しない)、`VolTech.Client.Auth` を `VolTech.Client.Unity` が参照する。`VolTech.Client.Unity` は `VolTech.Client.Tracing` を参照しない(`Tracing` の側が起動時に `ApiChannel.AddInterceptor` で登録する。リリースビルドで消えるアセンブリを参照しないため)
 - asmdef の参照は GUID で書く([構成](../client/structure.md))
 
 ## 設定と道具

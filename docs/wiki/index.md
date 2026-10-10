@@ -2,7 +2,7 @@
 title: "VolTech gRPC wiki"
 status: index
 area: root
-updated: 2026-10-10
+updated: 2026-10-11
 ---
 
 # VolTech gRPC wiki
@@ -18,11 +18,11 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 | メンテナンス・強制アップデート・日付変更の判定 | |
 | 通信の記録と、エディタでの確認(Request Viewer) | |
 
-このリポジトリはテンプレートで、アプリはこれを clone して作る。基盤と、アプリの雛形(`sandbox/`)が入っている。作り込んだ例は [grpc-foundation-samples](https://github.com/chinpanGX/grpc-foundation-samples)(ガチャのアプリ)にある。
+基盤はパッケージとして配り、アプリは自分のプロジェクトからタグで参照する。組み込み方の実例は、このリポジトリの `sandbox/`(基盤の機能を1つずつ試す RPC と、ガチャのサンプル)にある。
 
 ## はじめて使う人はこの順に読む
 
-1. [始め方](guide/getting-started.md) — clone して、雛形のサーバーとクライアントを動かす
+1. [始め方](guide/getting-started.md) — 基盤をパッケージとして参照し、sandbox のサンプルを動かす
 2. [API を足す](guide/add-api.md) — `.proto` を書き、生成し、サーバーとクライアントから使う
 3. 組み込むときに引く: [クライアントのリファレンス](guide/client-reference.md)・[サーバーのリファレンス](guide/server-reference.md)・[ツール](guide/tools.md)
 
@@ -55,7 +55,7 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 
 | ページ | 状態 | 内容 |
 |---|---|---|
-| [始め方](guide/getting-started.md) | `current` | テンプレート(このリポジトリ)を clone して、雛形のサーバーとクライアントを動かすまで |
+| [始め方](guide/getting-started.md) | `current` | 基盤をパッケージとして参照し、sandbox のサンプルを動かすまで |
 | [API を足す](guide/add-api.md) | `current` | `.proto` → 生成 → サーバーのハンドラー → クライアントの呼び出し |
 | [クライアントのリファレンス](guide/client-reference.md) | `current` | `ApiCore`・ラッパー・アプリが実装する interface・テスト用の部品 |
 | [サーバーのリファレンス](guide/server-reference.md) | `current` | `voltech-grpc-*` のクレートと組み込み方 |
@@ -79,10 +79,10 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 
 | ページ | 状態 | 内容 |
 |---|---|---|
-| [運用(パッケージとテンプレート)](repo/operations.md) | `deferred` | テンプレート(clone して基盤を手元で参照)を基本に、既存のアプリにはタグで参照させる運用 |
+| [運用(パッケージとサンプル)](repo/operations.md) | `current` | 基盤をパッケージとして配り、サンプルを sandbox に置く運用 |
 | [リポジトリ名と命名](repo/naming.md) | `current` | リポジトリ・パッケージ・クレート・.proto パッケージの命名と理由 |
 | [サーバーの分け方](repo/server-split.md) | `deferred` | モジュラーモノリスの採用と、プロセスを分ける基準 |
-| [フォルダ構成](repo/folder-layout.md) | `deferred` | テンプレート/パッケージのフォルダ構成と、クレート依存の向き |
+| [フォルダ構成](repo/folder-layout.md) | `deferred` | 当初の案のフォルダ構成(いまの形は [コードの地図](dev/code-map.md)) |
 | [基盤とアプリの境界](repo/boundary.md) | `deferred` | テーブル・.proto・エラー表示などの、基盤とアプリの責務分担 |
 | [当面の実装方針](repo/current-plan.md) | `current` | 単一リポジトリでの framework / app 分離と、実装の中で決めたこと |
 
@@ -132,7 +132,7 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 | [.proto の管理](ops/proto-management.md) | `confirmed` | buf による lint / breaking / generate |
 | [デバッグ](ops/debugging.md) | `confirmed` | Postman・grpcurl・gRPC リフレクション |
 | [テスト](ops/testing.md) | `confirmed` | 結合テストの観点と、実行するタイミング |
-| [パッケージとテンプレートを同時に直すとき](ops/local-override.md) | `confirmed` | 基盤をタグで参照しているアプリから、手元の基盤を参照する手順 |
+| [パッケージとアプリを同時に直すとき](ops/local-override.md) | `confirmed` | 基盤をタグで参照しているアプリから、手元の基盤を参照する手順 |
 
 ### 付録
 

@@ -4,8 +4,8 @@ status: current
 area: guide
 related: [guide/add-api, server/request-flow, server/transaction, server/auth, server/status, api/errors]
 proto: []
-code: [server/rust/auth/src, server/rust/error/src, server/rust/status/src, server/rust/transaction/src, sandbox/server/server/src/lib.rs, sandbox/server/server/src/main.rs, sandbox/server/server/src/sandbox_service.rs]
-updated: 2026-10-10
+code: [server/rust/auth/src, server/rust/error/src, server/rust/status/src, server/rust/transaction/src, sandbox/server/server/src/lib.rs, sandbox/server/server/src/main.rs, sandbox/server/server/src/player_lookup.rs, sandbox/server/api/src, sandbox/server/proto/build.rs]
+updated: 2026-10-11
 ---
 
 # サーバーのリファレンス
@@ -23,7 +23,7 @@ updated: 2026-10-10
 
 ## 組み込み方
 
-samples の `Server/app/server/src/lib.rs` と、このリポジトリの `sandbox/server/server/src/lib.rs` が実例。Layer の順番に意味がある([リクエストの処理の流れ](../server/request-flow.md))。
+sandbox の `sandbox/server/server/src/lib.rs` が実例。Layer の順番に意味がある([リクエストの処理の流れ](../server/request-flow.md))。
 
 ```rust
 // 起動時: 基盤とアプリのマイグレーション
@@ -47,13 +47,13 @@ Server::builder()
     // ...
 ```
 
-サーバーの状態は、起動時に `ServerStatus::watch(FileStatusSource::new(path), interval)` で読み込み、以後 `interval` ごとに読み直す(samples と sandbox は 5 秒。`sandbox/server/server/src/main.rs`)。
+サーバーの状態は、起動時に `ServerStatus::watch(FileStatusSource::new(path), interval)` で読み込み、以後 `interval` ごとに読み直す(sandbox は 5 秒。`sandbox/server/server/src/main.rs`)。
 
 ## アプリが実装するもの
 
 | trait | 役割 | サンプルの実装 |
 |---|---|---|
-| `voltech_grpc_auth::PlayerResolver` | `player_id` からプレイヤーの状態(`PlayerStatus::NotCreated`・`Active`・`Suspended`)を返す。`players` テーブルを持つアプリが実装する。停止中なら `AuthLayer` が `ACCOUNT_SUSPENDED` を返す | samples の `PlayerLookup`(`Server/app/server/src/player_lookup.rs`)、sandbox の `Players`(`sandbox/server/server/src/players.rs`) |
+| `voltech_grpc_auth::PlayerResolver` | `player_id` からプレイヤーの状態(`PlayerStatus::NotCreated`・`Active`・`Suspended`)を返す。`players` テーブルを持つアプリが実装する。停止中なら `AuthLayer` が `ACCOUNT_SUSPENDED` を返す | sandbox の `PlayerLookup`(`sandbox/server/server/src/player_lookup.rs`) |
 | `voltech_grpc_status::StatusSource` | サーバーの状態の設定の読み込み元。既定は `FileStatusSource`(TOML のファイル) | 基盤の `FileStatusSource` を使う |
 
 ## ハンドラーで使う
@@ -64,12 +64,13 @@ Server::builder()
 | `voltech_grpc_transaction::create_last_response(tx, player_id)` | プレイヤーを作るときに、同じトランザクションで呼ぶ(冪等性のために直前のレスポンスを保存する行を作る) |
 | `voltech_grpc_auth::AuthContext` | `AuthLayer` がリクエストの `extensions()` に入れる認証の情報。`device_id`・`player_id`・`player_created`(サインアップ済みか) |
 | `voltech_grpc_status::GameDate` | `ServerStatusLayer` がリクエストの `extensions()` に入れる、リクエストを受けたときのゲーム内の日付。1つのリクエストの中では、この日付を使う |
-| `voltech_grpc_error::failed_precondition(reason, message)` | 業務エラー(`FAILED_PRECONDITION` + `ErrorInfo.reason`)。`reason` はアプリの `ErrorCode::Xxx.as_str_name()` |
-| `voltech_grpc_error::failed_precondition_with_metadata(reason, message, metadata)` | 表示用の値(`ErrorInfo.metadata`)付きの業務エラー。キー `action` は使わない |
+| `voltech_grpc_error::failed_precondition(code, message)` | 業務エラー(`FAILED_PRECONDITION` + `ErrorInfo` の domain・reason)。`code` はアプリの `errors.toml` から生成した定数(例: `proto::errors::INSUFFICIENT_GEMS`) |
+| `voltech_grpc_error::failed_precondition_with_metadata(code, message, metadata)` | 表示用の値(`ErrorInfo.metadata`)付きの業務エラー。キー `action` は使わない |
 | `voltech_grpc_error::internal(err)` | サーバー内部エラー。詳細はログにだけ出し、クライアントには返さない |
-| `voltech_grpc_error::code::*` | 基盤が返す予約エラーコードの名前(`MAINTENANCE`・`UPDATE_REQUIRED`・`ACCOUNT_SUSPENDED`・`DATE_CHANGED`・`INTERNAL_ERROR`)。アプリの `error_code.proto` に同じ名前が無いとテストが失敗する(samples の `Server/app/proto/tests/error_code.rs`、sandbox の `sandbox/server/proto/tests/error_code.rs`) |
+| `voltech_grpc_error::ErrorCode` / `reserved::*` | エラーコード(domain と reason)と、基盤の予約エラー(domain `voltech`。`MAINTENANCE`・`INTERNAL_ERROR` など)。テストで返ったエラーを確かめるときに使う |
+| `voltech_grpc_error_build::compile(path)` | アプリの `build.rs` から呼び、アプリの `errors.toml` からエラーコードの定数を生成する(sandbox は `sandbox/server/proto/build.rs`。[エラー](../api/errors.md)) |
 
-samples では、`AuthContext` と `GameDate` を取り出す関数を `Server/app/api/src/context.rs` にまとめている(sandbox は `sandbox_service.rs` の中)(付け忘れの Layer があれば INTERNAL にする)。
+sandbox では、`AuthContext` と `GameDate` を取り出す関数を `sandbox/server/api/src/context.rs` にまとめている(付け忘れの Layer があれば INTERNAL にする)。
 
 ## Layer と設定
 

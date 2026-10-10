@@ -73,6 +73,6 @@ description: 基盤の依存パッケージ(Unity の package.json の UPM・NuG
 
 ## 注意
 
-- 基盤の依存は、テンプレートから作ったアプリにそのまま入る。上げたら CHANGELOG に必ず書く(アプリは upstream から取り込むときに CHANGELOG を読む)
+- 基盤の依存は、基盤を参照するアプリにそのまま入る。上げたら CHANGELOG に必ず書く(アプリはタグを上げるときに CHANGELOG を読む)
 - `package.json` の `unity`(対応する Unity の最低の版)は、エディタを上げただけでは変えない。新しいエディタでしか使えない API を使ったときに上げる
 - 日本語で書く。Python などで日本語を含む文字列を置き換えるときは UTF-8 で読み書きする

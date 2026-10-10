@@ -5,19 +5,19 @@ area: ops
 related: [ops/proto-management, ops/testing, guide/getting-started, api/codegen]
 proto: []
 code: [Makefile, scripts/proto-tools.sh, .env.example, buf.gen.yaml, buf.gen.sandbox.yaml]
-updated: 2026-10-10
+updated: 2026-10-11
 ---
 
 # 環境構築とよく使うコマンド
 
-このリポジトリ(VolTech gRPC)の環境構築と、よく使うコマンド。基盤を直すときも、テンプレートから作ったアプリでも同じ手順で使う([始め方](../guide/getting-started.md))。
+このリポジトリ(VolTech gRPC)で、基盤を直して sandbox で確かめるまでの手順とコマンド。アプリから基盤を使う手順は [始め方](../guide/getting-started.md) にある。
 
 | フォルダ | 内容 |
 |---|---|
 | `server/rust/` | サーバーの基盤クレート(Cargo ワークスペース) |
 | `Unity/com.chinpangx.voltech.grpc/` | Unity クライアントの UPM パッケージ |
 | `tools/protoc-gen-voltech-grpc/` | ラッパーを生成する protoc プラグイン([コード生成](../api/codegen.md)) |
-| `sandbox/` | アプリの雛形(`.proto`・サーバー・Unity プロジェクト)。基盤の動作確認にも使う |
+| `sandbox/` | 基盤の動作確認とガチャのサンプル(`.proto`・サーバー・Unity プロジェクト。配らない) |
 | `docs/wiki/` | 設計(この wiki) |
 
 ## 必須のツール

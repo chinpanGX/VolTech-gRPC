@@ -2,7 +2,7 @@
 title: "未確定・保留"
 status: open
 area: root
-updated: 2026-10-10
+updated: 2026-10-11
 ---
 
 # 未確定・保留
@@ -11,9 +11,7 @@ updated: 2026-10-10
 
 | # | 項目 | 状態 | 節 |
 |---|---|---|---|
-| 1 | クレートの細かい分け方(テンプレートの基盤のクレートの分け方、ドメインのクレートが生成コードに直接依存するか) | 実装時に決める | [フォルダ構成](repo/folder-layout.md), [レイヤー構成](server/layers.md) |
-| 2 | テンプレートの `Client/`・`Server/` の雛形の中身 | サーバー側は、起動・デバイス登録・トークンの発行まで実装済み([当面の実装方針](repo/current-plan.md))。Unity 側は作るときに決める | [フォルダ構成](repo/folder-layout.md) |
-| 3 | 基盤をタグで参照するアプリ(Atlas など)の buf から、基盤の `.proto`(カスタムオプションの定義)を参照する方法(BSR に置く、コピーする、など) | テンプレートから作ったアプリは、手元のパス(`buf.yaml` の `modules`)で参照すると決めた([運用](repo/operations.md))。タグで参照するアプリの分は、Atlas を乗せ換えるときに決める | [フォルダ構成](repo/folder-layout.md), [コード生成](api/codegen.md) |
+| 1 | クレートの細かい分け方(ドメインのクレートが生成コードに直接依存するか) | 実装時に決める | [フォルダ構成](repo/folder-layout.md), [レイヤー構成](server/layers.md) |
 | 4 | 細かい名前(パッケージの中のフォルダ名) | 実装時に決める。ヘッダー名と `MAINTENANCE` の `metadata` のキー名は決めた([メタデータ](api/metadata.md)、[サーバーの状態](server/status.md)) | [ラッパー](client/wrapper.md) |
 | 5 | サインインの全件の置き換えと、`IPlayerDiffApplier` による自動の反映の区別(フィールド名を分けるなど) | 実装時に決める | [共通レスポンス項目](api/common-response.md), [共通レスポンス項目の反映](client/response-items.md) |
 | 6 | サーバーでも `skip_auth` を読むか(`prost-reflect`) | v1の後に判断する | [認証(サーバー)](server/auth.md) |
@@ -27,4 +25,4 @@ updated: 2026-10-10
 | 20 | デバイス登録の回数の制限(認証なしで呼べ、毎回 Argon2 の計算と `devices` の行の追加をするので、連打でサーバーの資源を使い切られる)。サーバーで制限するか、インフラ(WAF など)で制限するか | 一般のユーザーに公開する前に決める | [認証(サーバー)](server/auth.md) |
 | 21 | DLC(アセット・マスターデータ)のバージョンを送り、古ければ取り直させるか | DLC の仕組みを入れるときに決める。古いアプリは送らないので、「ヘッダーが無ければ判定しない」決まりのまま後から足せる | [メタデータ](api/metadata.md), [サーバーの状態](server/status.md) |
 | 22 | ストアの区別(同じプラットフォームで複数のストアに出すときの、ストアごとの最低バージョン)。課金のレシート検証のストアは、購入 API のリクエストの項目にする | 課金や2つ目のストアを入れるときに決める。`x-app-platform` の値を細かくするか、`x-app-store` を足す | [メタデータ](api/metadata.md), [サーバーの状態](server/status.md) |
-| 23 | テンプレートの雛形の形(`sandbox/` の名前を `app/` などに変えるか、雛形に残す確認用の RPC(`Ping`・`Fail`・`Increment`)と結合テストをアプリでどう扱うか、基盤の Makefile・CI とアプリのものの分け方) | テンプレートをこのリポジトリにした(2026-10-10)。雛形を整えるときに決める | [運用](repo/operations.md), [始め方](guide/getting-started.md) |
+| 24 | カスタムエラーハンドラーの属性で、担当するエラーコードをどう書くか。`ErrorCode` が enum から構造体(domain と reason)になったので、属性の引数に定数として書けない(文字列で domain と reason を書く、生成コードに定数の文字列を足す、など) | カスタムエラーハンドラーを作るときに決める | [エラー処理](client/error-handling.md), [エラー](api/errors.md) |

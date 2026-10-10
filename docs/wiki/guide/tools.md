@@ -5,7 +5,7 @@ area: guide
 related: [api/codegen, client/request-viewer, ops/setup, ops/debugging]
 proto: []
 code: [tools/protoc-gen-voltech-grpc/src/GeneratorParameters.cs, buf.gen.yaml, buf.yaml, Makefile, Unity/com.chinpangx.voltech.grpc/Editor, Unity/com.chinpangx.voltech.grpc/Runtime/Tracing]
-updated: 2026-10-10
+updated: 2026-10-11
 ---
 
 # ツール
@@ -49,8 +49,9 @@ Unity エディタで、API のリクエストとレスポンスを1件ずつ見
 
 | コマンド | 内容 |
 |---|---|
-| `make sandbox-server` | MySQL と sandbox のサーバーを起動する(samples では `make run`) |
-| `make proto-gen` | `.proto` から C# を生成する |
+| `make sandbox-server` | MySQL と sandbox のサーバーを起動する |
+| `make proto-gen` / `make sandbox-proto-gen` | `.proto` から C# を生成する(基盤 / sandbox) |
+| `make errors-gen` / `make sandbox-errors-gen` | `errors.toml` から C# のエラーコードを生成する(基盤の予約エラー / sandbox の業務エラー。`protoc-gen-voltech-grpc errors`) |
 | `make proto-lint` / `make proto-breaking` | `.proto` の lint / main との互換性の確認 |
 | `make test` | プッシュ前のテスト一式 |
 | `make client-lint` | クライアントの書き方の確認 |

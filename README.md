@@ -1,20 +1,20 @@
 # VolTech gRPC
 
-gRPC でゲームのバックエンドを作るための基盤とテンプレート。Rust のサーバー側クレート、Unity のクライアント(UPM パッケージ)、C# のラッパーを生成する protoc プラグインと、それを使うアプリの雛形(`sandbox/`)からなる。アプリはこのリポジトリを clone して作る。
+gRPC でゲームのバックエンドを作るための基盤。Rust のサーバー側クレート、Unity のクライアント(UPM パッケージ)、C# のラッパーを生成する protoc プラグインからなる。アプリは自分のプロジェクトから、タグを指定して参照する。
 
 | 場所 | 中身 |
 | --- | --- |
-| `server/rust/` | サーバーの基盤クレート(`voltech-grpc-auth`・`-error`・`-status`・`-transaction`) |
+| `server/rust/` | サーバーの基盤クレート(`voltech-grpc-auth`・`-error`・`-error-build`・`-status`・`-transaction`) |
 | `Unity/com.chinpangx.voltech.grpc/` | Unity クライアントの UPM パッケージ |
 | `tools/protoc-gen-voltech-grpc/` | ApiCore を通して呼ぶ C# ラッパーを生成する protoc プラグイン |
-| `sandbox/` | アプリの雛形(proto・サーバー・Unity プロジェクト)。基盤の動作確認にも使う |
+| `sandbox/` | 基盤の動作確認とガチャのサンプル(proto・サーバー・Unity プロジェクト)。組み込み方の実例 |
 | `docs/` | 設計と利用ガイド(`docs/wiki/`) |
 
-このリポジトリの sandbox には業務機能を入れない(アプリは clone した先で sandbox を書き換える)。
+sandbox は配布物ではない。基盤の動作確認と、組み込み方の実例のためにある。
 
 ## 使い方
 
-[docs/wiki/guide/getting-started.md](docs/wiki/guide/getting-started.md)。既存のアプリからタグで参照する形は [docs/wiki/repo/operations.md](docs/wiki/repo/operations.md)。
+[docs/wiki/guide/getting-started.md](docs/wiki/guide/getting-started.md)。
 
 ## 開発
 

@@ -5,7 +5,7 @@ area: client
 related: [api/errors, client/auth-account, client/response-items]
 proto: []
 code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/Errors, Unity/com.chinpangx.voltech.grpc/Runtime/Client/ErrorHandling]
-updated: 2026-10-10
+updated: 2026-10-11
 ---
 
 # エラー処理
@@ -26,7 +26,7 @@ updated: 2026-10-10
 - 存在しないメソッドを呼ぶと `UNIMPLEMENTED` になるので、業務上の「見つからない」と混ざらない
 - 変換そのものが失敗したら(`IErrorPolicyProvider` の実装の例外など)、`CLIENT_ERROR` にする。変換で起きた例外を呼び出し側に投げない
 
-- action は、`metadata["action"]` があればそれ、無いか知らない値なら `default_action`(起動時に Descriptor から読んで `Dictionary<ErrorCode, ErrorAction>` にしておく)
+- action は、`metadata["action"]` があればそれ、無いか知らない値なら既定の action(`ErrorPolicyProvider` が、`errors.toml` から生成した一覧と予約エラーで `Dictionary<ErrorCode, ErrorAction>` にしておく)
 - 文言と action の取り出しは `IErrorPolicyProvider` のようなインターフェースの裏に置き、将来マスターから読む形にも差し替えられるようにする
 
 ## 呼び出し側への返し方
@@ -82,7 +82,7 @@ updated: 2026-10-10
 ## カスタムエラーハンドラー
 
 ```csharp
-[CustomErrorHandler(ErrorCode.GachaClosed, ErrorCode.GachaTicketShortage)]
+[CustomErrorHandler("my-app", "GACHA_CLOSED", "GACHA_TICKET_SHORTAGE")] // 属性の形は未確定(未確定・保留 #24)
 public sealed class GachaErrorHandler : ICustomErrorHandler
 {
     public UniTask<ErrorDecision> HandleAsync(ApiError error) { ... }

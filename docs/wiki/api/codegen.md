@@ -5,7 +5,7 @@ area: api
 related: [repo/folder-layout, api/errors, api/idempotency, api/auth, server/transaction, server/auth, client/wrapper, client/response-items, client/fake-testing]
 proto: []
 code: [tools/protoc-gen-voltech-grpc, buf.gen.yaml]
-updated: 2026-10-10
+updated: 2026-10-11
 ---
 
 # コード生成
@@ -24,14 +24,14 @@ updated: 2026-10-10
   - ラッパー(gRPCサービスごとに1クラス)。RPCごとの `idempotency_level`([冪等性](idempotency.md))と、サービスごとの `skip_auth`([認証](auth.md))を読んで埋め込む
   - 全RPCの一覧(汎用のテスト用。[サーバーが無いときの差し替えとテスト](../client/fake-testing.md))
   - 共通レスポンス項目(`player_diff`・`badges`・`notifications`)を持つレスポンスの一覧(反映処理の登録漏れの確認用。[共通レスポンス項目の反映](../client/response-items.md))。それらのレスポンスの `partial class` に、目印のinterface(`IHasPlayerDiff`・`IHasBadges`・`IHasNotifications`)を付ける
-- **カスタムオプションは2つだけ**にする
-  - `default_action`(エラーコードの既定の action。[エラー](errors.md))
+  - `errors` サブコマンドで、エラーの定義ファイル(`errors.toml`)から C# のエラーコードの定数と、既定の action の一覧を作る([エラー](errors.md))
+- **カスタムオプションは `skip_auth` だけ**にする
   - `skip_auth`(認証が不要なサービス。[認証](auth.md))
+  - エラーの既定の action は `.proto` に書かず、`errors.toml` に書く([エラー](errors.md))
   - 冪等性は、標準のメソッドオプション `idempotency_level` で表す([冪等性](idempotency.md))
 
 | オプション | クライアント | サーバー |
 |---|---|---|
-| `default_action` | 実行時に Descriptor から読む | 読まない |
 | `skip_auth` | ラッパーの生成時にプラグインが読む | v1では読まない([認証(サーバー)](../server/auth.md)) |
 | `idempotency_level` | ラッパーの生成時にプラグインが読む | v1から読む(標準のフィールドなので `prost-types` で読める。[with_transaction() と冪等性](../server/transaction.md)) |
 

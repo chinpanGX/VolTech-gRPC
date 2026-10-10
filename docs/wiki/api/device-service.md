@@ -4,7 +4,7 @@ status: current
 area: api
 related: [api/auth, api/metadata, api/errors, server/auth, client/auth-account]
 proto: [server/rust/auth/proto/voltech/v1/device.proto]
-updated: 2026-10-10
+updated: 2026-10-11
 ---
 
 # API: DeviceService(デバイス登録・トークンの発行)
@@ -69,7 +69,7 @@ updated: 2026-10-10
 | エラー | 条件 |
 |---|---|
 | `INVALID_ARGUMENT` | `secret_key` の長さが範囲外、または使えない文字を含む |
-| `INTERNAL` + `ERROR_CODE_INTERNAL_ERROR` | DB のエラーなど |
+| `INTERNAL` + `INTERNAL_ERROR` | DB のエラーなど |
 
 ## IssueToken
 
@@ -108,7 +108,7 @@ device_id と secret_key を検証し、アクセストークンを発行する�
 | エラー | 条件 |
 |---|---|
 | `UNAUTHENTICATED` | `device_id` が登録されていない、または `secret_key` が違う(どちらかは区別しない)。`secret_key` の長さや文字が `Register` の決まりに合わなくても、`INVALID_ARGUMENT` ではなくこれになる |
-| `INTERNAL` + `ERROR_CODE_INTERNAL_ERROR` | DB のエラーなど |
+| `INTERNAL` + `INTERNAL_ERROR` | DB のエラーなど |
 
 ## 認証が必要な API の呼び方
 
@@ -125,9 +125,9 @@ authorization: Bearer <access_token>
 | エラー | 条件 |
 |---|---|
 | `UNAUTHENTICATED` | `authorization` が無い、`Bearer ` で始まらない、トークンが存在しない・期限切れ・発行し直されて古くなった |
-| `FAILED_PRECONDITION` + `ERROR_CODE_ACCOUNT_SUSPENDED` | プレイヤーが BAN・アカウント停止中(`PlayerResolver` が `Suspended` を返した) |
-| `INTERNAL` + `ERROR_CODE_INTERNAL_ERROR` | DB や `PlayerResolver` のエラー |
+| `FAILED_PRECONDITION` + `ACCOUNT_SUSPENDED` | プレイヤーが BAN・アカウント停止中(`PlayerResolver` が `Suspended` を返した) |
+| `INTERNAL` + `INTERNAL_ERROR` | DB や `PlayerResolver` のエラー |
 
 `UNAUTHENTICATED` を受け取ったクライアントは、`IssueToken` でトークンを取り直してから再送する。
 
-エラーコード(`ERROR_CODE_*`)は `ErrorInfo.reason` に入る。`ErrorInfo.domain` は `framework`([エラー](errors.md))。
+エラーは基盤の予約エラーで、`ErrorInfo.domain` は `voltech`、`ErrorInfo.reason` は上の名前になる([エラー](errors.md))。

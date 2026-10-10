@@ -1,41 +1,40 @@
 ---
-title: "運用(パッケージとテンプレート)"
-status: deferred
+title: "運用(パッケージとサンプル)"
+status: current
 area: repo
 related: [repo/naming, repo/current-plan, guide/getting-started, ops/local-override]
-proto: [sandbox/proto/sandbox/v1/error_code.proto]
-code: [sandbox/server/Cargo.toml, sandbox/UnityProject/Packages/manifest.json, buf.yaml]
-updated: 2026-10-10
+proto: []
+code: [sandbox/server/Cargo.toml, sandbox/UnityProject/Packages/manifest.json, Unity/com.chinpangx.voltech.grpc/package.json]
+updated: 2026-10-11
 ---
 
-# 運用(パッケージとテンプレート)
+# 運用(パッケージとサンプル)
 
-このリポジトリ(VolTech-gRPC)を**テンプレート**にする。基盤と、アプリの雛形(`sandbox/`)を1つのリポジトリに持ち、アプリはこれを clone して作る。基盤のフォルダはパッケージの形(UPM パッケージ・機能ごとのクレート)にしてあるので、clone できない既存のアプリ(Atlas)は、タグで参照する。
+基盤は**パッケージ**として配る。アプリは自分のプロジェクトを作り、基盤をタグで参照する。このリポジトリ(VolTech-gRPC)は、基盤と、組み込み方の実例(sandbox)を持つ。アプリがこのリポジトリを clone して、その中で作ることはしない。
 
-| 使い方 | 対象 | 基盤の参照 | 基盤の更新 |
-|---|---|---|---|
-| テンプレート(基本) | 新しく作るアプリ(サンプルを含む) | 手元のパス(Cargo の `path`、UPM の `file:`、`buf.yaml` の `modules`) | upstream から merge する |
-| パッケージ | 既存のアプリ(Atlas など) | タグ(Cargo の `git` + `tag`、UPM の git URL) | タグを上げる |
-
-## テンプレート
-
-- アプリを作るときは、このリポジトリを `git clone` し、複製元を `upstream` として登録する(手順は [始め方](../guide/getting-started.md))
-- 基盤の改善は `git fetch upstream` → merge で取り込む。基盤と雛形が1つの履歴なので、組み合わせが食い違わない(基盤のタグと雛形の対応を管理しなくてよい)
-- **アプリは基盤のフォルダ(`server/rust/`・`Unity/com.chinpangx.voltech.grpc/`・`tools/`)を直接直さない**。直すと upstream からの取り込みで衝突する。アプリが変えたいところは、用意した差し替え口を使う(共通エラーハンドラーの差し替え、`IErrorDialogView`・`IErrorNavigator`、反映処理、カスタムエラーハンドラー、`IAccountStore`、接続設定、サーバーの `PlayerResolver`。[クライアント基盤](../client/index.md))。足りない場面が出たら、upstream の基盤に差し替え口を足す
-- アプリのコードは雛形(`sandbox/`)の中に書く。基盤の側は雛形に依存しないので、アプリの変更と基盤の取り込みは別のフォルダに分かれる
-- サンプル(grpc-foundation-samples)もこの手順で作り、基盤の改善を取り込む。基盤を取り込んでアプリを作る手順を、Atlasより先にサンプルで試すため
-  - サンプルの業務エラーコードは、サンプルのリポジトリの `error_code.proto` にだけ入る(テンプレートの `error_code.proto` は予約コードだけ)
-- テストは、サンプルに頼らずこのリポジトリで行う。クライアントの基盤のテスト(Unity の EditMode テスト)、サーバーの基盤のテスト、雛形を使った結合テスト(デバイス登録・トークン・冪等性・エラー・メンテナンスの判定など。[開発運用](../ops/index.md))
+| もの | 置き場所 | 使い方 |
+|---|---|---|
+| 基盤 | `server/rust/`(クレート)、`Unity/com.chinpangx.voltech.grpc/`(UPM パッケージ)、`tools/protoc-gen-voltech-grpc/`(protoc プラグイン) | アプリはタグで参照する(Cargo の `git` + `tag`、UPM の git URL) |
+| 実例(sandbox) | `sandbox/` | 基盤の機能を1つずつ試す RPC と、ガチャのサンプル。基盤を手元のパスで参照する。配らない |
 
 ## パッケージ
 
 - Rust は Git の依存(`tag` でバージョンを固定)、Unity は UPM の Git URL(`?path=` とタグ)で参照する。protoc プラグインは dotnet tool として入れる
+- アプリはパッケージのコードを直接触らない。改善は、タグのバージョンを上げて取り込む
+- アプリが変えたいところは、用意した差し替え口を使う(共通エラーハンドラーの差し替え、`IErrorDialogView`・`IErrorNavigator`、反映処理、カスタムエラーハンドラー、`IAccountStore`、接続設定、サーバーの `PlayerResolver`。[クライアント基盤](../client/index.md))。足りない場面が出たら、パッケージに差し替え口を足す
 - クライアントとサーバーの認証、プラグインと `ApiCore` は組で動くので、1つのリポジトリから同じタグで出す(`device.proto` や、ラッパーと `ApiCore` の食い違いが起きない)
-- 基盤を同時に直すときは、手元のパスに差し替える([パッケージとテンプレートを同時に直すとき](../ops/local-override.md))
+- アプリのエラーは、アプリの `errors.toml`(アプリの domain)に書く。基盤の予約エラーは基盤が持つので、アプリに書き写さない([エラー](../api/errors.md))
 - 基盤はアプリのコードに依存しない。サーバーでアプリとつなぐのは `PlayerResolver` の trait だけ
+- 基盤とアプリを同時に直すときは、手元のパスに差し替える([パッケージとアプリを同時に直すとき](../ops/local-override.md))
 - タグの付け方とリリースの手順は未確定([未確定・保留](../open-questions.md) #16)
+
+## サンプル(sandbox)
+
+- ガチャのサンプルは sandbox に置く。基盤と同じ履歴なので、基盤の変更でサンプルが壊れたら、同じコミットのテストで気づける。依存の版の決まり(`make deps-check`)も一緒に確かめられる
+- sandbox は基盤を手元のパスで参照する(Cargo の `path`、UPM の `file:`)。アプリと同じくタグで動くかは、リリースの前に確かめる
+- テストはこのリポジトリで行う。クライアントの基盤のテスト(Unity の EditMode テスト)、サーバーの基盤のテスト、sandbox の結合テスト(デバイス登録・トークン・冪等性・エラー・メンテナンスの判定・ガチャなど。[開発運用](../ops/index.md))
 
 ## 実装で決めたこと
 
-- テンプレートは、基盤を分けた後の VolTech-gRPC にする(2026-10-10)。当初はサンプルにテンプレートを兼ねさせ、基盤はタグで参照する形にしていたが、アプリを作るたびにサンプルのコードを消すことになり、基盤のタグと雛形の組み合わせを合わせる手間もかかるため改めた
-- 雛形は、基盤の動作確認に使っていた `sandbox/` にする。すでに基盤を手元のパスで参照し、デバイス登録からトランザクションまでを通す最小のサーバーと Unity プロジェクトになっている。名前と、雛形に残す確認用の RPC の扱いは未確定([未確定・保留](../open-questions.md) #23)
+- サンプルは、別のリポジトリ(grpc-foundation-samples)ではなく sandbox に置く(2026-10-11)。アプリは基盤をパッケージとして参照するので、サンプルを clone の元にする必要が無い。別のリポジトリにすると、基盤を直すたびにタグを打ってサンプルの参照を上げることになり、壊れたことに気づくのも遅れる
+- 一時期、このリポジトリをテンプレートにして、アプリが clone して基盤を手元で参照する形にした(2026-10-10)。アプリが自分のプロジェクトからパッケージを参照する形に戻した

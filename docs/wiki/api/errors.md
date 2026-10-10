@@ -3,19 +3,19 @@ title: "エラー"
 status: confirmed
 area: api
 related: [api/auth, server/auth, server/status, client/error-handling, client/response-items, ops/testing]
-proto: [sandbox/proto/sandbox/v1/error_code.proto]
-code: [server/rust/error]
-updated: 2026-10-10
+proto: []
+code: [server/rust/error, server/rust/error-build, server/rust/error/errors.toml, sandbox/errors.toml, tools/protoc-gen-voltech-grpc/src/Errors, Unity/com.chinpangx.voltech.grpc/Runtime/Client/Errors]
+updated: 2026-10-11
 ---
 
 # エラー
 
 ## 返し方
 
-| 種類 | ステータス | `ErrorInfo.reason` |
+| 種類 | ステータス | `ErrorInfo` の domain / reason |
 |---|---|---|
-| 業務エラー(メンテナンス・強制アップデート等を含む) | `FAILED_PRECONDITION` | 業務ごとのコード(例: `ERROR_CODE_INSUFFICIENT_GEMS`) |
-| サーバー内部エラー | `INTERNAL` | `ERROR_CODE_INTERNAL_ERROR`(詳細はログにだけ出す) |
+| 業務エラー(メンテナンス・強制アップデート等を含む) | `FAILED_PRECONDITION` | アプリの業務エラーはアプリの domain(例: `sandbox` / `INSUFFICIENT_GEMS`)、基盤の予約エラーは `voltech`(例: `voltech` / `MAINTENANCE`) |
+| サーバー内部エラー | `INTERNAL` | `voltech` / `INTERNAL_ERROR`(詳細はログにだけ出す) |
 | 認証エラー | `UNAUTHENTICATED` | なし([認証](auth.md)) |
 
 - gRPCではエラー時にレスポンスメッセージを返せないので、**リッチエラーモデル**で運ぶ。`google.rpc.Status` の details に Google 標準の `google.rpc.ErrorInfo` を入れ、トレーラー `grpc-status-details-bin` で返す(Rust は tonic-types、C# は `Google.Api.CommonProtos` で扱える)
@@ -23,58 +23,51 @@ updated: 2026-10-10
 ```proto
 // google/rpc/error_details.proto(Googleが提供する定義)
 message ErrorInfo {
-  string reason = 1;                 // ErrorCode の値の名前
-  string domain = 2;                 // 固定値。クライアントは判定に使わない
+  string reason = 1;                 // エラーの名前(例: INSUFFICIENT_GEMS)
+  string domain = 2;                 // エラーの持ち主(基盤の予約エラーは voltech、アプリの業務エラーはアプリの domain)
   map<string, string> metadata = 3;  // action の上書き、メンテナンスの終了予定など
 }
 ```
 
-## エラーコードと action の定義
+- **エラーは domain と reason の組で見分ける**(`ErrorCode`)。reason が同じでも domain が違えば別のエラー
+- 基盤の予約エラーは domain `voltech` で、アプリは使えない。アプリが予約エラーを変えたり消したりできないので、基盤を取り込むたびに手で合わせる必要が無い
 
-エラーコードと action は `.proto` の enum で定義し、サーバー・クライアントの両方に生成する(ここが唯一の定義元)。
+## エラーの定義ファイル(errors.toml)
 
-```proto
-// voltech/v1/error_options.proto(基盤。server/rust/error/proto に置く)
-package voltech.v1;
+エラーコードと既定の action は、domain ごとの定義ファイル `errors.toml` に書き、サーバー(Rust)とクライアント(C#)の定数を生成する(ここが唯一の定義元)。
 
-import "google/protobuf/descriptor.proto";
+| 定義ファイル | domain | Rust | C# |
+|---|---|---|---|
+| `server/rust/error/errors.toml`(基盤の予約エラー) | `voltech` | `voltech_grpc_error::reserved`(`voltech-grpc-error` の build.rs が生成) | `VolTech.Client.ReservedErrors`(パッケージに同梱。`make errors-gen`) |
+| アプリの `errors.toml`(sandbox は `sandbox/errors.toml`) | アプリが決める(sandbox は `sandbox`) | アプリの build.rs で `voltech_grpc_error_build::compile` を呼ぶ(sandbox は `proto::errors`) | `protoc-gen-voltech-grpc errors` で生成する(sandbox は `Sandbox.V1.SandboxErrors`。`make sandbox-errors-gen`) |
 
-enum ErrorAction {
-  ERROR_ACTION_UNSPECIFIED = 0;
-  ERROR_ACTION_STAY = 1;
-  ERROR_ACTION_RETRY = 2;
-  ERROR_ACTION_HOME = 3;
-  ERROR_ACTION_TITLE = 4;
-  ERROR_ACTION_UPDATE = 5;
-}
+```toml
+# アプリの errors.toml(sandbox/errors.toml から抜粋)
+domain = "sandbox"
 
-extend google.protobuf.EnumValueOptions {
-  ErrorAction default_action = 50001;
-}
+[[errors]]
+reason = "INSUFFICIENT_GEMS"
+action = "stay"
+description = "ジェムが足りず、ガチャを引けない。"
 ```
 
-アプリのエラーコードは、アプリの `error_code.proto` の `ErrorCode` に定義する(一覧はそちらを見る。ここには書き写さない)。基盤のリポジトリでは sandbox の [`sandbox/v1/error_code.proto`](../../../sandbox/proto/sandbox/v1/error_code.proto) が例になる。
+- **domain**: 小文字・数字・ハイフンを `.` でつないだ名前(例: `my-app`)。`voltech` はアプリでは使えない
+- **reason**: 大文字のスネークケース、63文字以内(AIP-193 の `ErrorInfo.reason` の規則)。同じファイルの中で重複させない。生成するコードの定数とぶつかる `DOMAIN`・`ALL` は使えない
+- **action**: 既定の action(`stay`・`retry`・`home`・`title`・`update`)
+- **client_only**: クライアントだけが使うエラー(サーバーは返さない)。Rust の定数を作らない
+- **description**: 用途。生成するコードのコメントになる。必ず書く
+- 規則に合わないと、生成(build.rs・`protoc-gen-voltech-grpc errors`)がエラーになる
+- **消した reason は使い回さない**(古いアプリが別の意味に受け取る)
+- **文言キー**は domain と reason から決まりで作る(例: `sandbox` / `INSUFFICIENT_GEMS` → `error.sandbox.insufficient_gems`)
 
-- 番号: 1〜999 は基盤の予約コード(`NETWORK_ERROR`・`INTERNAL_ERROR`・`MAINTENANCE`・`ACCOUNT_SUSPENDED` など)、1000 以降をアプリが足す。業務エラーは機能ごとに番号の範囲を分け、範囲を `.proto` のコメントに書く
-- 消した番号と名前は `reserved` にする
-- 書き方の例:
+## 返す・受け取る
 
-```proto
-enum ErrorCode {
-  ERROR_CODE_UNSPECIFIED = 0;
-  // 1〜999: 基盤の予約コード
-  ERROR_CODE_INTERNAL_ERROR = 2 [(voltech.v1.default_action) = ERROR_ACTION_RETRY];
-  // 1000〜1099: ガチャ
-  ERROR_CODE_INSUFFICIENT_GEMS = 1001 [(voltech.v1.default_action) = ERROR_ACTION_STAY];
-}
-```
-
-- **`reason`** には enum の値の名前を入れる(サーバーは `as_str_name()`、クライアントは `ErrorCode.Descriptor.FindValueByName()` で相互に変換する)。名前は AIP-193 の規則(大文字のスネークケース、63文字以内)を満たす
-- **既定の action** は、enum の各値にカスタムオプション `default_action` で付ける。付いていない値は Title として扱う
-- **文言キー**は enum の名前から決まりで作る(例: `ERROR_CODE_INSUFFICIENT_GEMS` → `error.insufficient_gems`)
-- **サーバーによる action の上書き**: 必要なときだけ `metadata["action"]` に `ErrorAction` の名前を入れる。指定できるのは5種類の action だけで、画面名は指定しない
-- **知らないコード**(古いアプリに無い値)は `UNKNOWN_ERROR` と同じ挙動にする。サーバーが後からコードを足しても、古いアプリは壊れない
-- **追加**は `.proto` に1行足して生成し直し、文言を足すだけ。**削除**した番号と名前は `reserved` にする([開発運用](../ops/index.md))
+- サーバー: `voltech_grpc_error::failed_precondition(code, message)` で業務エラーを返す。`code` は生成した定数(例: `proto::errors::INSUFFICIENT_GEMS`)。表示用の値を付けるときは `failed_precondition_with_metadata`。内部エラーは `internal(err)`(詳細はログにだけ出る)
+- クライアント: `ApiError.Code` が `ErrorCode`(domain と reason)になる。画面で自分で処理したいエラーは、生成した定数を `handledCodes` に渡す(例: `new[] { SandboxErrors.InsufficientGems }`)。予約エラーは渡しても、必ず共通エラーハンドラーが処理する([エラー処理](../client/error-handling.md))
+- クライアントの既定の action は、`ErrorPolicyProvider` に生成した一覧(例: `SandboxErrors.All`)を渡して引く。予約エラー(`ReservedErrors.All`)は自動で入る
+- **サーバーによる action の上書き**: 必要なときだけ `metadata["action"]` に action の名前を入れる。クライアントが読むのは `ERROR_ACTION_STAY`・`ERROR_ACTION_RETRY`・`ERROR_ACTION_HOME`・`ERROR_ACTION_TITLE`・`ERROR_ACTION_UPDATE` で、知らない値なら既定の action を使う。画面名は指定しない
+- **知らないコード**(古いアプリに無い domain・reason)は `UNKNOWN_ERROR` と同じ挙動にする。サーバーが後からコードを足しても、古いアプリは壊れない
+- **追加**は `errors.toml` に足して生成し直し、文言を足すだけ
 - **文言への値の埋め込み**は v1 では対応しない。例外はメンテナンスの終了予定(下記)。必要になったら `metadata` で値を送る(キー `action` は避ける)
 
 ## action とダイアログ
@@ -87,20 +80,20 @@ enum ErrorCode {
 | Title | タイトルへ | タイトルに戻る(セッション情報を破棄) |
 | Update | ストアへ | ストアのページを開く。アプリは先へ進めない |
 
-## 予約コード
+## 予約エラー(domain: voltech)
 
-| エラーコード(`ERROR_CODE_` を省略) | 返す側 | action | 用途 |
-|---|---|---|---|
-| `NETWORK_ERROR` | クライアント | Retry | 通信断・タイムアウト |
-| `INTERNAL_ERROR` | サーバー | Retry | サーバー内部エラー。一時的な障害は再試行で直り得る |
-| `UNKNOWN_ERROR` | クライアント | Title | 想定外のステータス、知らないコード |
-| `MAINTENANCE` | サーバー | Title | メンテナンス中([サーバーの状態](../server/status.md)) |
-| `UPDATE_REQUIRED` | サーバー | Update | 強制アップデート([サーバーの状態](../server/status.md))。リリース済みのアプリには後から足せないので v1 から入れる |
-| `ACCOUNT_SUSPENDED` | サーバー | Title | BAN・アカウント停止([認証(サーバー)](../server/auth.md)) |
-| `DATE_CHANGED` | サーバー | Title | 日付変更([サーバーの状態](../server/status.md))。サインインし直し、所持データを全件取り直す |
-| `CLIENT_ERROR` | クライアント | Title | クライアントのバグ(共通レスポンス項目の反映処理での例外など。[共通レスポンス項目の反映](../client/response-items.md))。通信エラーとは違う文言にする |
+一覧と既定の action は [`server/rust/error/errors.toml`](../../../server/rust/error/errors.toml) が正。ここには、どこが返すかと注意だけを書く。
 
-- パッケージ([認証(サーバー)](../server/auth.md)、[サーバーの状態](../server/status.md))が返す予約コード(`MAINTENANCE`・`UPDATE_REQUIRED`・`DATE_CHANGED`・`ACCOUNT_SUSPENDED`)は、基盤の `voltech-grpc-error` クレートに名前の文字列の定数としてまとめて持つ(`voltech_grpc_error::code`。`ErrorCode` の enum はアプリ側で生成されるため)。テンプレートの `error_code.proto` の予約コードと一致しているかを、テストで確かめる([テスト](../ops/testing.md))
+| reason | 返す側 | 注意 |
+|---|---|---|
+| `NETWORK_ERROR` | クライアント | 通信断・タイムアウト |
+| `INTERNAL_ERROR` | サーバー | 一時的な障害は再試行で直り得る |
+| `UNKNOWN_ERROR` | クライアント | 想定外のステータス、知らないエラー |
+| `MAINTENANCE` | サーバー([サーバーの状態](../server/status.md)) | 終了予定を `metadata` の `end_at` に入れる(下記) |
+| `UPDATE_REQUIRED` | サーバー([サーバーの状態](../server/status.md)) | リリース済みのアプリには後から足せないので v1 から入れる |
+| `ACCOUNT_SUSPENDED` | サーバー([認証(サーバー)](../server/auth.md)) | BAN・アカウント停止 |
+| `DATE_CHANGED` | サーバー([サーバーの状態](../server/status.md)) | サインインし直し、所持データを全件取り直す |
+| `CLIENT_ERROR` | クライアント | 共通レスポンス項目の反映処理での例外など([共通レスポンス項目の反映](../client/response-items.md))。通信エラーとは違う文言にする |
 
 ## メンテナンス中の表示
 
@@ -108,3 +101,7 @@ enum ErrorCode {
 - メンテナンスの判定は全リクエスト共通([サーバーの状態](../server/status.md))なので、タイトル画面で最初に呼ぶトークン発行でも同じ値が返る。メンテナンスを知らせる専用のAPIは作らない
 - 運営からの「お知らせ」は、認証ありの普通のAPIで取得する(静的なファイルでは配信しない)。トークン発行は認証不要なので、タイトル画面でも先にトークンを取ってから呼べる
 - メンテナンス中でも呼べるAPI(判定の対象外)は v1 では作らない。メンテナンス中はお知らせのAPIも `MAINTENANCE` になるが、`metadata` の値で必要な情報は表示できる
+
+## 実装で決めたこと
+
+- エラーコードは `.proto` の enum(`ErrorCode`)と、カスタムオプション `default_action` で定義していたのをやめ、domain ごとの `errors.toml` にした(2026-10-10)。enum だと、基盤の予約コードをアプリの `error_code.proto` に書き写す必要があり、アプリが予約コードの番号や action を変えたり消したりしても気づけなかった。`error_options.proto` をアプリへ受け渡す必要も無くなった

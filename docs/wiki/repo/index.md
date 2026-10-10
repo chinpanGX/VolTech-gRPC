@@ -2,18 +2,18 @@
 title: "リポジトリ構成"
 status: index
 area: repo
-updated: 2026-10-10
+updated: 2026-10-11
 ---
 
 # リポジトリ構成
 
-> [運用](operations.md)〜[フォルダ構成](folder-layout.md)(と [概要](../overview.md) のリポジトリ、[パッケージとテンプレートを同時に直すとき](../ops/local-override.md) の手順)は、パッケージとテンプレートを別のリポジトリにする場合の形。パッケージ・リポジトリにどう分けるかは、実装を進めて形が固まってから検討する([未確定・保留](../open-questions.md) #17)。それまでは [当面の実装方針](current-plan.md) の方針で、1つのリポジトリで実装する。
+> 基盤は VolTech-gRPC に分け、パッケージとして配る。サンプルはこのリポジトリの sandbox に置く([運用](operations.md))。[フォルダ構成](folder-layout.md) と [当面の実装方針](current-plan.md) には、分ける前の案と経緯が残っている。
 
 ## ページ
 
-- [運用(パッケージとテンプレート)](operations.md) — パッケージ(バージョン参照)とテンプレート(clone)の2形態での提供と、その運用
+- [運用(パッケージとサンプル)](operations.md) — 基盤をパッケージとして配り、サンプルを sandbox に置く運用
 - [リポジトリ名と命名](naming.md) — リポジトリ・パッケージ・クレート・.proto パッケージの命名と理由
 - [サーバーの分け方](server-split.md) — モジュラーモノリスの採用と、プロセスを分ける基準
-- [フォルダ構成](folder-layout.md) — テンプレート/パッケージのフォルダ構成と、クレート依存の向き
+- [フォルダ構成](folder-layout.md) — 当初の案のフォルダ構成と、クレート依存の向き
 - [基盤とアプリの境界](boundary.md) — テーブル・.proto・エラー表示などの、基盤とアプリの責務分担
 - [当面の実装方針](current-plan.md) — 単一リポジトリでの framework / app 分離と、実装の中で決めたこと

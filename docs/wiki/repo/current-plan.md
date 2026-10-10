@@ -3,15 +3,15 @@ title: "当面の実装方針"
 status: current
 area: repo
 related: [repo/operations, repo/naming, repo/folder-layout, api/errors]
-proto: [sandbox/proto/sandbox/v1/error_code.proto]
-updated: 2026-10-10
+proto: []
+updated: 2026-10-11
 ---
 
 # 当面の実装方針
 
 > **2026-10-10 に分割を終えた。** 基盤は grpc-foundation-samples(タグ `pre-split`)から、このリポジトリ(VolTech-gRPC)に新しい履歴でコピーした。手順 1(パッケージの形にする)はコピー先で行い、手順 2 は履歴を引き継がないコピーに変えた(samples の履歴は samples に残す)。いまのフォルダは [コードの地図](../dev/code-map.md) にある。
 >
-> **同じ日に、テンプレートを samples からこのリポジトリ(VolTech-gRPC)に移すことにした**([運用](operations.md))。アプリは VolTech-gRPC を clone して作り、`sandbox/` を雛形にする。samples は、テンプレートから作ったアプリとして作り直す(samples の側の作業)。下は分ける前の方針と、samples の中にあった頃の形で、経緯として残す(下の「このリポジトリ」は samples を指す)。
+> **2026-10-11 に、samples のガチャを sandbox に移した。** アプリは基盤をパッケージとして参照し、サンプルは基盤と同じリポジトリに置く([運用](operations.md))。grpc-foundation-samples は使わない。下は分ける前の方針と、samples の中にあった頃の形で、経緯として残す(下の「このリポジトリ」は samples を指す)。
 
 まずは1つのリポジトリ(`grpc-foundation-samples`)で、基盤(パッケージ)・テンプレート・サンプルの中身を実装する。動かし方は [環境構築とよく使うコマンド](../ops/setup.md) にある。
 
@@ -21,9 +21,9 @@ updated: 2026-10-10
 
 1. **このリポジトリで、基盤をパッケージの形にする**。Unity は基盤を埋め込みパッケージ(`Packages/com.chinpangx.voltech.grpc/`、`package.json` 付き)に移す。サーバーの `framework/` のクレートと、基盤の `.proto` は、今の形のまま単独でビルドできる状態を保つ
 2. **履歴ごと `voltech-grpc` に移す**(`git subtree split` か `git filter-repo`)
-3. **サンプルから参照する**。Cargo は git の依存(`tag` を指定)、UPM は git の URL(`?path=` とタグ)にする。基盤を同時に直すときは、手元のパスに差し替える([パッケージとテンプレートを同時に直すとき](../ops/local-override.md))。サンプルの buf から基盤の `.proto` を参照する方法(#3)は、このときに決め直す
+3. **サンプルから参照する**。Cargo は git の依存(`tag` を指定)、UPM は git の URL(`?path=` とタグ)にする。基盤を同時に直すときは、手元のパスに差し替える([パッケージとアプリを同時に直すとき](../ops/local-override.md))。サンプルの buf から基盤の `.proto` を参照する方法(#3)は、このときに決め直す
 
-アプリは、このリポジトリ(サンプル兼テンプレート)を clone して作り、基盤はパッケージとして参照する(分けた後、VolTech-gRPC をテンプレートにする形に改めた。[運用](operations.md))
+アプリは、このリポジトリ(サンプル兼テンプレート)を clone して作り、基盤はパッケージとして参照する(分けた後は、アプリが自分のプロジェクトから基盤を参照する形にした。[運用](operations.md))
 
 - 後で分けるときに切り出しやすいように、**アプリごとに変更しないもの(`framework/`)と、変更するもの(`app/`)をフォルダで分ける**
 - `framework/` のクレートは、**実装する機能ごとに分け、`voltech-grpc-<機能>` の名前を付ける**(`voltech-grpc-auth`・`voltech-grpc-error` など)。フォルダは機能の名前だけにする(`framework/auth/`)
@@ -74,8 +74,8 @@ grpc-foundation-samples/
 
 実装の中で決めたこと:
 
-- カスタムオプションは機能の `.proto` に置く。`ErrorAction` と `default_action` は `voltech/v1/error_options.proto`、`skip_auth` は `voltech/v1/auth_options.proto`。アプリの `error_code.proto` は `voltech/v1/error_options.proto` を import する([エラー](../api/errors.md) のコード例は、1つのファイルにまとめていた頃のもの)
-- パッケージが返す予約エラーコードの名前は、`voltech-grpc-error` クレートにまとめる(`voltech_grpc_error::code`)
+- カスタムオプションは機能の `.proto` に置く。`ErrorAction` と `default_action` は `voltech/v1/error_options.proto`、`skip_auth` は `voltech/v1/auth_options.proto`。アプリの `error_code.proto` は `voltech/v1/error_options.proto` を import する(いまはエラーを `errors.toml` で定義するので、この2つは無い。[エラー](../api/errors.md))
+- パッケージが返す予約エラーコードは、`voltech-grpc-error` クレートにまとめる(いまは `voltech_grpc_error::reserved`。`errors.toml` から生成する)
 - `player_id` は ULID にする。DB には `BINARY(16)`、API(`.proto`)とクライアントには 26 文字の文字列で持つ。連番と違い、他人の ID や登録者数を推測されない。基盤の `PlayerId` の型も ULID(`ulid::Ulid`)にする
 - buf からパッケージの `.proto` は、手元のパス(`buf.yaml` の `modules`)で参照する([未確定・保留](../open-questions.md) #3)
 - Rust の生成は、使う側の `build.rs` で protox(Rust 製の protobuf コンパイラ)を使って行い、生成コードはコミットしない。protoc のインストールは要らない

@@ -4,8 +4,8 @@ status: current
 area: guide
 related: [guide/add-api, client/api-core, client/error-handling, client/response-items, client/auth-account, client/fake-testing, client/structure]
 proto: []
-code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client, Unity/com.chinpangx.voltech.grpc/Runtime/Auth, Unity/com.chinpangx.voltech.grpc/Runtime/Unity, Unity/com.chinpangx.voltech.grpc/Runtime/Client/Errors/ProtoErrorPolicyProvider.cs]
-updated: 2026-10-10
+code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client, Unity/com.chinpangx.voltech.grpc/Runtime/Auth, Unity/com.chinpangx.voltech.grpc/Runtime/Unity, Unity/com.chinpangx.voltech.grpc/Runtime/Client/Errors/ErrorPolicyProvider.cs, sandbox/UnityProject/Assets/Scripts/Sample/SampleLifetimeScope.cs]
+updated: 2026-10-11
 ---
 
 # クライアントのリファレンス
@@ -14,7 +14,7 @@ Unity のクライアントで使う、基盤の型の一覧。各型の細か�
 
 | アセンブリ / フォルダ | 名前空間 | 中身 |
 |---|---|---|
-| `VolTech.Client`(`Runtime/Client/`) | `VolTech.Client` | 基盤の本体と、エラーコードの表(`ProtoErrorPolicyProvider`)。Unity に依存しない(No Engine References) |
+| `VolTech.Client`(`Runtime/Client/`) | `VolTech.Client` | 基盤の本体と、エラーの既定の action の表(`ErrorPolicyProvider`)・予約エラー(`ReservedErrors`)。Unity に依存しない(No Engine References) |
 | `VolTech.Client.Auth`(`Runtime/Auth/`) | `VolTech.Client.Auth` | 認証(`DeviceTokenProvider`)とアカウントの保存先 |
 | `VolTech.Client.Unity`(`Runtime/Unity/`) | `VolTech.Client.Unity` | Unity 用の層(`ApiChannel`・`UnityApiLogger` など) |
 | `VolTech.V1`(`Runtime/Generated/`) | `VolTech.V1` | 基盤の `.proto`(デバイス登録・カスタムオプション)から生成した C# |
@@ -24,7 +24,7 @@ Unity のクライアントで使う、基盤の型の一覧。各型の細か�
 
 ## 組み込み方
 
-samples の `SampleLifetimeScope` と、このリポジトリの sandbox の `ApiServerTestBase` が実例。必要なものを作って `ApiCore` に渡し、ラッパーに `ApiCore` と `CallInvoker` を渡す。
+sandbox の `SampleLifetimeScope`(`sandbox/UnityProject/Assets/Scripts/Sample/`。VContainer で組み立てる)と、テストの `ApiServerTestBase` が実例。必要なものを作って `ApiCore` に渡し、ラッパーに `ApiCore` と `CallInvoker` を渡す。
 
 ```csharp
 var options = new ApiCoreOptions(UnityAppVersion.Create(appVersion));
@@ -35,7 +35,7 @@ var clock = new ServerClock();
 var core = new ApiCore(
     options,
     new DeviceTokenProvider(callInvoker, new InMemoryAccountStore(), options), // ITokenProvider
-    ProtoErrorPolicyProvider.ForAppErrorCodes(),                               // IErrorPolicyProvider
+    new ErrorPolicyProvider(SandboxErrors.All),                                // IErrorPolicyProvider(アプリの errors.toml から生成した一覧)
     new DefaultCommonErrorHandler(errorDialog),                                // ICommonErrorHandler
     new PlayerDiffApplier(playerRepository),                                   // IPlayerDiffApplier(アプリ)
     new UnityApiLogger(),                                                      // IApiLogger(リリースでは null)
@@ -82,7 +82,7 @@ var gachaApi = new GachaApi(core, callInvoker);
 | `DeviceTokenProvider`(`ITokenProvider`) | デバイス登録・トークンの発行・期限の管理を自動で行う。アカウント情報は `IAccountStore` に保存する([認証とアカウント情報](../client/auth-account.md)) |
 | `IAccountStore` / `InMemoryAccountStore` | アカウント情報(`AccountData`: `DeviceId`・`SecretKey`・`PlayerId`)の保存先。`InMemoryAccountStore` はメモリだけ(起動するたびに新しい端末になる)。端末に保存する実装は、まだ無い |
 | `DefaultCommonErrorHandler`(`ICommonErrorHandler`) | action ごとに決まったボタンのダイアログを出し、押されたボタンから動き(`ErrorDecision`)を決める([エラー処理](../client/error-handling.md)) |
-| `ProtoErrorPolicyProvider`(`IErrorPolicyProvider`) | アプリの `error_code.proto` から、エラーコードの名前と番号の対応と、既定の action を読む。`ForAppErrorCodes()` で作る |
+| `ErrorPolicyProvider`(`IErrorPolicyProvider`) | エラーコードから既定の action を引く。アプリの `errors.toml` から生成した一覧(例: `SandboxErrors.All`)を渡して作る。予約エラーは自動で入る([エラー](../api/errors.md)) |
 | `ServerClock`(`IServerClock`) | サーバー時刻。成功したレスポンスのヘッダーで合わせる。`IsSynchronized` が false の間は `Now` を読めない |
 | `ApiChannel` | `Create(address)` で YetAnotherHttpHandler(HTTP/2)の `GrpcChannel` を作る。`CreateCallInvoker(channel)` で、開発用の Interceptor(通信の記録)を付けた `CallInvoker` を作る |
 | `UnityAppVersion` | `Create(version)` で、今のプラットフォームとバージョンの `AppVersion` を作る。サーバーはこれで強制アップデートを判定する |
@@ -94,9 +94,10 @@ var gachaApi = new GachaApi(core, callInvoker);
 |---|---|
 | `ApiCoreOptions` | `Deadline`(1回の通信全体の制限時間。15 秒)・`AppVersion` |
 | `AppVersion` | プラットフォーム(`Ios`・`Android`・`Windows`・`Editor`)と、リリースのたびに増やす整数のバージョン |
-| `ErrorAction` | エラーの後に取る行動(`Stay`・`Retry`・`Home`・`Title`・`Update`)。値は `voltech/v1/error_options.proto` と同じ |
+| `ErrorAction` | エラーの後に取る行動(`Stay`・`Retry`・`Home`・`Title`・`Update`)。`errors.toml` の action に対応する |
+| `ErrorCode` | エラーコード。`ErrorInfo` の domain と reason の組(`ApiError.Code` の型)。`handledCodes` にも渡す |
 | `ErrorDecision` | エラーハンドラーが決めた動き(送り直す・留まる・ホーム・タイトル・ストア) |
-| `ReservedErrorCodes` | クライアントが作る予約コード(`NetworkError`・`InternalError`・`UnknownError`・`ClientError`) |
+| `ReservedErrors` | 基盤の予約エラー(domain `voltech`。`server/rust/error/errors.toml` から生成)。`Maintenance`・`NetworkError` など |
 | `ApiHeaders` | ヘッダー名(`authorization`・`x-request-id`・`x-app-platform`・`x-app-version`・`x-game-date`・`x-server-time`。[メタデータ](../api/metadata.md)) |
 | `RpcErrorDetails` | `GetErrorInfo(RpcException)` で、トレーラーの `grpc-status-details-bin` から `ErrorInfo` を読む |
 

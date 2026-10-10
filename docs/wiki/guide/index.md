@@ -4,7 +4,7 @@ status: index
 area: guide
 related: [dev/index, overview]
 proto: []
-updated: 2026-10-10
+updated: 2026-10-11
 ---
 
 # 利用者向けガイド
@@ -15,7 +15,7 @@ VolTech gRPC(基盤)を使ってアプリを作る人向けのページ。「何
 
 ## ページ
 
-- [始め方](getting-started.md) — テンプレート(このリポジトリ)を clone して、雛形のサーバーとクライアントを動かすまで
+- [始め方](getting-started.md) — 基盤をパッケージとして参照し、sandbox のサンプルを動かすまで
 - [API を足す](add-api.md) — `.proto` を書き、コードを生成し、サーバーのハンドラーとクライアントの呼び出しを書くまで
 - [クライアントのリファレンス](client-reference.md) — `ApiCore`・生成したラッパー・アプリが実装する interface・テスト用の部品
 - [サーバーのリファレンス](server-reference.md) — `voltech-grpc-*` のクレートと、サーバーへの組み込み方

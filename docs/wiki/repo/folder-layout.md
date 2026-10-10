@@ -3,13 +3,13 @@ title: "フォルダ構成"
 status: deferred
 area: repo
 related: [repo/current-plan, api/errors]
-proto: [sandbox/proto/sandbox/v1/error_code.proto]
-updated: 2026-10-10
+proto: []
+updated: 2026-10-11
 ---
 
 # フォルダ構成
 
-> **当初の案で、いまの形ではない。** 2026-10-10 に、VolTech-gRPC を、基盤とアプリの雛形(`sandbox/`)を持つテンプレートにした([運用](operations.md))。いまのフォルダは [コードの地図](../dev/code-map.md) にある。下は、テンプレートをサンプル(`grpc-foundation-samples`)が兼ね、基盤を別のパッケージのリポジトリにする案の形。`foundation/` も当初の案で、いまは機能ごとのクレート(`voltech-grpc-transaction` など)にしている
+> **当初の案で、いまの形ではない。** いまは基盤をパッケージとして配り、サンプルはこのリポジトリの sandbox に置く([運用](operations.md))。いまのフォルダは [コードの地図](../dev/code-map.md) にある。下は、テンプレートをサンプル(`grpc-foundation-samples`)が兼ね、基盤を別のパッケージのリポジトリにする案の形。`foundation/` も当初の案で、いまは機能ごとのクレート(`voltech-grpc-transaction` など)にしている
 
 テンプレート(アプリを作るときのいつもの形に合わせ、一番上を `Client/`・`Server/`・`Shared/` に分ける):
 
@@ -65,4 +65,4 @@ voltech-grpc/
 - 基盤の改善を upstream から取り込むときに触るのは `Server/foundation/`(`voltech-grpc-transaction` など)だけなので、アプリの変更と衝突しにくい。`Client/` には基盤のコードが無く、更新は `manifest.json` のタグを上げるだけ
 - 新しい機能は、`Server/crates/` にドメインのクレートを足し、`Server/crates/api` にハンドラーを足す
 - `Client/`・`Server/` の雛形は、サーバーが起動し、デバイス登録とトークンの発行が通るところまでを用意する(サーバー側は実装済み。[当面の実装方針](current-plan.md))
-- パッケージはテンプレートのクレートに依存しないので、エラーは `tonic::Status` を直接作って返す(予約コードは名前の文字列の定数で持つ。[エラー](../api/errors.md))
+- パッケージはテンプレートのクレートに依存しないので、エラーは `tonic::Status` を直接作って返す(予約エラーは `errors.toml` から生成した定数で持つ。[エラー](../api/errors.md))

@@ -3,8 +3,8 @@ title: "テスト"
 status: confirmed
 area: ops
 related: [client/error-handling]
-proto: [sandbox/proto/sandbox/v1/error_code.proto]
-updated: 2026-10-10
+proto: []
+updated: 2026-10-11
 ---
 
 # テスト
@@ -15,9 +15,8 @@ updated: 2026-10-10
   - `NO_SIDE_EFFECTS`・`IDEMPOTENT` のRPCは、レスポンスが保存されない
   - `skip_auth` のサービスはトークンなしで呼べ、それ以外は `UNAUTHENTICATED` になる
 - `IDEMPOTENT` と宣言したAPIは、その結合テストで「2回呼んでも状態が同じ」を確かめる
-- クライアントでは、全エラーコードに `default_action` が付いているか、全コードの文言キーが文言データにあるかも確かめる
-- テンプレートの `error_code.proto` の予約コードが、パッケージの持つ一覧と一致しているかを確かめる
-- テンプレート(このリポジトリ)では、クライアントの基盤のテスト(Unity の EditMode テスト)、サーバーの基盤のテスト、雛形(sandbox)を使った結合テストを回す。テンプレートから作ったアプリ(サンプルを含む)は、upstream から基盤を取り込んだときに結合テストで確かめる
+- クライアントでは、全エラーコードの文言キーが文言データにあるかも確かめる(既定の action は `errors.toml` の生成で必ず付く)
+- このリポジトリでは、クライアントの基盤のテスト(Unity の EditMode テスト)、サーバーの基盤のテスト、sandbox を使った結合テスト(ガチャのサンプルを含む)を回す。アプリは、パッケージのバージョンを上げたときに結合テストで確かめる
 
 | タイミング | 実行するもの |
 |---|---|

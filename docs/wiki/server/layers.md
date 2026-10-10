@@ -4,19 +4,19 @@ status: confirmed
 area: server
 related: [server/transaction]
 proto: []
-updated: 2026-10-10
+updated: 2026-10-11
 ---
 
 # レイヤー構成
 
 ```
-Server/app/gacha/src/         ドメインのクレート(grpc-foundation-samples の例。player も同じ形)
+sandbox/server/gacha/src/     ドメインのクレート(sandbox のガチャの例。player も同じ形)
 ├── service/                   業務ロジック本体。&mut Transaction とコレクターを引数で受け取る
 ├── model/                     各エンティティのstruct。モデル自身の状態変化だけで完結する処理
 │                              (経験値からレベルを計算する等)はここのimplブロックに置く
 └── lib.rs                     他のクレートに見せる関数・型だけを pub にする
 
-Server/app/api/src/
+sandbox/server/api/src/
 └── gacha.rs                   薄いgRPCハンドラー(tonic生成traitの実装)。Proto⇔ドメインの変換、
                                with_transaction() の呼び出し、Responseの組み立てだけを行う
 ```

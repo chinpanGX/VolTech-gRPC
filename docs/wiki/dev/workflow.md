@@ -5,7 +5,7 @@ area: dev
 related: [dev/code-map, ops/testing, ops/setup]
 proto: []
 code: [Makefile, .claude/skills/wiki-update/SKILL.md, .claude/skills/deps-update/SKILL.md, scripts/wiki_affected.py, scripts/deps.py]
-updated: 2026-10-10
+updated: 2026-10-11
 ---
 
 # 基盤を直すときの流れ
@@ -13,8 +13,8 @@ updated: 2026-10-10
 ## 1. 直す前に
 
 - 直すところの設計のページを読む(なぜその形にしたか)。[コードの地図](code-map.md) から、コードと設計のページを辿れる
-- 基盤(`server/rust/`・`Unity/com.chinpangx.voltech.grpc/`)は、sandbox(アプリの雛形)やアプリ(grpc-foundation-samples)に依存させない。アプリの都合で基盤を直したくなったら、直接変えずに差し替え口(trait・interface)を足す([当面の実装方針](../repo/current-plan.md))
-- 直した動きは sandbox で確かめる。確かめたい基盤の機能が sandbox に無ければ、`sandbox.proto` に RPC を足す(業務機能は足さない)
+- 基盤(`server/rust/`・`Unity/com.chinpangx.voltech.grpc/`)は、sandbox やアプリに依存させない。アプリの都合で基盤を直したくなったら、直接変えずに差し替え口(trait・interface)を足す([当面の実装方針](../repo/current-plan.md))
+- 直した動きは sandbox で確かめる。確かめたい基盤の機能が sandbox に無ければ、`sandbox.proto` に RPC を足す(業務の例はガチャのサンプルにまとめ、むやみに増やさない)
 
 ## 2. 直した後に確かめる
 
