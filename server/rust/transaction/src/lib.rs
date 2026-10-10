@@ -105,7 +105,25 @@ impl Transactions {
         let mut tx = self.pool.begin().await.map_err(internal)?;
 
         // 再送が届いても最初の処理の完了を待てるように、業務データより先に直前のレスポンスの行をロックする
-        let last = lock_last_response(&mut tx, player_id).await?;
+        let last = match lock_last_response(&mut tx, player_id).await? {
+            Some(last) => last,
+            None => {
+                // この仕組みより前に作られたプレイヤーには行が無いので作る。行が無いときの FOR UPDATE は
+                // 隙間のロックを取り、それを持ったまま INSERT すると、同じ隙間に INSERT する別のプレイヤーの
+                // トランザクションとデッドロックする。ロックを手放してから、別のトランザクションで作る
+                tx.rollback().await.map_err(internal)?;
+                let mut create = self.pool.begin().await.map_err(internal)?;
+                create_last_response(&mut create, player_id)
+                    .await
+                    .map_err(internal)?;
+                create.commit().await.map_err(internal)?;
+
+                tx = self.pool.begin().await.map_err(internal)?;
+                lock_last_response(&mut tx, player_id)
+                    .await?
+                    .ok_or_else(|| internal("last_responses row is missing after it was created"))?
+            }
+        };
         if let Some((saved_request_id, saved_method, saved_response)) = last
             && saved_request_id == request_id
         {
@@ -158,31 +176,23 @@ pub async fn migrate(pool: &MySqlPool) -> Result<(), sqlx::migrate::MigrateError
 
 type LastResponse = (String, String, Vec<u8>);
 
+/// プレイヤーの直前のレスポンスの行をロックして読む。行が無ければ `None`、行はあるがまだ保存していなければ `Some(None)`。
 async fn lock_last_response(
     tx: &mut Transaction<'static, MySql>,
     player_id: Ulid,
-) -> Result<Option<LastResponse>, Status> {
-    let select = || {
-        sqlx::query_as::<_, (Option<String>, Option<String>, Option<Vec<u8>>)>(
-            "SELECT request_id, method, response FROM last_responses WHERE player_id = ? FOR UPDATE",
-        )
-        .bind(player_id.to_bytes().to_vec())
-    };
-    let mut row = select().fetch_optional(&mut **tx).await.map_err(internal)?;
-    if row.is_none() {
-        // この仕組みより前に作られたプレイヤーには行が無いので、その場で作る
-        create_last_response(tx, player_id)
-            .await
-            .map_err(internal)?;
-        row = select().fetch_optional(&mut **tx).await.map_err(internal)?;
-    }
+) -> Result<Option<Option<LastResponse>>, Status> {
+    let row = sqlx::query_as::<_, (Option<String>, Option<String>, Option<Vec<u8>>)>(
+        "SELECT request_id, method, response FROM last_responses WHERE player_id = ? FOR UPDATE",
+    )
+    .bind(player_id.to_bytes().to_vec())
+    .fetch_optional(&mut **tx)
+    .await
+    .map_err(internal)?;
 
-    Ok(match row {
-        Some((Some(request_id), Some(method), Some(response))) => {
-            Some((request_id, method, response))
-        }
+    Ok(row.map(|row| match row {
+        (Some(request_id), Some(method), Some(response)) => Some((request_id, method, response)),
         _ => None,
-    })
+    }))
 }
 
 fn request_id<T>(request: &Request<T>) -> Result<&str, Status> {
