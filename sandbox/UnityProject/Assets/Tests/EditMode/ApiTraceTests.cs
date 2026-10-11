@@ -221,6 +221,66 @@ namespace Sandbox.Tests.EditMode
             Assert.That(surrogate.ResponseBody.IndexOf('\uD83D'), Is.EqualTo(-1), "\u7D75\u6587\u5B57\u306E\u524D\u534A\u3060\u3051\u304C\u6B8B\u3063\u3066\u3044\u306A\u3044");
         }
 
+        /// <summary>
+        /// Body は読まれたときに JSON にするが、その前に呼び出し側がメッセージを書き換えても、記録は通信の時点の中身のまま。
+        /// </summary>
+        [UnityTest]
+        [Description("Body は読まれたときに JSON にするが、その前に呼び出し側がメッセージを書き換えても、記録は通信の時点の中身のまま")]
+        public IEnumerator BodyKeepsContentAtCallTime() => UniTask.ToCoroutine(async () =>
+        {
+            invoker.Register<IncrementRequest, IncrementResponse>(SandboxServiceMethods.Increment, (_, _) =>
+                UniTask.FromResult(new IncrementResponse { Counter = 3 }));
+            var request = new IncrementRequest { Amount = 1 };
+
+            var response = await client.IncrementAsync(request);
+            request.Amount = 99;
+            response.Counter = 99;
+
+            var trace = store.Snapshot().Single();
+            Assert.That(trace.RequestBody, Does.Contain("\"amount\": \"1\""));
+            Assert.That(trace.ResponseBody, Does.Contain("\"counter\": \"3\""));
+        });
+
+        /// <summary>
+        /// 実機は、結果を埋めた記録の Request を省いて送る。エディタは、同じ Id の送信中の記録の Request で埋める。
+        /// 埋める記録が無ければ(送信中の記録を消した後に届いたら)、省いたことが残る。
+        /// </summary>
+        [Test]
+        [Description("実機は、結果を埋めた記録の Request を省いて送る。エディタは、同じ Id の送信中の記録の Request で埋める。埋める記録が無ければ、省いたことが残る")]
+        public void OmittedRequestIsFilledFromPendingTrace()
+        {
+            var pending = new ApiTrace
+            {
+                Id = 1,
+                State = ApiTraceState.Pending,
+                RequestHeaders = { new ApiTraceHeader("x-request-id", "abc") },
+                RequestBody = "{ \"amount\": \"1\" }",
+            };
+            var succeeded = pending.Clone();
+            succeeded.State = ApiTraceState.Succeeded;
+            succeeded.ResponseBody = "{ \"counter\": \"3\" }";
+
+            var sent = ApiTraceMessages.Decode(ApiTraceMessages.Encode(succeeded, omitRequest: true));
+            Assert.That(sent.RequestOmitted, Is.True);
+            Assert.That(sent.RequestBody, Is.Null.Or.Empty);
+            Assert.That(sent.RequestHeaders, Is.Empty);
+            Assert.That(succeeded.RequestHeaders, Has.Count.EqualTo(1), "元の記録は変えない");
+
+            store.Put(ApiTraceMessages.Decode(ApiTraceMessages.Encode(pending)));
+            store.Put(sent);
+
+            var trace = store.Snapshot().Single();
+            Assert.That(trace.State, Is.EqualTo(ApiTraceState.Succeeded));
+            Assert.That(trace.RequestOmitted, Is.False);
+            Assert.That(trace.RequestBody, Is.EqualTo(pending.RequestBody));
+            Assert.That(Header(trace.RequestHeaders, "x-request-id"), Is.EqualTo("abc"));
+            Assert.That(trace.ResponseBody, Is.EqualTo(succeeded.ResponseBody));
+
+            store.Clear();
+            store.Put(ApiTraceMessages.Decode(ApiTraceMessages.Encode(succeeded, omitRequest: true)));
+            Assert.That(store.Snapshot().Single().RequestOmitted, Is.True);
+        }
+
         private static string Header(List<ApiTraceHeader> headers, string key)
         {
             return headers.FirstOrDefault(header => header.Key == key)?.Value;

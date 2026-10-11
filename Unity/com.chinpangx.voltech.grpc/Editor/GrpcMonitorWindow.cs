@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 using UnityEditor;
 using UnityEditor.Networking.PlayerConnection;
 using UnityEditor.UIElements;
@@ -54,6 +55,11 @@ namespace VolTech.Client.Editor
         private ApiTraceStore shownStore;
         private int selectedId = -1;
         private ApiTrace detailTrace;
+        private Label detailSummary;
+        private VisualElement detailResult;
+
+        // 一覧の時刻の文字列。行を描き直すたびに時刻を読み直さないように残す(キーは記録の StartedAt)
+        private readonly Dictionary<string, string> timeLabels = new();
 
         private enum TraceSource
         {
@@ -176,7 +182,7 @@ namespace VolTech.Client.Editor
                 showAlternatingRowBackgrounds = AlternatingRowBackground.All,
                 showBorder = true,
             };
-            list.columns.Add(CreateColumn("time", "Time", 70, false, trace => FormatTime(trace.StartedAt, "HH:mm:ss")));
+            list.columns.Add(CreateColumn("time", "Time", 70, false, TimeLabel));
             list.columns.Add(CreateColumn("api", "API", 140, true, trace => trace.ShortMethod));
             list.columns.Add(CreateColumn("result", "Result", 150, false, StateText));
             list.columns.Add(CreateColumn("duration", "Duration", 70, false, trace => trace.DurationMs < 0 ? "" : $"{trace.DurationMs:0} ms", TextAnchor.MiddleRight));
@@ -257,7 +263,12 @@ namespace VolTech.Client.Editor
             if (index >= 0)
             {
                 list.SetSelectionWithoutNotify(new[] { index });
-                list.ScrollToItem(index);
+                // 最新を追うときだけスクロールする。追わないときは、手で動かした一覧の位置をそのままにする
+                if (followLatest)
+                {
+                    list.ScrollToItem(index);
+                }
+
                 // 送信中だった記録が埋まったら、詳細も描き直す
                 if (!ReferenceEquals(shown[index], detailTrace))
                 {
@@ -272,10 +283,27 @@ namespace VolTech.Client.Editor
             }
         }
 
+        // 同じ通信の記録が埋まった(送信中 → 結果)ときは、Request は変わらないので、上の行と Response・Error だけを作り直す。
+        // Body の TextField は大きいと組み立てが重いので、作り直す数を減らす
         private void ShowDetail(ApiTrace trace)
         {
+            // Id は実機のアプリを起動し直すと 1 から振り直すので、送り始めた時刻と RPC も同じときだけ、同じ通信とみなす
+            var sameCall = trace != null && detailTrace != null && detailResult != null
+                && trace.Id == detailTrace.Id
+                && trace.StartedAt == detailTrace.StartedAt
+                && trace.Method == detailTrace.Method;
             detailTrace = trace;
+            if (sameCall)
+            {
+                detailSummary.text = SummaryText(trace);
+                detailResult.Clear();
+                AddResult(detailResult, trace);
+                return;
+            }
+
             detail.Clear();
+            detailSummary = null;
+            detailResult = null;
             if (trace == null)
             {
                 detail.Add(new Label("通信を選ぶと、ヘッダーと Body を表示します。"));
@@ -286,15 +314,37 @@ namespace VolTech.Client.Editor
             title.style.unityFontStyleAndWeight = FontStyle.Bold;
             title.selection.isSelectable = true;
             detail.Add(title);
-            var duration = trace.DurationMs < 0 ? "" : $"  {trace.DurationMs:0} ms";
-            var truncated = trace.Truncated ? "  (Body truncated)" : "";
-            detail.Add(new Label($"{FormatTime(trace.StartedAt, "yyyy-MM-dd HH:mm:ss.fff")}{duration}  {StateText(trace)}{truncated}"));
+            detailSummary = new Label(SummaryText(trace));
+            detail.Add(detailSummary);
 
             var request = Section("Request");
-            request.Add(HeadersSection("Headers", trace.RequestHeaders));
-            request.Add(BodySection(trace.RequestBody));
+            if (trace.RequestOmitted)
+            {
+                // 実機は結果を埋めた記録の Request を省いて送る。送信中の記録を Clear した後に届くと、埋められない
+                request.Add(new Label("送信中の記録を消した後に届いたので、Request はありません。"));
+            }
+            else
+            {
+                request.Add(HeadersSection("Headers", trace.RequestHeaders));
+                request.Add(BodySection(trace.RequestBody, trace.Truncated));
+            }
+
             detail.Add(request);
 
+            detailResult = new VisualElement();
+            AddResult(detailResult, trace);
+            detail.Add(detailResult);
+        }
+
+        private static string SummaryText(ApiTrace trace)
+        {
+            var duration = trace.DurationMs < 0 ? "" : $"  {trace.DurationMs:0} ms";
+            var truncated = trace.Truncated ? "  (Body truncated)" : "";
+            return $"{FormatTime(trace.StartedAt, "yyyy-MM-dd HH:mm:ss.fff")}{duration}  {StateText(trace)}{truncated}";
+        }
+
+        private static void AddResult(VisualElement container, ApiTrace trace)
+        {
             var response = Section("Response");
             if (trace.State == ApiTraceState.Pending)
             {
@@ -303,11 +353,11 @@ namespace VolTech.Client.Editor
             else
             {
                 response.Add(HeadersSection("Headers", trace.ResponseHeaders));
-                response.Add(BodySection(trace.ResponseBody));
+                response.Add(BodySection(trace.ResponseBody, trace.Truncated));
                 response.Add(HeadersSection("Trailers", trace.Trailers));
             }
 
-            detail.Add(response);
+            container.Add(response);
 
             if (trace.State == ApiTraceState.Failed)
             {
@@ -325,7 +375,7 @@ namespace VolTech.Client.Editor
 
                 error.Add(HeaderRows(rows));
                 error.Add(HeadersSection("Metadata", trace.ErrorMetadata));
-                detail.Add(error);
+                container.Add(error);
             }
         }
 
@@ -381,9 +431,13 @@ namespace VolTech.Client.Editor
             return rows;
         }
 
-        // Body は読み取り専用の複数行の TextField に JSON を出し、Copy ボタンで全体をコピーできるようにする
-        private static VisualElement BodySection(string body)
+        // Body は読み取り専用の複数行の TextField に JSON を出し、Copy ボタンで全体をコピーできるようにする。
+        // 記録の JSON は字下げしていない(実機から送る量を減らすため)ので、出すときに字下げする。
+        // 切り詰めた Body は JSON として閉じていないので、そのまま出す
+        private static VisualElement BodySection(string rawBody, bool truncated)
         {
+            var body = truncated ? rawBody : IndentJson(rawBody);
+
             var section = new VisualElement();
             section.style.marginTop = 2;
 
@@ -439,6 +493,120 @@ namespace VolTech.Client.Editor
                 ApiTraceState.Succeeded => "OK",
                 _ => string.IsNullOrEmpty(trace.ErrorReason) ? trace.StatusCode : trace.ErrorReason,
             };
+        }
+
+        private string TimeLabel(ApiTrace trace)
+        {
+            var iso = trace.StartedAt ?? "";
+            if (!timeLabels.TryGetValue(iso, out var label))
+            {
+                // 一覧に出る記録は Capacity 件までなので、それを大きく超えたら作り直す
+                if (timeLabels.Count > ApiTraceStore.Capacity * 2)
+                {
+                    timeLabels.Clear();
+                }
+
+                label = FormatTime(iso, "HH:mm:ss");
+                timeLabels[iso] = label;
+            }
+
+            return label;
+        }
+
+        // protobuf の JSON(字下げなし)を、2文字ずつ字下げした形にする。文字列の中は変えない。
+        // JSON でないもの({ か [ で始まらない)は、そのまま返す
+        private static string IndentJson(string json)
+        {
+            if (string.IsNullOrEmpty(json) || (json[0] != '{' && json[0] != '['))
+            {
+                return json;
+            }
+
+            var builder = new StringBuilder(json.Length * 2);
+            var depth = 0;
+            var inString = false;
+            for (var i = 0; i < json.Length; i++)
+            {
+                var c = json[i];
+                if (inString)
+                {
+                    builder.Append(c);
+                    if (c == '\\' && i + 1 < json.Length)
+                    {
+                        builder.Append(json[++i]);
+                    }
+                    else if (c == '"')
+                    {
+                        inString = false;
+                    }
+
+                    continue;
+                }
+
+                switch (c)
+                {
+                    case '"':
+                        inString = true;
+                        builder.Append(c);
+                        break;
+                    case '{':
+                    case '[':
+                        builder.Append(c);
+                        var next = NextNonSpace(json, i + 1);
+                        if (next < json.Length && (json[next] == '}' || json[next] == ']'))
+                        {
+                            // 空のオブジェクト・配列は {} / [] のまま
+                            builder.Append(json[next]);
+                            i = next;
+                        }
+                        else
+                        {
+                            depth++;
+                            NewLine(builder, depth);
+                        }
+
+                        break;
+                    case '}':
+                    case ']':
+                        depth = Math.Max(0, depth - 1);
+                        NewLine(builder, depth);
+                        builder.Append(c);
+                        break;
+                    case ',':
+                        builder.Append(c);
+                        NewLine(builder, depth);
+                        break;
+                    case ':':
+                        builder.Append(": ");
+                        break;
+                    default:
+                        // 文字列の外の空白は捨て、字下げを付け直す
+                        if (!char.IsWhiteSpace(c))
+                        {
+                            builder.Append(c);
+                        }
+
+                        break;
+                }
+            }
+
+            return builder.ToString();
+        }
+
+        private static int NextNonSpace(string text, int index)
+        {
+            while (index < text.Length && char.IsWhiteSpace(text[index]))
+            {
+                index++;
+            }
+
+            return index;
+        }
+
+        private static void NewLine(StringBuilder builder, int depth)
+        {
+            builder.Append('\n');
+            builder.Append(' ', depth * 2);
         }
 
         private static string FormatTime(string iso, string format)

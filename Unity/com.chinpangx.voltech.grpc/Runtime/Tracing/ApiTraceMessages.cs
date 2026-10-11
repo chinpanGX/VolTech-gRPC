@@ -27,17 +27,32 @@ namespace VolTech.Client.Tracing
         /// <summary>
         /// 記録を、送る形(JSON の UTF-8)にする。大きすぎる Body は切り詰める(元の記録は変えない)。
         /// </summary>
-        public static byte[] Encode(ApiTrace trace)
+        /// <param name="trace">送る記録。</param>
+        /// <param name="omitRequest">
+        /// Request(ヘッダーと Body)を省くか。同じ Id の送信中の記録を送ってあれば、Request は変わらないので省ける。
+        /// 受け取ったエディタが、手元の記録から埋める。
+        /// </param>
+        public static byte[] Encode(ApiTrace trace, bool omitRequest = false)
         {
-            var sending = trace;
-            if (IsTooLong(trace.RequestBody) || IsTooLong(trace.ResponseBody))
+            // Body を読むと JSON になり、記録のフィールドに残る(JsonUtility はそのフィールドを書き出す)
+            var requestBody = omitRequest ? null : trace.RequestBody;
+            var responseBody = trace.ResponseBody;
+            var truncate = IsTooLong(requestBody) || IsTooLong(responseBody);
+            if (!truncate && !omitRequest)
             {
-                sending = trace.Clone();
-                sending.RequestBody = Truncate(trace.RequestBody);
-                sending.ResponseBody = Truncate(trace.ResponseBody);
-                sending.Truncated = true;
+                return Encoding.UTF8.GetBytes(JsonUtility.ToJson(trace));
             }
 
+            var sending = trace.Clone();
+            if (omitRequest)
+            {
+                sending.RequestHeaders.Clear();
+                sending.RequestOmitted = true;
+            }
+
+            sending.RequestBody = Truncate(requestBody);
+            sending.ResponseBody = Truncate(responseBody);
+            sending.Truncated = truncate;
             return Encoding.UTF8.GetBytes(JsonUtility.ToJson(sending));
         }
 

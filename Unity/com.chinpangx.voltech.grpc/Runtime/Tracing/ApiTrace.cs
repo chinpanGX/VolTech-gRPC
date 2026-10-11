@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace VolTech.Client.Tracing
 {
@@ -9,6 +10,8 @@ namespace VolTech.Client.Tracing
     /// <remarks>
     /// 実機からエディタへ JsonUtility で送るので、値は public なフィールドで持つ。
     /// ApiTraceStore に入れた後は書き換えない(別のスレッドから読まれるため)。状態が変わったら、同じ Id の新しい記録で置き換える。
+    /// ただし Body は、通信を遅らせないように、読まれたときに初めて JSON にして残す(SetRequestBody・SetResponseBody)。
+    /// 別のスレッドが同時に読んでも、同じ文字列ができるだけなので壊れない。
     /// </remarks>
     [Serializable]
     public sealed class ApiTrace
@@ -34,14 +37,36 @@ namespace VolTech.Client.Tracing
         /// <summary>送ったヘッダー(送った順)。</summary>
         public List<ApiTraceHeader> RequestHeaders = new();
 
-        /// <summary>送った Body(整形した JSON)。</summary>
-        public string RequestBody;
+        /// <summary>送った Body(JSON)。</summary>
+        public string RequestBody
+        {
+            get => requestBody ??= requestJson?.Value;
+            set
+            {
+                requestBody = value;
+                requestJson = null;
+            }
+        }
+
+        /// <summary>
+        /// 実機から送るときに、Request(ヘッダーと Body)を省いたか。同じ Id の送信中の記録で、もう送ってあるため。
+        /// エディタは、受け取ったときに手元の記録から埋める(ApiTraceStore.Put)。埋められなければ true のまま残る。
+        /// </summary>
+        public bool RequestOmitted;
 
         /// <summary>受け取ったヘッダー。</summary>
         public List<ApiTraceHeader> ResponseHeaders = new();
 
-        /// <summary>受け取った Body(整形した JSON)。エラーのときは空。</summary>
-        public string ResponseBody;
+        /// <summary>受け取った Body(JSON)。エラーのときは空。</summary>
+        public string ResponseBody
+        {
+            get => responseBody ??= responseJson?.Value;
+            set
+            {
+                responseBody = value;
+                responseJson = null;
+            }
+        }
 
         /// <summary>受け取ったトレーラー。</summary>
         public List<ApiTraceHeader> Trailers = new();
@@ -64,8 +89,40 @@ namespace VolTech.Client.Tracing
         /// <summary>実機から送るときに、大きすぎる Body を切り詰めたか。</summary>
         public bool Truncated;
 
+        // Body は JsonUtility で送るので、文字列はシリアライズするフィールドに持つ。JSON にする前の値(Lazy)は送らない。
+        // Lazy は複製(Clone)と共有するので、送信中の記録と、それを埋めた記録で、同じ Body を2回 JSON にしない
+        [SerializeField]
+        private string requestBody;
+
+        [SerializeField]
+        private string responseBody;
+
+        [NonSerialized]
+        private Lazy<string> requestJson;
+
+        [NonSerialized]
+        private Lazy<string> responseJson;
+
         /// <summary>RPC のフルパスから、サービス名を省いた短い名前(例: Draw)。</summary>
         public string ShortMethod => Method?.Substring(Method.LastIndexOf('/') + 1) ?? "";
+
+        /// <summary>
+        /// 送った Body を、読まれたときに JSON にするように入れる。
+        /// </summary>
+        internal void SetRequestBody(Lazy<string> json)
+        {
+            requestBody = null;
+            requestJson = json;
+        }
+
+        /// <summary>
+        /// 受け取った Body を、読まれたときに JSON にするように入れる。
+        /// </summary>
+        internal void SetResponseBody(Lazy<string> json)
+        {
+            responseBody = null;
+            responseJson = json;
+        }
 
         /// <summary>
         /// 同じ中身の複製を作る。記録を書き換えずに、状態を変えた新しい記録を作るときに使う。

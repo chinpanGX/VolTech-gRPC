@@ -65,7 +65,7 @@ namespace VolTech.Client.Tracing
         {
             lock (gate)
             {
-                var index = traces.FindIndex(existing => existing.Id == trace.Id);
+                var index = IndexOfLocked(trace.Id);
                 if (index < 0)
                 {
                     return false;
@@ -84,14 +84,23 @@ namespace VolTech.Client.Tracing
         /// </summary>
         /// <remarks>
         /// 実機は、つながったときに持っている記録をすべて送り直してくるので、エディタの側に無い記録も足す。
+        /// Request を省いた記録(RequestOmitted)は、置き換える前の記録の Request で埋める。
         /// </remarks>
         public void Put(ApiTrace trace)
         {
             lock (gate)
             {
-                var index = traces.FindIndex(existing => existing.Id == trace.Id);
+                var index = IndexOfLocked(trace.Id);
                 if (index >= 0)
                 {
+                    if (trace.RequestOmitted)
+                    {
+                        var previous = traces[index];
+                        trace.RequestHeaders = previous.RequestHeaders;
+                        trace.RequestBody = previous.RequestBody;
+                        trace.RequestOmitted = previous.RequestOmitted;
+                    }
+
                     traces[index] = trace;
                 }
                 else
@@ -126,6 +135,20 @@ namespace VolTech.Client.Tracing
                 traces.Clear();
                 version++;
             }
+        }
+
+        // 置き換えるのは、たいてい最近の記録なので、後ろから探す
+        private int IndexOfLocked(int id)
+        {
+            for (var index = traces.Count - 1; index >= 0; index--)
+            {
+                if (traces[index].Id == id)
+                {
+                    return index;
+                }
+            }
+
+            return -1;
         }
 
         private void AddLocked(ApiTrace trace)

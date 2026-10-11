@@ -10,6 +10,7 @@ namespace VolTech.Client.Tracing
     /// </summary>
     /// <remarks>
     /// エディタがつながったときは持っている記録をすべて送り、その後は記録が足されたり埋められたりするたびに1件ずつ送る。
+    /// 埋めた記録は Request を省いて送る(Request の Body を2回送らない)。
     /// つながっていなければ送らない(記録は端末のメモリにだけ残る)。
     /// </remarks>
     internal static class ApiTraceSender
@@ -48,11 +49,14 @@ namespace VolTech.Client.Tracing
             store.Changed += trace => mainThread.Post(_ => Send(connection, trace), null);
         }
 
+        // 結果を埋めた記録は、Request を省いて送る。送信中の記録(Request を含む)は、それより先に送ってある。
+        // 送信中の記録を足したときに、つながっていなかったとしても、つながったときに持っている記録をすべて送るので届いている
         private static void Send(PlayerConnection connection, ApiTrace trace)
         {
             if (connection.isConnected)
             {
-                connection.Send(ApiTraceMessages.Trace, ApiTraceMessages.Encode(trace));
+                var omitRequest = trace.State != ApiTraceState.Pending;
+                connection.Send(ApiTraceMessages.Trace, ApiTraceMessages.Encode(trace, omitRequest));
             }
         }
     }

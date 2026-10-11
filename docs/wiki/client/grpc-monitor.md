@@ -45,7 +45,9 @@ Interceptor は、`AsyncUnaryCall` を同じ形で包み直し、レスポンス
 | レスポンス | ヘッダー、Body(JSON。エラーのときは無し)、トレーラー |
 | 結果 | 状態(送信中 / 成功 / エラー)、gRPC のステータスコードと detail、`ErrorInfo`(`grpc-status-details-bin` を読んだもの: reason・domain・metadata) |
 
-- Body は `JsonFormatter`(`WithFormatDefaultValues(true)`・`WithIndentation()`)で、既定値のフィールドも含めて整形する。値が既定値でも、送った・受け取ったことが分かるようにするため。protobuf の標準の JSON 形式なので、grpcurl の `-d` と Postman にそのまま貼れる
+- Body は `JsonFormatter`(`WithFormatDefaultValues(true)`)で、既定値のフィールドも含めて JSON にする。値が既定値でも、送った・受け取ったことが分かるようにするため。protobuf の標準の JSON 形式なので、grpcurl の `-d` と Postman にそのまま貼れる
+- **Body を JSON にするのは、記録が読まれたとき**(ウィンドウに出す・実機から送る)まで遅らせる。通信の流れの中で JSON にすると、送るのと、`await` している側に結果を返すのが、その分だけ遅れるため(大きなレスポンスでは数 ms と、大きな文字列の確保になる)。通信の時点ではメッセージを複製(`Clone`)するだけにする。複製するのは、呼び出し側が後からメッセージを書き換えても、記録が通信の時点の中身のままになるようにするため
+- 記録の JSON は字下げしない(実機から送る量を減らすため)。ウィンドウが表示するときに字下げする(Copy も字下げした形)
 - `-bin` で終わるヘッダー・トレーラー(バイナリ)は、バイト数と base64 で出す。`grpc-status-details-bin` は `ErrorInfo` として別に出す
 - 記録はリクエストを送るときに作り(状態は「送信中」)、レスポンスかエラーを受け取ったら埋める。応答を待っている通信も一覧に出る
 
@@ -88,6 +90,7 @@ ApiTraceInterceptor → ApiTraceStore              GrpcMonitorReceiver(EditorCon
 - **エディタ**: `GrpcMonitorReceiver` が `EditorConnection` で受け取り、端末の分の `ApiTraceStore` に入れる。同じ連番の記録が届いたら置き換える(「送信中」が「成功」に変わる)。`Reset` を受け取ったら、端末の分の記録を消す。連番は端末のアプリを起動するたびに 1 から振り直すので、消さないと前の起動の記録が上書きされて混ざる
   - 消すのは、エディタの接続のイベントではなく `Reset` で行う。接続のイベントと、端末から届く記録の順番は決まっていないので、イベントで消すと先に届いた記録まで消すことがある。同じ端末からのメッセージは送った順に届くので、`Reset` は続けて送る記録より先に処理される
 - **送る形**: 1件ずつ、`JsonUtility` で JSON にした UTF-8 のバイト列。メッセージの ID は決まった `Guid` にする。Body が大きすぎるときは切り詰め、切り詰めたことを記録に残す(上限は実装で決める)
+- **結果を埋めた記録は、Request(ヘッダーと Body)を省いて送る**(`RequestOmitted`)。同じ Id の送信中の記録で送ってあり、Request は変わらないので、大きな Body を2回送らないため。エディタは受け取ったときに、手元の同じ Id の記録の Request で埋める(`ApiTraceStore.Put`)。送信中の記録を送ったときにつながっていなくても、つながったときに持っている記録をすべて(Request を含めて)送り直すので、埋める記録は届いている。エディタで送信中の記録を Clear した後に結果が届いたときだけ埋められず、詳細に「Request はありません」と出す
 - **ウィンドウ**: Toolbar で、見るものを「Editor」と「接続先の端末」から選ぶ。接続先の端末は、Console・Profiler と同じ Unity の接続先の選択(`PlayerConnectionGUILayout.ConnectionTargetSelectionDropdown`)で選ぶ。これは IMGUI なので、`IMGUIContainer` に入れて Toolbar に置く(UI Toolkit の部品が無いため)
 - 時刻は端末の時計のまま出す
 - iOS の USB 接続は、macOS のエディタで使えるかを実装のときに確かめる。使えなければ、同じネットワークの Wi-Fi でつなぐ(PlayerConnection は Wi-Fi でもつながる)
@@ -125,6 +128,8 @@ ApiTraceInterceptor → ApiTraceStore              GrpcMonitorReceiver(EditorCon
   - **Trailers**(Response の下): Headers と同じ形
   - **Error**: エラーのときだけ。ステータスコード・detail・`ErrorInfo` の reason・domain と、metadata の項目ごとの行
 - 一覧が増えても重くならないように、`ListView` の仮想化(`makeItem` / `bindItem`)を使う。詳細は選んだ1件だけを組み立てる
+- 選んでいる通信の記録が埋まった(送信中 → 結果)ときは、詳細の上の行と Response・Error だけを作り直す。Body の `TextField` は大きいと組み立てが重いので、変わらない Request は作り直さない。同じ通信かは、Id・開始時刻・RPC で見る(実機のアプリを起動し直すと Id は 1 から振り直すため)
+- 一覧のスクロールは、Follow latest のときだけ行う。追わないときは、手で動かした一覧の位置を、新しい通信が来ても戻さない
 
 ## 置き場所
 
@@ -159,5 +164,6 @@ USB でつないだ実機からの受け取りは、自動のテストで確か�
 
 - `ApiTraceStore`: 件数の上限で古いものから捨てること、更新で版が増えること、消した記録が結果の置き換えで戻ってこないこと(EditMode テスト)
 - `ApiTraceInterceptor`: `FakeCallInvoker` を包んで呼び、成功・業務エラー・通信エラーで、ヘッダー・Body の JSON・ステータス・`ErrorInfo` が記録されること。結果と例外がそのまま呼び出し側に返ること。記録の処理で例外が起きても通信が失敗しないこと(EditMode テスト)
-- 端末から送る形: `ApiTrace` を JSON にして読み戻すと、同じ中身になること。切り詰めがサロゲートペアを割らないこと(EditMode テスト)
+- 端末から送る形: `ApiTrace` を JSON にして読み戻すと、同じ中身になること。切り詰めがサロゲートペアを割らないこと。Request を省いた記録が、送信中の記録の Request で埋まること(EditMode テスト)
+- Body を後から JSON にしても、呼び出し側が通信の後に書き換えたメッセージではなく、通信の時点の中身が記録されること(EditMode テスト)
 - ウィンドウと実機からの受け取りは自動のテストをせず、サンプルを Play したときと、開発ビルドを USB でつないだときに、目で確かめる

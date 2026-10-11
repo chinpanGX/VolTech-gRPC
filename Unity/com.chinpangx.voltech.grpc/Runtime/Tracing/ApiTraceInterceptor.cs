@@ -15,12 +15,15 @@ namespace VolTech.Client.Tracing
     /// </summary>
     /// <remarks>
     /// ApiCore の外(gRPC の層)で記録するので、ApiCore を通らないトークンの発行も、実際に送ったヘッダーも記録できる。
+    /// Body を JSON にするのは、記録が読まれたとき(ウィンドウに出す・実機から送る)まで遅らせる。通信の流れの中では、
+    /// メッセージを複製するだけにして、送るのと結果を返すのを遅らせない。
     /// </remarks>
     public sealed class ApiTraceInterceptor : Interceptor
     {
-        // 既定値のフィールドも出して、送った・受け取ったことが分かるようにする。grpcurl・Postman にそのまま貼れる形
+        // 既定値のフィールドも出して、送った・受け取ったことが分かるようにする。grpcurl・Postman にそのまま貼れる形。
+        // 字下げはしない(実機から送る量を減らす)。読みやすくするのは、表示するエディタの側で行う
         private static readonly JsonFormatter formatter =
-            new(JsonFormatter.Settings.Default.WithFormatDefaultValues(true).WithIndentation());
+            new(JsonFormatter.Settings.Default.WithFormatDefaultValues(true));
 
         private readonly ApiTraceStore store;
 
@@ -62,8 +65,8 @@ namespace VolTech.Client.Tracing
                         : "",
                     State = ApiTraceState.Pending,
                     RequestHeaders = ToHeaders(context.Options.Headers),
-                    RequestBody = ToJson(request),
                 };
+                pending.SetRequestBody(ToLazyJson(request));
                 store.Add(pending);
             }
             catch (Exception exception)
@@ -133,7 +136,7 @@ namespace VolTech.Client.Tracing
                 succeeded.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
                 succeeded.State = ApiTraceState.Succeeded;
                 succeeded.ResponseHeaders = responseHeadersOnSuccess;
-                succeeded.ResponseBody = ToJson(response);
+                succeeded.SetResponseBody(ToLazyJson(response));
                 succeeded.Trailers = ToHeaders(call.GetTrailers());
                 var status = call.GetStatus();
                 succeeded.StatusCode = status.StatusCode.ToString();
@@ -217,9 +220,28 @@ namespace VolTech.Client.Tracing
             return headers;
         }
 
-        private static string ToJson(object message)
+        // 呼び出し側が後からメッセージを書き換えても記録が変わらないように、JSON にする前に複製しておく。
+        // 複製は、JSON にするよりずっと軽い。JSON にできなくても、読んだ側(ウィンドウ)で例外にしない
+        private static Lazy<string> ToLazyJson<T>(T message)
         {
-            return message is IMessage protobuf ? formatter.Format(protobuf) : message?.ToString() ?? "";
+            if (message is not IMessage)
+            {
+                var text = message?.ToString() ?? "";
+                return new Lazy<string>(() => text);
+            }
+
+            var copy = (IMessage)(message is IDeepCloneable<T> cloneable ? cloneable.Clone() : message);
+            return new Lazy<string>(() =>
+            {
+                try
+                {
+                    return formatter.Format(copy);
+                }
+                catch (Exception exception)
+                {
+                    return $"(could not format as JSON: {exception.Message})";
+                }
+            });
         }
     }
 }
