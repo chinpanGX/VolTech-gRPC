@@ -66,7 +66,7 @@ voltech-grpc-transaction = { git = "https://github.com/chinpanGX/VolTech-gRPC", 
 }
 ```
 
-- タグは Cargo と UPM で同じ値を使う。まだタグを打っていないので、`v0.1.0` は打つ予定の名前(リリースの手順は [未確定・保留](../open-questions.md) #16)
+- タグは Cargo と UPM で同じ値を使う(リリースの手順は [未確定・保留](../open-questions.md) #16)
 - 版の上げ方と、基盤とアプリを同時に直すときの手順は [基盤の版を上げる・基盤を一緒に直す](upgrade.md)
 
 ## 2. アプリの .proto とエラーを用意する
