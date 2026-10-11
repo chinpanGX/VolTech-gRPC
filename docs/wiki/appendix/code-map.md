@@ -2,7 +2,7 @@
 title: "コードの地図"
 status: current
 area: appendix
-related: [repo/current-plan, appendix/workflow, guide/client-reference, guide/server-reference]
+related: [repo/operations, appendix/workflow, guide/client-reference, guide/server-reference]
 proto: []
 code: [server/rust/Cargo.toml, server/rust, sandbox/server, Unity/com.chinpangx.voltech.grpc, tools/protoc-gen-voltech-grpc, sandbox/proto, scripts, mk, buf.yaml, buf.gen.yaml]
 updated: 2026-10-11
@@ -10,7 +10,7 @@ updated: 2026-10-11
 
 # コードの地図
 
-基盤を直す人向けに、どこに何があるかをまとめる。フォルダの分け方は [フォルダ構成](../repo/folder-layout.md)。
+基盤を直す人向けに、どこに何があるかをまとめる。
 
 ## 基盤(アプリごとに変えない)
 

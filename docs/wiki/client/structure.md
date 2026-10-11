@@ -2,7 +2,7 @@
 title: "構成"
 status: confirmed
 area: client
-related: [repo/current-plan, client/auth-account, client/connection, appendix/testing]
+related: [repo/operations, client/auth-account, client/connection, appendix/testing]
 proto: []
 code: [Unity/com.chinpangx.voltech.grpc/package.json, Unity/com.chinpangx.voltech.grpc/Tests/EditMode/ProtobufVersionTests.cs]
 updated: 2026-10-11

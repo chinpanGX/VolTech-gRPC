@@ -2,18 +2,18 @@
 title: "リポジトリ名と命名"
 status: current
 area: repo
-related: [repo/current-plan, repo/folder-layout, guide/upgrade]
+related: [repo/operations, appendix/code-map, guide/upgrade]
 proto: []
 updated: 2026-10-11
 ---
 
 # リポジトリ名と命名
 
-基盤(パッケージ)の名前は **VolTech gRPC** にする。基盤はこのリポジトリ(`VolTech-gRPC`)に分け、アプリはパッケージとして参照する。ガチャのサンプルは、このリポジトリの sandbox に置く([運用](operations.md)。分け方は [当面の実装方針](current-plan.md))。
+基盤(パッケージ)の名前は **VolTech gRPC** にする。基盤はこのリポジトリ(`VolTech-gRPC`)に分け、アプリはパッケージとして参照する。ガチャのサンプルは、このリポジトリの sandbox に置く([運用(パッケージとサンプル)](operations.md))。
 
 | もの | 名前 |
 |---|---|
-| 基盤のリポジトリ | **`VolTech-gRPC`**(このリポジトリ。計画では `voltech-grpc` と書いていた) |
+| 基盤のリポジトリ | **`VolTech-gRPC`**(このリポジトリ) |
 | GitHub の説明文 | gRPC foundation for Unity × Rust game backends |
 | GitHub のトピック | `grpc` `unity` `rust` `game-backend` `mobile-game` |
 | サーバーのフォルダ(基盤のリポジトリの中) | `server/rust/`(Go 版を足したら `server/go/`) |
@@ -38,5 +38,4 @@ updated: 2026-10-11
 ## 実装で決めたこと
 
 - エディタで通信を見るウィンドウの名前は **gRPC Monitor** にし、メニューは `Window > VolTech gRPC > gRPC Monitor` にする(2026-10-11 に Request Viewer から変えた)。リクエストだけでなく、レスポンス・トレーラー・エラーまで、エディタと実機の通信を流れで見るので、Request と Viewer では役割より狭い。映るのは gRPC の通信だけなので Network とは付けない(Unity の Network Profiler などとも紛れる)。ドッキングしたときにタブ名だけで何の道具か分かるように、gRPC を入れる
-- samples の `Api` のアセンブリに混ざっていた基盤の部分は、パッケージにするときに分けた。認証(`DeviceTokenProvider` など)は `VolTech.Client.Auth`、Unity 用の層(`ApiChannel` など)は `VolTech.Client.Unity`、基盤の `.proto` の生成コードは `VolTech.V1`、エラーの既定の action の表は `VolTech.Client`(いまは `ErrorPolicyProvider`。アプリの `errors.toml` から生成した一覧を受け取る。[エラー](../api/errors.md))
 - パッケージのテストのアセンブリは `VolTech.Client.Tests.EditMode` にする(`Tests.EditMode` のままだと、利用側の同じ名前の asmdef とぶつかる)

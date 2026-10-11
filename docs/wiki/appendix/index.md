@@ -2,7 +2,7 @@
 title: "付録: 基盤開発者向け"
 status: index
 area: appendix
-related: [guide/index, repo/current-plan]
+related: [guide/index, repo/operations]
 proto: []
 updated: 2026-10-10
 ---

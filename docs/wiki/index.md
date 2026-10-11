@@ -69,7 +69,7 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 
 | ページ | 状態 | 内容 |
 |---|---|---|
-| [概要(目的・範囲・成果物・進め方・全体構成)](overview.md) | `confirmed` | REST から gRPC への置き換えの目的、範囲、成果物、進め方、全体構成図 |
+| [概要(特徴・範囲・全体構成)](overview.md) | `confirmed` | 基盤の特徴、範囲、配るもの(パッケージとサンプル)、全体構成図 |
 
 ### [リポジトリ構成](repo/index.md)
 
@@ -77,9 +77,6 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 |---|---|---|
 | [運用(パッケージとサンプル)](repo/operations.md) | `current` | 基盤をパッケージとして配り、サンプルを sandbox に置く運用 |
 | [リポジトリ名と命名](repo/naming.md) | `current` | リポジトリ・パッケージ・クレート・.proto パッケージの命名と理由 |
-| [サーバーの分け方](repo/server-split.md) | `deferred` | モジュラーモノリスの採用と、プロセスを分ける基準 |
-| [フォルダ構成](repo/folder-layout.md) | `deferred` | 当初の案のフォルダ構成(いまの形は [コードの地図](appendix/code-map.md)) |
-| [当面の実装方針](repo/current-plan.md) | `current` | 単一リポジトリでの framework / app 分離と、実装の中で決めたこと |
 
 ### [API定義](api/index.md)
 
@@ -98,7 +95,7 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 
 | ページ | 状態 | 内容 |
 |---|---|---|
-| [レイヤー構成](server/layers.md) | `confirmed` | api → service → model の3層と、トランザクションを型で強制する理由 |
+| [レイヤー構成](server/layers.md) | `confirmed` | api → service → model の3層、トランザクションを型で強制する理由、クレートの分け方 |
 | [リクエストの処理の流れ](server/request-flow.md) | `confirmed` | Layer の順序(アップデート→メンテ→認証→日付変更)とタイムアウト |
 | [with_transaction() と冪等性](server/transaction.md) | `confirmed` | トランザクションの手順と、最新1件保存による冪等性の実装 |
 | [コレクター(差分・バッジ・通知)](server/collectors.md) | `confirmed` | 共通レスポンス項目を集めて詰める仕組み |
@@ -128,7 +125,6 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 | [protoc プラグインの中身](appendix/protoc-plugin.md) | `current` | `protoc-gen-voltech-grpc` のファイルと決まりごと |
 | [環境構築とよく使うコマンド](appendix/setup.md) | `current` | このリポジトリで要るツール、make のコマンド、sandbox での確かめ方 |
 | [テスト](appendix/testing.md) | `confirmed` | 基盤のテストの観点と、流すタイミング |
-| [付録: Atlasの乗せ換え](appendix/atlas-migration.md) | `appendix` | Atlas の REST から gRPC への乗せ換えメモ |
 
 ### 判断の記録
 

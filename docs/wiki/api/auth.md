@@ -9,7 +9,7 @@ updated: 2026-10-10
 
 # 認証
 
-**Atlasのデバイス認証(ゲスト型)を引き継ぐ。** API の仕様(リクエスト・レスポンス・エラー)は [API: DeviceService](device-service.md) にある。
+**デバイス認証(ゲスト型)にする。** API の仕様(リクエスト・レスポンス・エラー)は [API: DeviceService](device-service.md) にある。
 
 1. **デバイス登録**: クライアントが生成した `secret_key` を送り、サーバーが `device_id` と `player_id` を発行する。発行するのは ID だけで、プレイヤー(`players` の行と初期データ)はまだ作らない
 2. **トークンの発行**: `device_id` と `secret_key` を送り、アクセストークンを受け取る。有効期限は1時間で、有効なトークンは1デバイスにつき1つ(発行し直すと古いものは無効になる)

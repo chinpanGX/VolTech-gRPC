@@ -2,7 +2,7 @@
 title: "運用(パッケージとサンプル)"
 status: current
 area: repo
-related: [repo/naming, repo/current-plan, guide/getting-started, guide/upgrade]
+related: [repo/naming, guide/getting-started, guide/upgrade]
 proto: []
 code: [tools/protoc-gen-voltech-grpc/src, sandbox/server/Cargo.toml, sandbox/UnityProject/Packages/manifest.json, Unity/com.chinpangx.voltech.grpc/package.json]
 updated: 2026-10-11
@@ -39,5 +39,4 @@ updated: 2026-10-11
 - 基盤はリポジトリだけで配り、パッケージのレジストリ(crates.io・NuGet・OpenUPM)には出さない(2026-10-11)。Cargo も UPM も git の URL とタグで取り込めるので、リポジトリにタグを打てばリリースになる。レジストリに出すと、クレート・UPM パッケージ・プラグインを別々に公開することになり、同じタグでそろえる手間が増える
 - アプリは基盤を git submodule で持たない(2026-10-11)。submodule にすると、アプリのリポジトリを clone する全員(Unity だけを触る人も)に `--recursive` が要り、sandbox まで取ってくる。プラグインを使うのは C# を生成する人だけなので、その人の Makefile が必要なときに取ってくる
 
-- サンプルは、別のリポジトリ(grpc-foundation-samples)ではなく sandbox に置く(2026-10-11)。アプリは基盤をパッケージとして参照するので、サンプルを clone の元にする必要が無い。別のリポジトリにすると、基盤を直すたびにタグを打ってサンプルの参照を上げることになり、壊れたことに気づくのも遅れる
-- 一時期、このリポジトリをテンプレートにして、アプリが clone して基盤を手元で参照する形にした(2026-10-10)。アプリが自分のプロジェクトからパッケージを参照する形に戻した
+- サンプルは、別のリポジトリにせず sandbox に置く(2026-10-11)。アプリは基盤をパッケージとして参照するので、サンプルを clone の元にする必要が無い。別のリポジトリにすると、基盤を直すたびにタグを打ってサンプルの参照を上げることになり、壊れたことに気づくのも遅れる
