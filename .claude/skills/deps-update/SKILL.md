@@ -17,7 +17,7 @@ description: 基盤の依存パッケージ(Unity の package.json の UPM・NuG
 
 | 組 | 一緒に直すところ | 決まり |
 |---|---|---|
-| Protobuf | `Unity/com.chinpangx.voltech.grpc/package.json` の `org.nuget.google.protobuf`・`org.nuget.google.api.commonprotos`、`tools/protoc-gen-voltech-grpc/src/ProtocGenVoltechGrpc.csproj` の `Google.Protobuf` | Google.Protobuf は、CommonProtos が依存する版にそろえる(新しい Protobuf を使いたいときは、その版を参照する CommonProtos が出るまで待つ)。プラグインも同じ版 |
+| Protobuf | `Unity/com.chinpangx.voltech.grpc/package.json` の `org.nuget.google.protobuf`、`tools/protoc-gen-voltech-grpc/src/ProtocGenVoltechGrpc.csproj` の `Google.Protobuf` | プラグインも同じ版。Google.Protobuf を参照するビルド済みの DLL のパッケージ(Google.Api.CommonProtos など)は足さない(エディタの中で型が食い違う) |
 | gRPC(C#) | `package.json` の `org.nuget.grpc.net.client`・`org.nuget.grpc.core.api`、`scripts/proto-tools.sh` の `GRPC_TOOLS_VERSION` | 3つとも同じ版 |
 | buf | `scripts/proto-tools.sh` の `BUF_VERSION` | 単独で上げてよい |
 | UniTask・YetAnotherHttpHandler・System.IO.Pipelines | `package.json` | 単独で上げてよい |

@@ -4,7 +4,7 @@ status: confirmed
 area: client
 related: [repo/operations, client/auth-account, client/connection, appendix/testing]
 proto: []
-code: [Unity/com.chinpangx.voltech.grpc/package.json, Unity/com.chinpangx.voltech.grpc/Tests/EditMode/ProtobufVersionTests.cs]
+code: [Unity/com.chinpangx.voltech.grpc/package.json, Unity/com.chinpangx.voltech.grpc/Runtime/Client/Errors/RpcErrorDetails.cs]
 updated: 2026-10-11
 ---
 
@@ -16,13 +16,12 @@ updated: 2026-10-11
 |---|---|
 | Grpc.Net.Client(と、依存の Grpc.Core.Api) | gRPCクライアント。`RpcException`・`Metadata` などの型 |
 | Google.Protobuf | 生成されたメッセージ型のランタイム |
-| Google.Api.CommonProtos | エラー詳細の型(`google.rpc.Status` / `google.rpc.ErrorInfo`) |
 | UniTask | 非同期処理。基盤のAPI(ラッパー、`ApiCore`、各interface)は UniTask を返す |
 | YetAnotherHttpHandler | UnityでHTTP/2通信を行うためのハンドラー(Unity用の層だけが使う) |
 
 - YetAnotherHttpHandler は OpenUPM、それ以外は Unity NuGet レジストリ(`org.nuget.*`)から入れる
-- **Google.Protobuf の版は、Google.Api.CommonProtos が依存する版にそろえる**(いまは CommonProtos 2.17.0 に合わせて 3.31.1)。Unity のエディタ(6000.6 以降)は別の版の Google.Protobuf を同梱している。版がずれると、エディタの中で CommonProtos がエディタの版に結び付き、`ErrorInfo` を読むところで `MissingMethodException` になる(業務エラーがすべて不明なエラーになる)。ビルドしたアプリでは起きない。ずれたら `ProtobufVersionTests` が失敗する
-- エラー詳細を読む `Grpc.StatusProto` は Unity NuGet レジストリに無いので、トレーラーを読んでパースする処理を自前で書く
+- **Google.Protobuf を参照するビルド済みの DLL(Google.Api.CommonProtos など)には依存しない**。Unity のエディタ(6000.6 以降)は別の版の Google.Protobuf を同梱していて、DLL が参照する版がパッケージに無いと、エディタの中でその DLL がエディタの版に結び付き、型が食い違って `MissingMethodException` になる(ビルドしたアプリでは起きない)。`make deps-check` が、lock の中にそういうパッケージが無いことを確かめる
+- エラー詳細(`google.rpc.Status` / `google.rpc.ErrorInfo`)は、`RpcErrorDetails` が Google.Protobuf の `CodedInputStream` で自前で読む(`Grpc.StatusProto` は Unity NuGet レジストリに無く、CommonProtos は上の理由で使わない)。CommonProtos と同じバイト列になることを `RpcErrorDetailsTests` が確かめる
 
 ## Unityに依存しない本体(Core)と、Unity用の層
 
@@ -40,7 +39,7 @@ voltech-grpc/unity/
                VContainer の登録
 ```
 
-- 本体が依存するのは UniTask、Grpc.Net.Client、Google.Protobuf、Google.Api.CommonProtos だけ
+- 本体が依存するのは UniTask、Grpc.Net.Client、Google.Protobuf だけ
 - **asmdef の参照は GUID で書く**(`"GUID:..."`)。名前で書くと、アセンブリの名前を変えたときに参照が切れる。Unity のインスペクターで参照を足したときの形とも同じになる
 - ビルドの種類で入れるかどうかを分けたいもの(開発用のツールなど)は、`#if` で囲まずにアセンブリに分け、asmdef の Define Constraints で決める([gRPC Monitor](grpc-monitor.md))
 - 本体は Unity の外(csproj)ではビルドしない。Unity 以外で使う予定が無いので、asmdef だけで持つ。本体のテストも Unity の EditMode テストで回す([テスト](../appendix/testing.md))。Unity のライセンスが要るので、v1 では CI では回らない

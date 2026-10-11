@@ -58,7 +58,7 @@ Unity のクライアントで使う、基盤の型の一覧。各型の細か�
 | `ErrorDecision` | エラーハンドラーが決めた動き(送り直す・留まる・ホーム・タイトル・ストア) |
 | `ReservedErrors` | 基盤の予約エラー(domain `voltech`。`server/rust/error/errors.toml` から生成)。`Maintenance`・`NetworkError` など |
 | `ApiHeaders` | ヘッダー名(`authorization`・`x-request-id`・`x-app-platform`・`x-app-version`・`x-game-date`・`x-server-time`。[メタデータ](../api/metadata.md)) |
-| `RpcErrorDetails` | `GetErrorInfo(RpcException)` で、トレーラーの `grpc-status-details-bin` から `ErrorInfo` を読む |
+| `RpcErrorDetails` | `GetErrorInfo(RpcException)` で、トレーラーの `grpc-status-details-bin` から `ErrorInfo` を読む(`RpcErrorInfo`: `Reason`・`Domain`・`Metadata`。無ければ null) |
 
 ## テストで使う
 

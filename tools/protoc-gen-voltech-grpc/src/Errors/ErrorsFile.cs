@@ -30,7 +30,7 @@ internal sealed record ErrorsFile(string Domain, IReadOnlyList<ErrorEntry> Error
         TomlTable table;
         try
         {
-            table = Toml.ToModel(source);
+            table = TomlSerializer.Deserialize<TomlTable>(source)!;
         }
         catch (TomlException exception)
         {

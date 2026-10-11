@@ -18,7 +18,7 @@ updated: 2026-10-11
 | サーバー内部エラー | `INTERNAL` | `voltech` / `INTERNAL_ERROR`(詳細はログにだけ出す) |
 | 認証エラー | `UNAUTHENTICATED` | なし([認証](auth.md)) |
 
-- gRPCではエラー時にレスポンスメッセージを返せないので、**リッチエラーモデル**で運ぶ。`google.rpc.Status` の details に Google 標準の `google.rpc.ErrorInfo` を入れ、トレーラー `grpc-status-details-bin` で返す(Rust は tonic-types、C# は `Google.Api.CommonProtos` で扱える)
+- gRPCではエラー時にレスポンスメッセージを返せないので、**リッチエラーモデル**で運ぶ。`google.rpc.Status` の details に Google 標準の `google.rpc.ErrorInfo` を入れ、トレーラー `grpc-status-details-bin` で返す(Rust は tonic-types、C# はクライアントの `RpcErrorDetails` が読む)
 
 ```proto
 // google/rpc/error_details.proto(Googleが提供する定義)
