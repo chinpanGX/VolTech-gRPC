@@ -4,7 +4,7 @@ status: current
 area: dev
 related: [repo/current-plan, dev/workflow, guide/client-reference, guide/server-reference]
 proto: []
-code: [server/rust/Cargo.toml, server/rust, sandbox/server, Unity/com.chinpangx.voltech.grpc, tools/protoc-gen-voltech-grpc, sandbox/proto, scripts, buf.yaml, buf.gen.yaml]
+code: [server/rust/Cargo.toml, server/rust, sandbox/server, Unity/com.chinpangx.voltech.grpc, tools/protoc-gen-voltech-grpc, sandbox/proto, scripts, mk, buf.yaml, buf.gen.yaml]
 updated: 2026-10-11
 ---
 
@@ -58,8 +58,10 @@ updated: 2026-10-11
 | 置き場所 | 中身 |
 |---|---|
 | `buf.yaml`・`buf.gen.yaml`・`buf.gen.sandbox.yaml` | `.proto` のモジュール(基盤と sandbox)と lint の設定、C# の生成の設定(基盤 → パッケージ、sandbox → sandbox の Unity プロジェクト) |
-| `Makefile` | 開発用のコマンド(`make help`) |
-| `scripts/proto-tools.sh` | `.proto` の生成に使うツール(buf・protoc・grpc_csharp_plugin)を `.tools/bin` に入れる |
+| `Makefile` | 基盤の開発用のコマンド(`make help`)。アプリは使わない |
+| `mk/env.mk` | 人や PC で変わる設定(`DOTNET`・`GIT_BASH`)の既定値。`local.mk`(コミットしない。例は `local.mk.example`)か環境変数で上書きする |
+| `mk/codegen.mk` | C# の生成に使うツールとプラグインを入れるコマンド(`voltech-tools`・`proto-tools`・`proto-plugin`)と、生成の関数。基盤の `Makefile` と、アプリの Makefile が読む |
+| `scripts/proto-tools.sh` | `.proto` の生成に使うツール(buf・protoc・grpc_csharp_plugin)を、引数のフォルダ(既定は `.tools/bin`)に入れる |
 | `scripts/wiki_*.py` | `wiki_gen.py`(API の表の生成)、`wiki_lint.py`(wiki の確認)、`wiki_affected.py`(変わったファイルから直すべき wiki のページを探す) |
 | `scripts/deps.py` | 依存の確認。`check`(一緒に上げないと壊れる組み合わせ。`make deps-check`・CI)、`outdated`(新しい版。`make deps-outdated`) |
 | `docker-compose.yml`・`.env.example`・`docker/mysql/init/` | MySQL(基盤のテスト用の `app` と、sandbox の `voltech_sandbox`)と、サーバーの環境変数 |

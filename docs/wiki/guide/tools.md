@@ -27,9 +27,8 @@ updated: 2026-10-11
 | オプション | 中身 |
 |---|---|
 | `package=app.v1` | 生成する `.proto` のパッケージ。複数書ける。書かなければ全部を生成する。基盤の `voltech.v1` は `DeviceTokenProvider` が直接呼ぶので、ラッパーを作らないように絞っている |
-| `error_code=app.v1.ErrorCode` | `handledCodes` に使う enum の完全名。書かなければ、名前が `ErrorCode` の enum を探す |
 
-使い方は `make proto-gen`(プラグインをビルドしてから生成する)。プラグインだけをビルドするのは `make proto-plugin`(`.tools/voltech-grpc` に入る)。設計の理由は [コード生成](../api/codegen.md)、中身は [protoc プラグインの中身](../dev/protoc-plugin.md)。
+アプリでは、Makefile で同じタグの基盤を取ってきてビルドし、`buf generate` で使う([始め方](getting-started.md))。このリポジトリでは `make proto-gen`(プラグインをビルドしてから生成する)。プラグインだけをビルドするのは `make proto-plugin`(`.tools/voltech-grpc` に入る)。設計の理由は [コード生成](../api/codegen.md)、中身は [protoc プラグインの中身](../dev/protoc-plugin.md)。
 
 ## gRPC Monitor
 
@@ -45,7 +44,7 @@ Unity エディタで、API のリクエストとレスポンスを1件ずつ見
 
 ## make のコマンド
 
-リポジトリのルートで実行する。一覧は `make help`、よく使うものは [環境構築とよく使うコマンド](../ops/setup.md)。
+このリポジトリ(基盤と sandbox)のコマンド。アプリでは使わない(アプリの生成のコマンドは [始め方](getting-started.md))。リポジトリのルートで実行する。一覧は `make help`、よく使うものは [環境構築とよく使うコマンド](../ops/setup.md)。
 
 | コマンド | 内容 |
 |---|---|
@@ -54,7 +53,6 @@ Unity エディタで、API のリクエストとレスポンスを1件ずつ見
 | `make errors-gen` / `make sandbox-errors-gen` | `errors.toml` から C# のエラーコードを生成する(基盤の予約エラー / sandbox の業務エラー。`protoc-gen-voltech-grpc errors`) |
 | `make proto-lint` / `make proto-breaking` | `.proto` の lint / main との互換性の確認 |
 | `make test` | プッシュ前のテスト一式 |
-| `make client-lint` | クライアントの書き方の確認 |
 | `make wiki-lint` / `make wiki-affected` | wiki の確認 / 変わったファイルから直すべき wiki のページを探す |
 | `make deps-outdated` / `make deps-check` | 基盤の依存の新しい版を調べる / 一緒に上げないと壊れる組み合わせを確かめる |
 

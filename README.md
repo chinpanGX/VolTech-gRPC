@@ -19,3 +19,7 @@ sandbox は配布物ではない。基盤の動作確認と、組み込み方の
 ## 開発
 
 `make help` でコマンドの一覧が出る。プッシュ前は `make test`。セットアップは [docs/wiki/ops/setup.md](docs/wiki/ops/setup.md)。
+
+## ライセンス
+
+MIT。[LICENSE](LICENSE)。

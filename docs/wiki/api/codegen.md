@@ -18,7 +18,7 @@ updated: 2026-10-11
 ```
 
 - **C#の[ラッパー](../client/wrapper.md)は、自作のprotocプラグインで生成する**。`buf generate` で protoc組み込みのC#生成・grpc_csharp_plugin と一緒に実行する。Unity では Grpc.Tools が動かないので、**生成したC#コードはコミットする**
-- プラグインは **C#** で書く(入出力の型 `CodeGeneratorRequest` は `Google.Protobuf` に入っている。クライアント側の道具と言語がそろう)。基盤のリポジトリ(VolTech-gRPC)に置き、dotnet tool として配る。生成するラッパーは `ApiCore` の API に合わせるので、`ApiCore` と同じタグで出す
+- プラグインは **C#** で書く(入出力の型 `CodeGeneratorRequest` は `Google.Protobuf` に入っている。クライアント側の道具と言語がそろう)。基盤のリポジトリ(VolTech-gRPC)に置き、パッケージとしては配らない。アプリは同じタグの基盤を取ってきてビルドする([始め方](../guide/getting-started.md))。生成するラッパーは `ApiCore` の API に合わせるので、`ApiCore` と同じタグで使う
 - 入力の `.proto` の場所と、生成コードの出力先は、アプリごとに変えられる([フォルダ構成](../repo/folder-layout.md))
 - プラグインが生成するもの
   - ラッパー(gRPCサービスごとに1クラス)。RPCごとの `idempotency_level`([冪等性](idempotency.md))と、サービスごとの `skip_auth`([認証](auth.md))を読んで埋め込む
@@ -49,7 +49,6 @@ updated: 2026-10-11
   - 共通レスポンス項目を持つメッセージの `partial class` に、目印のインターフェースを付ける
 - オプション(`buf.gen.yaml` の `opt`)
   - `package=app.v1`: 生成するパッケージ。複数書ける。書かなければ全部。基盤のデバイス登録(`voltech.v1`)は Auth が直接呼ぶので、アプリのパッケージだけにする
-  - `error_code=app.v1.ErrorCode`: `handledCodes` の enum。書かなければ、名前が `ErrorCode` の enum を探す
 - `skip_auth` は、アプリの `.proto` が `voltech/v1/auth_options.proto` を import しないので、番号(50002)で未知のフィールドから読む。プラグインと auth パッケージは同じタグで出すので、番号がずれることはない
 - ストリーミングの RPC はエラーにする(`ApiCore` は単項の呼び出しだけを扱う)
 - 1つのファイルに複数の型を出す(手書きのコードの「1ファイル1型」は、生成コードには当てはめない。protoc の生成と同じ)

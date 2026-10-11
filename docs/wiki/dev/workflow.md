@@ -23,7 +23,7 @@ updated: 2026-10-11
 | Rust のクレート | `make fmt` → `make lint`(Clippy。警告もエラー) → `make test-rust`(MySQL を使う) |
 | `.proto` | `make proto-lint` → `make proto-gen`(C# を生成し直してコミットする)。RPC やコメントを変えたら `make wiki-gen` |
 | protoc プラグイン | `make plugin-test` → `make proto-gen` で生成コードの差分を確かめる([protoc プラグインの中身](protoc-plugin.md)) |
-| Unity のコード | `make client-lint`(書き方) → コンパイル → EditMode テスト |
+| Unity のコード | コンパイル → EditMode テスト |
 | 依存のパッケージの版 | `make deps-check`(一緒に上げないと壊れる組み合わせ)。上げる手順はスキル `/deps-update`(`.claude/skills/deps-update/SKILL.md`)。新しい版は `make deps-outdated` で調べる |
 
 Unity のコンパイルとテストは、Unity のエディタを開いたままでも、Unity CLI で流せる(エディタに Pipeline のパッケージが入っているとき)。

@@ -34,6 +34,8 @@ TestResults/
 .env
 .env.*
 !.env.example
+# make の利用者ごとの設定(例は local.mk.example)
+local.mk
 
 # --- IDE ---
 .idea/
@@ -42,7 +44,7 @@ TestResults/
 *.iml
 .claude/settings.local.json
 
-# --- 開発ツール(make proto-tools が入れる)---
+# --- 開発ツール(make voltech-tools が入れる)---
 /.tools/
 
 # --- OS ---

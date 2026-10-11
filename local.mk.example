@@ -1,0 +1,8 @@
+# 利用者ごとの設定の例。local.mk にコピーして、要るものだけを書く(local.mk はコミットしない)。
+# 書ける設定と既定値は mk/env.mk にある。
+
+# PATH で先に別の .NET SDK(Unity の .NET 8 など)が見つかるとき
+# DOTNET := C:/Program Files/dotnet/dotnet.exe
+
+# Git を既定と違う場所に入れたとき(Windows)
+# GIT_BASH := D:/Git/bin/bash.exe

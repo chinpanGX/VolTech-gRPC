@@ -5,7 +5,7 @@ area: dev
 related: [api/codegen, guide/tools, dev/code-map]
 proto: []
 code: [tools/protoc-gen-voltech-grpc]
-updated: 2026-10-10
+updated: 2026-10-11
 ---
 
 # protoc プラグインの中身
@@ -33,7 +33,7 @@ updated: 2026-10-10
 ## 決まりごと
 
 - **`skip_auth` はタグ番号で読む**。アプリの `.proto` は `voltech/v1/auth_options.proto` を import しないので、リクエストに拡張の定義が入っていないことがある。番号は `auth_options.proto` と同じにする(`ProtoOptions.SkipAuthFieldNumber`)
-- **生成するファイルの using はアルファベット順**にする。`make client-lint` は生成コードを見ないので、ずれても気づけない。テストで確かめている
+- **生成するファイルの using はアルファベット順**にする。生成コードは書き方のチェックの対象外なので、テストで確かめている
 - 生成するものが無いファイル(メッセージだけの `.proto` など)は、ファイルを作らない
 - 共通レスポンス項目の目印は、項目の型を定義したファイルに interface を、項目を持つレスポンスのファイルに `partial class` を出す
 

@@ -18,3 +18,5 @@
   - `voltech/v1/error_options.proto` を消す
 - ガチャのサンプルを grpc-foundation-samples から sandbox に移す(サーバー・Unity の画面とシーン・テスト)
 - エディタの通信を見るウィンドウを Request Viewer から gRPC Monitor に改名する(メニューは `Window > VolTech gRPC > gRPC Monitor`)。一覧を4列(Time・API・Result・Duration)にし、開いたときに広げる
+- MIT ライセンスで公開する(`LICENSE`。UPM パッケージにも `LICENSE.md` を入れる)
+- アプリが C# を生成するための `mk/codegen.mk` を用意する。アプリの Makefile は、同じタグの基盤から生成に使うフォルダだけを取ってきて読み込む。使う `dotnet` などの設定は `local.mk` で上書きできる

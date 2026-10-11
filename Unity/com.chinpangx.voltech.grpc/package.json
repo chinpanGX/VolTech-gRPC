@@ -5,6 +5,7 @@
   "unity": "6000.3",
   "description": "Unity client foundation for gRPC game backends.",
   "keywords": ["grpc", "unity", "game-backend"],
+  "license": "MIT",
   "dependencies": {
     "com.cysharp.unitask": "2.5.11",
     "com.cysharp.yetanotherhttphandler": "1.11.6",

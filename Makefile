@@ -1,41 +1,27 @@
-# 開発用のコマンド
-.PHONY: help db-up db-down proto-tools proto-plugin plugin-test proto-lint proto-format proto-breaking proto-gen build fmt fmt-check lint client-fmt client-lint wiki-gen wiki-lint wiki-affected deps-check deps-outdated sandbox-proto-gen errors-gen sandbox-errors-gen sandbox-server test test-rust
+# 基盤の開発用のコマンド(基盤と sandbox)。アプリは使わない。
+# C# の生成に使うツールの準備と、利用者ごとの設定(.NET・Git Bash)は mk/ にあり、アプリの Makefile も同じものを読む
+include mk/codegen.mk
 
-ifeq ($(OS),Windows_NT)
-# PowerShell から make を実行しても、レシピは Git Bash で動かす(既定の cmd.exe では動かないため)。
-# Git を別の場所に入れたときは、環境変数 GIT_BASH でパスを渡す
-GIT_BASH ?= C:/Program Files/Git/bin/bash.exe
-SHELL := $(GIT_BASH)
-# 単なる bash だと、PATH 上の WSL の bash.exe が起動することがあるので、パスで指定する
-BASH := "$(GIT_BASH)"
-else
-BASH := bash
-endif
+.PHONY: help db-up db-down plugin-test proto-lint proto-format proto-breaking proto-gen build fmt fmt-check lint wiki-gen wiki-lint wiki-affected deps-check deps-outdated sandbox-proto-gen errors-gen sandbox-errors-gen sandbox-server test test-rust
 
-# .proto のツールは scripts/proto-tools.sh が .tools/bin に、自作のプラグインは make proto-plugin が .tools/voltech-grpc に入れたものを使う
-PROTO_ENV := PATH="$$PWD/.tools/bin:$$PWD/.tools/voltech-grpc:$$PATH"
 PLUGIN_DIR := tools/protoc-gen-voltech-grpc
 
 RUST_MANIFESTS := server/rust/Cargo.toml sandbox/server/Cargo.toml
-UNITY_SLN := sandbox/UnityProject/UnityProject.sln
 # エラーの定義ファイル(errors.toml)から生成する C#
 RESERVED_ERRORS_CS := Unity/com.chinpangx.voltech.grpc/Runtime/Client/Errors/ReservedErrors.cs
 SANDBOX_ERRORS_CS := sandbox/UnityProject/Assets/Generated/Errors/SandboxErrors.cs
 
-# 説明は各ターゲットの行の「## 」の後ろに書く。
+# 説明は各ターゲットの行の「## 」の後ろに書く(mk/ のターゲットも出す)。
 # Windows 版の make は、レシピのコマンドを ANSI コードページ経由で渡すので、日本語を echo すると文字化けする。
 # そのため説明はレシピに書かず、Makefile 自体から読み出して表示する
 help: ## コマンドの一覧
-	@grep -E '^[a-z-]+:.*## ' Makefile | sed -E 's/^([a-z-]+):.*## (.*)/\1|\2/' | awk -F'|' '{ printf "%-16s %s\n", $$1, $$2 }'
+	@grep -hE '^[a-z-]+:.*## ' Makefile mk/codegen.mk | sed -E 's/^([a-z-]+):.*## (.*)/\1|\2/' | awk -F'|' '{ printf "%-16s %s\n", $$1, $$2 }'
 
 db-up: ## MySQL を起動
 	docker compose up -d --wait mysql
 
 db-down: ## MySQL を停止
 	docker compose down
-
-proto-tools: ## .proto のツール(buf・protoc・grpc_csharp_plugin)を .tools/bin に入れる
-	$(BASH) scripts/proto-tools.sh
 
 proto-lint: proto-tools ## buf lint
 	$(PROTO_ENV) buf lint
@@ -46,23 +32,20 @@ proto-format: proto-tools ## buf format -w
 proto-breaking: proto-tools ## buf breaking(main ブランチと比較)
 	$(PROTO_ENV) buf breaking --against '.git#branch=main'
 
-proto-plugin: ## 自作の protoc プラグイン(protoc-gen-voltech-grpc)をビルドして .tools/voltech-grpc に入れる
-	dotnet publish $(PLUGIN_DIR)/src -c Release -o .tools/voltech-grpc --nologo -v quiet
-
 plugin-test: ## 自作の protoc プラグインのテスト
-	dotnet test $(PLUGIN_DIR)/tests --nologo
+	"$(DOTNET)" test $(PLUGIN_DIR)/tests --nologo
 
 proto-gen: proto-lint ## 基盤の .proto から C# を生成(UPM パッケージの Runtime/Generated)
-	$(PROTO_ENV) buf generate --path server/rust/auth/proto/voltech
+	$(call voltech_proto_gen,--path server/rust/auth/proto/voltech)
 
 errors-gen: proto-plugin ## 基盤の予約エラー(server/rust/error/errors.toml)から C# を生成(UPM パッケージの ReservedErrors)
-	$(PROTO_ENV) protoc-gen-voltech-grpc errors server/rust/error/errors.toml $(RESERVED_ERRORS_CS) --namespace VolTech.Client --class ReservedErrors --reserved
+	$(call voltech_errors_gen,server/rust/error/errors.toml,$(RESERVED_ERRORS_CS),VolTech.Client,ReservedErrors,--reserved)
 
 sandbox-proto-gen: proto-lint proto-plugin ## sandbox の .proto から C# を生成(sandbox の Unity プロジェクト)
-	$(PROTO_ENV) buf generate --template buf.gen.sandbox.yaml --path sandbox/proto/sandbox
+	$(call voltech_proto_gen,--template buf.gen.sandbox.yaml --path sandbox/proto/sandbox)
 
 sandbox-errors-gen: proto-plugin ## sandbox の業務エラー(sandbox/errors.toml)から C# を生成(sandbox の Unity プロジェクト)
-	$(PROTO_ENV) protoc-gen-voltech-grpc errors sandbox/errors.toml $(SANDBOX_ERRORS_CS) --namespace Sandbox.V1 --class SandboxErrors
+	$(call voltech_errors_gen,sandbox/errors.toml,$(SANDBOX_ERRORS_CS),Sandbox.V1,SandboxErrors)
 
 build: ## cargo build
 	$(foreach m,$(RUST_MANIFESTS),cargo build --manifest-path $(m) &&) true
@@ -75,14 +58,6 @@ fmt-check: ## rustfmt で整形済みか確認
 
 lint: ## Clippy(警告はエラー扱い)
 	$(foreach m,$(RUST_MANIFESTS),cargo clippy --manifest-path $(m) --workspace --all-targets -- -D warnings &&) true
-
-client-fmt: ## dotnet format でクライアントを直す
-	dotnet format $(UNITY_SLN) --severity warn
-
-# .sln は Unity が sandbox/UnityProject を開いたときに作る(コミットしない)ので、無ければ理由を出して止める
-client-lint: ## クライアントの書き方の違反を確認(Unity で sandbox/UnityProject を一度開いて .sln を作っておく)
-	@test -f $(UNITY_SLN) || { echo "$(UNITY_SLN) not found. Open sandbox/UnityProject in Unity once to generate it."; exit 1; }
-	dotnet format $(UNITY_SLN) --severity warn --verify-no-changes
 
 test-rust: db-up ## Rust のテスト(MySQL を使う)
 	$(foreach m,$(RUST_MANIFESTS),cargo test --manifest-path $(m) &&) true
@@ -102,8 +77,8 @@ deps-check: ## 一緒に上げないと壊れる依存の組み合わせを確�
 deps-outdated: ## 依存の新しい版を各レジストリに問い合わせる
 	python scripts/deps.py outdated
 
-# TODO: Unity の EditMode テスト(クライアントの本体を含む)を足す。client-lint は書き方だけを確かめる
-test: test-rust plugin-test client-lint wiki-lint deps-check ## プッシュ前のテスト一式
+# TODO: Unity の EditMode テスト(クライアントの本体を含む)を足す
+test: test-rust plugin-test wiki-lint deps-check ## プッシュ前のテスト一式
 
 sandbox-server: db-up ## sandbox のサーバーを起動(.env を読む。DB は voltech_sandbox)
 	cargo run --manifest-path sandbox/server/Cargo.toml -p server

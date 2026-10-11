@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# .proto の生成に使うツール(buf・protoc・grpc_csharp_plugin)を .tools/bin に入れる。
+# .proto の生成に使うツール(buf・protoc・grpc_csharp_plugin)を入れる。
+# 入れる先は引数で渡す(既定はこのリポジトリの .tools/bin)。アプリは mk/codegen.mk から、アプリの .tools/bin を渡す。
 # 入っているバージョンが同じなら何もしない。
 set -euo pipefail
 
@@ -8,7 +9,7 @@ BUF_VERSION=1.73.0
 GRPC_TOOLS_VERSION=2.84.0
 
 root=$(cd "$(dirname "$0")/.." && pwd)
-bin="$root/.tools/bin"
+bin="${1:-$root/.tools/bin}"
 stamp="$bin/.versions"
 want="buf=$BUF_VERSION grpc-tools=$GRPC_TOOLS_VERSION"
 
