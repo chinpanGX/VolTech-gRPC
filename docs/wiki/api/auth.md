@@ -2,7 +2,7 @@
 title: "認証"
 status: confirmed
 area: api
-related: [server/auth, client/auth-account, repo/boundary, api/device-service]
+related: [server/auth, client/auth-account, guide/roles, api/device-service]
 proto: [server/rust/auth/proto/voltech/v1/device.proto, sandbox/proto/sandbox/v1/sandbox.proto]
 updated: 2026-10-10
 ---

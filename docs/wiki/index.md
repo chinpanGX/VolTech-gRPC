@@ -20,11 +20,13 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 
 基盤はパッケージとして配り、アプリは自分のプロジェクトからタグで参照する。組み込み方の実例は、このリポジトリの `sandbox/`(基盤の機能を1つずつ試す RPC と、ガチャのサンプル)にある。
 
-## はじめて使う人はこの順に読む
+## アプリを作る人はこの順に読む
 
-1. [始め方](guide/getting-started.md) — 基盤をパッケージとして参照し、sandbox のサンプルを動かす
-2. [API を足す](guide/add-api.md) — `.proto` を書き、生成し、サーバーとクライアントから使う
-3. 組み込むときに引く: [クライアントのリファレンス](guide/client-reference.md)・[サーバーのリファレンス](guide/server-reference.md)・[ツール](guide/tools.md)
+1. [始め方](guide/getting-started.md) — 基盤を参照し、C# の生成を準備する(sandbox で動くものを見る方法もここ)
+2. [クライアントとサーバーをつなぐ](guide/connect.md) — サーバーとクライアントを組み立て、つながるのを確かめる
+3. [API を足す](guide/add-api.md) — アプリの API を足す。`.proto` → 生成 → ハンドラー → 呼び出し → テスト
+
+組み込むときに引くもの: [クライアントのリファレンス](guide/client-reference.md)・[サーバーのリファレンス](guide/server-reference.md)・[基盤とアプリの役割分担](guide/roles.md)
 
 ## やりたいことから探す
 
@@ -37,9 +39,8 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 | メンテナンス・強制アップデートにしたい | [サーバーの状態](server/status.md) |
 | 接続先・タイムアウトを変えたい | [接続設定](client/connection.md) |
 | サーバー無しでクライアントを試したい・テストしたい | [サーバーが無いときの差し替えとテスト](client/fake-testing.md) |
-| 通信の中身を見たい | [ツール](guide/tools.md)(gRPC Monitor)・[デバッグ](ops/debugging.md)(grpcurl) |
-| 環境を作りたい・make のコマンドを知りたい | [環境構築とよく使うコマンド](ops/setup.md) |
-| upstream から基盤を取り込みたい | [運用](repo/operations.md) |
+| 通信の中身を見たい | [通信を見る・調べる](guide/debugging.md) |
+| 基盤の新しい版を使いたい / 基盤も一緒に直したい | [基盤の版を上げる・基盤を一緒に直す](guide/upgrade.md) |
 
 ## 基盤そのものを直す人
 
@@ -51,15 +52,18 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 
 状態: `confirmed` 確定 / `current` 当面の方針(あとで変わり得る) / `deferred` 保留 / `appendix` 付録
 
-### [利用者向けガイド](guide/index.md)
+### [アプリ開発者向けガイド](guide/index.md)
 
 | ページ | 状態 | 内容 |
 |---|---|---|
-| [始め方](guide/getting-started.md) | `current` | 基盤をパッケージとして参照し、sandbox のサンプルを動かすまで |
-| [API を足す](guide/add-api.md) | `current` | `.proto` → 生成 → サーバーのハンドラー → クライアントの呼び出し |
-| [クライアントのリファレンス](guide/client-reference.md) | `current` | `ApiCore`・ラッパー・アプリが実装する interface・テスト用の部品 |
-| [サーバーのリファレンス](guide/server-reference.md) | `current` | `voltech-grpc-*` のクレートと組み込み方 |
-| [ツール](guide/tools.md) | `current` | protoc プラグイン・gRPC Monitor・make のコマンド |
+| [始め方](guide/getting-started.md) | `current` | 基盤の参照、アプリのフォルダ構成、C# の生成の準備、sandbox の動かし方 |
+| [クライアントとサーバーをつなぐ](guide/connect.md) | `current` | サーバーとクライアントの組み立て、アプリが実装するもの、接続の確かめ方 |
+| [API を足す](guide/add-api.md) | `current` | `.proto` → 生成 → サーバーのハンドラー → クライアントの呼び出し → テスト |
+| [基盤とアプリの役割分担](guide/roles.md) | `current` | テーブル・.proto・エラー表示などを、基盤とアプリのどちらが持つか |
+| [通信を見る・調べる](guide/debugging.md) | `current` | gRPC Monitor・Postman・grpcurl・ログ |
+| [基盤の版を上げる・基盤を一緒に直す](guide/upgrade.md) | `current` | タグの上げ方と、手元の基盤を参照する手順 |
+| [クライアントのリファレンス](guide/client-reference.md) | `current` | `ApiCore`・ラッパー・基盤の実装・テスト用の部品 |
+| [サーバーのリファレンス](guide/server-reference.md) | `current` | `voltech-grpc-*` のクレートで使うもの |
 
 ### [基盤開発者向けガイド](dev/index.md)
 
@@ -83,7 +87,6 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 | [リポジトリ名と命名](repo/naming.md) | `current` | リポジトリ・パッケージ・クレート・.proto パッケージの命名と理由 |
 | [サーバーの分け方](repo/server-split.md) | `deferred` | モジュラーモノリスの採用と、プロセスを分ける基準 |
 | [フォルダ構成](repo/folder-layout.md) | `deferred` | 当初の案のフォルダ構成(いまの形は [コードの地図](dev/code-map.md)) |
-| [基盤とアプリの境界](repo/boundary.md) | `deferred` | テーブル・.proto・エラー表示などの、基盤とアプリの責務分担 |
 | [当面の実装方針](repo/current-plan.md) | `current` | 単一リポジトリでの framework / app 分離と、実装の中で決めたこと |
 
 ### [API定義](api/index.md)
@@ -129,10 +132,7 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 | ページ | 状態 | 内容 |
 |---|---|---|
 | [環境構築とよく使うコマンド](ops/setup.md) | `current` | 必須のツール、.proto の生成、make のコマンド、接続の確かめ方 |
-| [.proto の管理](ops/proto-management.md) | `confirmed` | buf による lint / breaking / generate |
-| [デバッグ](ops/debugging.md) | `confirmed` | Postman・grpcurl・gRPC リフレクション |
 | [テスト](ops/testing.md) | `confirmed` | 結合テストの観点と、実行するタイミング |
-| [パッケージとアプリを同時に直すとき](ops/local-override.md) | `confirmed` | 基盤をタグで参照しているアプリから、手元の基盤を参照する手順 |
 
 ### 付録
 

@@ -2,7 +2,7 @@
 title: "API を足す"
 status: current
 area: guide
-related: [guide/client-reference, guide/server-reference, guide/tools, api/codegen, api/errors, api/idempotency, api/common-response]
+related: [guide/connect, guide/client-reference, guide/server-reference, guide/debugging, api/codegen, api/errors, api/idempotency, api/common-response]
 proto: [sandbox/proto/sandbox/v1/gacha.proto, sandbox/proto/sandbox/v1/player.proto]
 code: [sandbox/server/api/src, sandbox/server/server/src/lib.rs, sandbox/server/proto/build.rs, sandbox/errors.toml, buf.gen.sandbox.yaml]
 updated: 2026-10-11
@@ -40,6 +40,8 @@ reason = "INSUFFICIENT_GEMS"
 action = "stay"
 description = "ジェムが足りない。"
 ```
+
+- **一度使ったフィールド番号・名前は使い回さない**。消したら `reserved` にする。リリースした後に番号や型を変えると、古いアプリと通信できなくなる。`buf breaking` で、互換を壊す変更を見つけられる
 
 sandbox では `sandbox/proto/sandbox/v1/gacha.proto`・`sandbox/errors.toml`。
 
@@ -124,8 +126,11 @@ if (!result.IsSuccess && result.Error.Code == AppErrors.InsufficientGems)
 
 ## 5. テストを書く
 
-- サーバー: 起動したサーバーに gRPC でつなぐ結合テストを書く(MySQL を使う。sandbox では `sandbox/server/server/tests/`)
+- サーバー: 起動したサーバーに gRPC でつなぐ結合テストを書く(MySQL を使う。tonic が生成するクライアントで呼ぶと、実際のクライアントと同じ経路を通る。sandbox では `sandbox/server/server/tests/`)
+  - `IDEMPOTENT` と宣言した RPC は、2回呼んでも状態が同じになることを確かめる
+  - 冪等性の対象の RPC は、同じ RequestID で2回送ると、業務データが1回分しか変わらないことを確かめる
 - クライアント: `FakeCallInvoker` に RPC の処理を登録すれば、サーバー無しでラッパーと `ApiCore` を通せる。生成した `GachaServiceMethods.Draw` などのパスの定数を使う([サーバーが無いときの差し替えとテスト](../client/fake-testing.md))
+- エラーを足したら、そのエラーの文言(ダイアログに出す文)がアプリの文言データにあるかを確かめる
 
 ## チェックリスト
 

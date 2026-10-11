@@ -2,7 +2,7 @@
 title: "gRPC Monitor(エディタ拡張)"
 status: current
 area: client
-related: [client/api-core, client/structure, client/connection, ops/debugging, api/metadata, api/errors]
+related: [client/api-core, client/structure, client/connection, guide/debugging, api/metadata, api/errors]
 proto: []
 code: [Unity/com.chinpangx.voltech.grpc/Runtime/Tracing, Unity/com.chinpangx.voltech.grpc/Editor, Unity/com.chinpangx.voltech.grpc/Runtime/Unity/ApiChannel.cs]
 updated: 2026-10-11

@@ -2,7 +2,7 @@
 title: "運用(パッケージとサンプル)"
 status: current
 area: repo
-related: [repo/naming, repo/current-plan, guide/getting-started, ops/local-override]
+related: [repo/naming, repo/current-plan, guide/getting-started, guide/upgrade]
 proto: []
 code: [tools/protoc-gen-voltech-grpc/src, sandbox/server/Cargo.toml, sandbox/UnityProject/Packages/manifest.json, Unity/com.chinpangx.voltech.grpc/package.json]
 updated: 2026-10-11
@@ -25,7 +25,7 @@ updated: 2026-10-11
 - クライアントとサーバーの認証、プラグインと `ApiCore` は組で動くので、1つのリポジトリから同じタグで出す(`device.proto` や、ラッパーと `ApiCore` の食い違いが起きない)
 - アプリのエラーは、アプリの `errors.toml`(アプリの domain)に書く。基盤の予約エラーは基盤が持つので、アプリに書き写さない([エラー](../api/errors.md))
 - 基盤はアプリのコードに依存しない。サーバーでアプリとつなぐのは `PlayerResolver` の trait だけ
-- 基盤とアプリを同時に直すときは、手元のパスに差し替える([パッケージとアプリを同時に直すとき](../ops/local-override.md))
+- 基盤とアプリを同時に直すときは、手元のパスに差し替える([基盤の版を上げる・基盤を一緒に直す](../guide/upgrade.md))
 - タグの付け方とリリースの手順は未確定([未確定・保留](../open-questions.md) #16)
 
 ## サンプル(sandbox)

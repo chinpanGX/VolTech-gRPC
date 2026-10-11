@@ -19,7 +19,8 @@ updated: 2026-10-11
 
 - **C#の[ラッパー](../client/wrapper.md)は、自作のprotocプラグインで生成する**。`buf generate` で protoc組み込みのC#生成・grpc_csharp_plugin と一緒に実行する。Unity では Grpc.Tools が動かないので、**生成したC#コードはコミットする**
 - プラグインは **C#** で書く(入出力の型 `CodeGeneratorRequest` は `Google.Protobuf` に入っている。クライアント側の道具と言語がそろう)。基盤のリポジトリ(VolTech-gRPC)に置き、パッケージとしては配らない。アプリは同じタグの基盤を取ってきてビルドする([始め方](../guide/getting-started.md))。生成するラッパーは `ApiCore` の API に合わせるので、`ApiCore` と同じタグで使う
-- 入力の `.proto` の場所と、生成コードの出力先は、アプリごとに変えられる([フォルダ構成](../repo/folder-layout.md))
+- `.proto` の確認と C# の生成には **buf** を使う。`buf lint`(書き方)・`buf format`(整形)・`buf breaking`(後方互換を壊す変更の検出)・`buf generate`(C# の生成)。Rust は `build.rs` で生成する(protox で `.proto` を読み込み、tonic-prost-build で生成する。protoc は要らない)
+- 入力の `.proto` の場所と、生成コードの出力先は、アプリごとに変えられる(`buf.yaml`・`buf.gen.yaml` と `build.rs` に書く。[始め方](../guide/getting-started.md))
 - プラグインが生成するもの
   - ラッパー(gRPCサービスごとに1クラス)。RPCごとの `idempotency_level`([冪等性](idempotency.md))と、サービスごとの `skip_auth`([認証](auth.md))を読んで埋め込む
   - 全RPCの一覧(汎用のテスト用。[サーバーが無いときの差し替えとテスト](../client/fake-testing.md))

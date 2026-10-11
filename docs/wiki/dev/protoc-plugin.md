@@ -2,7 +2,7 @@
 title: "protoc プラグインの中身"
 status: current
 area: dev
-related: [api/codegen, guide/tools, dev/code-map]
+related: [api/codegen, guide/add-api, dev/code-map]
 proto: []
 code: [tools/protoc-gen-voltech-grpc]
 updated: 2026-10-11
@@ -10,7 +10,7 @@ updated: 2026-10-11
 
 # protoc プラグインの中身
 
-`protoc-gen-voltech-grpc`(`tools/protoc-gen-voltech-grpc/`)を直す人向け。使い方は [ツール](../guide/tools.md)、設計の理由は [コード生成](../api/codegen.md)。
+`protoc-gen-voltech-grpc`(`tools/protoc-gen-voltech-grpc/`)を直す人向け。使い方は [始め方](../guide/getting-started.md)・[API を足す](../guide/add-api.md)、設計の理由と生成するもの・オプションは [コード生成](../api/codegen.md)。
 
 - .NET 10 のコンソールアプリ。`dotnet publish` で `.tools/voltech-grpc` に入れ、`buf.gen.yaml` の `local: protoc-gen-voltech-grpc` から呼ぶ(`make proto-plugin`)
 - 依存は `Google.Protobuf` だけ(入出力の型 `CodeGeneratorRequest`・`CodeGeneratorResponse` を含む)。版は Unity のパッケージと同じにする(`make deps-check` が確かめる)
@@ -42,4 +42,4 @@ updated: 2026-10-11
 1. `make plugin-test` でテストを流す
 2. `make proto-gen` で生成し直し、生成コードの差分を確かめる(意図しない差分が無いか)
 3. Unity でコンパイルが通ることを確かめる(Unity のエディタを開いているなら `unity recompile`)
-4. 生成するものの形を変えたら、[コード生成](../api/codegen.md) と [ツール](../guide/tools.md) を直す
+4. 生成するものの形を変えたら、[コード生成](../api/codegen.md) と [API を足す](../guide/add-api.md) を直す

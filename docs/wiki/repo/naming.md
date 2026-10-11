@@ -2,7 +2,7 @@
 title: "リポジトリ名と命名"
 status: current
 area: repo
-related: [repo/current-plan, repo/folder-layout, ops/local-override]
+related: [repo/current-plan, repo/folder-layout, guide/upgrade]
 proto: []
 updated: 2026-10-11
 ---

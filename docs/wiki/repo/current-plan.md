@@ -21,7 +21,7 @@ updated: 2026-10-11
 
 1. **このリポジトリで、基盤をパッケージの形にする**。Unity は基盤を埋め込みパッケージ(`Packages/com.chinpangx.voltech.grpc/`、`package.json` 付き)に移す。サーバーの `framework/` のクレートと、基盤の `.proto` は、今の形のまま単独でビルドできる状態を保つ
 2. **履歴ごと `voltech-grpc` に移す**(`git subtree split` か `git filter-repo`)
-3. **サンプルから参照する**。Cargo は git の依存(`tag` を指定)、UPM は git の URL(`?path=` とタグ)にする。基盤を同時に直すときは、手元のパスに差し替える([パッケージとアプリを同時に直すとき](../ops/local-override.md))。サンプルの buf から基盤の `.proto` を参照する方法(#3)は、このときに決め直す
+3. **サンプルから参照する**。Cargo は git の依存(`tag` を指定)、UPM は git の URL(`?path=` とタグ)にする。基盤を同時に直すときは、手元のパスに差し替える([基盤の版を上げる・基盤を一緒に直す](../guide/upgrade.md))。サンプルの buf から基盤の `.proto` を参照する方法(#3)は、このときに決め直す
 
 アプリは、このリポジトリ(サンプル兼テンプレート)を clone して作り、基盤はパッケージとして参照する(分けた後は、アプリが自分のプロジェクトから基盤を参照する形にした。[運用](operations.md))
 

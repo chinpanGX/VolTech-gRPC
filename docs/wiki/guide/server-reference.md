@@ -19,35 +19,7 @@ updated: 2026-10-11
 | `voltech-grpc-status` | `server/rust/status/` | メンテナンス・強制アップデート・日付変更の判定と、サーバー時刻・ゲーム内の日付のヘッダー |
 | `voltech-grpc-transaction` | `server/rust/transaction/` | トランザクションと冪等性(同じ RequestID の再送で二重に実行しない)、テーブルのマイグレーション |
 
-`Cargo.toml` で使うクレートだけを依存に入れる。コードでは `voltech_grpc_auth::AuthLayer` のように書く。
-
-## 組み込み方
-
-sandbox の `sandbox/server/server/src/lib.rs` が実例。Layer の順番に意味がある([リクエストの処理の流れ](../server/request-flow.md))。
-
-```rust
-// 起動時: 基盤とアプリのマイグレーション
-voltech_grpc_auth::migrate(&pool).await?;
-voltech_grpc_transaction::migrate(&pool).await?;
-sqlx::migrate!("../migrations").run(&pool).await?;
-
-// 冪等性の扱いは、アプリの .proto の idempotency_level から決める
-let transactions = Transactions::new(
-    pool.clone(),
-    IdempotencyLevels::from_file_descriptor_set(proto::FILE_DESCRIPTOR_SET)?,
-);
-let auth = AuthLayer::new(pool.clone(), PlayerLookup::new(pool.clone())); // PlayerLookup はアプリの PlayerResolver
-let date_change = DateChangeLayer::new(status.clone());
-
-Server::builder()
-    .layer(ServerStatusLayer::new(status))   // 強制アップデート・メンテナンス(全サービス。認証より先)
-    .layer(RpcMethodLayer)                   // Transactions::run が RPC の名前を読めるように
-    .add_service(DeviceServiceImpl::new(pool.clone()).into_server())        // 認証なし
-    .add_service(auth.layer(date_change.layer(GachaServiceImpl::new(transactions).into_server())))
-    // ...
-```
-
-サーバーの状態は、起動時に `ServerStatus::watch(FileStatusSource::new(path), interval)` で読み込み、以後 `interval` ごとに読み直す(sandbox は 5 秒。`sandbox/server/server/src/main.rs`)。
+`Cargo.toml` で使うクレートだけを依存に入れる。コードでは `voltech_grpc_auth::AuthLayer` のように書く。組み立て方は [クライアントとサーバーをつなぐ](connect.md)。
 
 ## アプリが実装するもの
 

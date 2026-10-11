@@ -2,7 +2,7 @@
 title: "始め方"
 status: current
 area: guide
-related: [guide/add-api, ops/setup, repo/operations, api/errors]
+related: [guide/connect, guide/add-api, guide/upgrade, guide/roles, repo/operations, api/errors]
 proto: []
 code: [mk, local.mk.example, scripts/proto-tools.sh, tools/protoc-gen-voltech-grpc/src, sandbox/server/Cargo.toml, sandbox/server/proto/build.rs, sandbox/UnityProject/Packages/manifest.json, sandbox/errors.toml, buf.gen.sandbox.yaml, sandbox/server/server/src/lib.rs, sandbox/UnityProject/Assets/Scripts/Sample/SampleLifetimeScope.cs, .env.example]
 updated: 2026-10-11
@@ -24,7 +24,20 @@ updated: 2026-10-11
 └── Makefile         C# の生成(下の「3. C# を生成する」)
 ```
 
-組み込み方の実例は、このリポジトリの sandbox にある。基盤の機能を1つずつ試す RPC と、ガチャのサンプル(タイトル → サインアップ → ガチャ)が入っていて、手元で動かせる(下の「4. sandbox を動かす」)。
+組み込み方の実例は、このリポジトリの sandbox にある。基盤の機能を1つずつ試す RPC と、ガチャのサンプル(タイトル → サインアップ → ガチャ)が入っている。
+
+アプリを作る流れは、このページ(基盤を参照し、生成の準備をする) → [クライアントとサーバーをつなぐ](connect.md) → [API を足す](add-api.md) の順。
+
+## まず動くものを見る(sandbox)
+
+アプリを作る前に、このリポジトリの sandbox で、基盤が動くところを見られる。Docker・Rust・Unity・GNU Make が要る(Windows では Git for Windows も)。
+
+1. このリポジトリを clone し、`.env.example` を `.env` にコピーして、`make sandbox-server` でサーバーを起動する(MySQL を Docker で起動し、`localhost:50051` で待ち受ける)
+2. Unity で `sandbox/UnityProject` を開き、`Assets/Scenes/Sample.unity` を Play する。Start を押すと、デバイス登録 → サインイン(初回はサインアップ)→ ガチャの画面に進む
+3. `Window > VolTech gRPC > gRPC Monitor` で、通信ごとのヘッダーと Body を見られる([通信を見る・調べる](debugging.md))
+
+サーバーの状態(メンテナンス・強制アップデート・日付が変わる時刻)は `sandbox/server/config/server_status.toml` で決める。サーバーが 5 秒ごとに読み直すので、書き換えれば再起動しなくても効く([サーバーの状態](../server/status.md))。
+
 
 ## 1. 基盤を参照する
 
@@ -54,7 +67,7 @@ voltech-grpc-transaction = { git = "https://github.com/chinpanGX/VolTech-gRPC", 
 ```
 
 - タグは Cargo と UPM で同じ値を使う。まだタグを打っていないので、`v0.1.0` は打つ予定の名前(リリースの手順は [未確定・保留](../open-questions.md) #16)
-- 基盤とアプリを同時に直すときは、手元のパスで差し替える([パッケージとアプリを同時に直すとき](../ops/local-override.md))
+- 版の上げ方と、基盤とアプリを同時に直すときの手順は [基盤の版を上げる・基盤を一緒に直す](upgrade.md)
 
 ## 2. アプリの .proto とエラーを用意する
 
@@ -130,20 +143,10 @@ plugins:
       - package=app.v1
 ```
 
-- 基盤のタグを上げるときは、`VOLTECH_TAG`・`manifest.json`・`Cargo.toml` の3か所をそろえて変え、`make proto-gen errors-gen` で生成し直す。新しいタグの基盤は、次の `make` で取ってくる。プラグインが生成するラッパーは、同じタグの `ApiCore` に合わせて作られている
+- 基盤のタグは `VOLTECH_TAG`・`manifest.json`・`Cargo.toml` の3か所でそろえる([基盤の版を上げる・基盤を一緒に直す](upgrade.md))
 - Rust の生成にはコマンドは要らない(`build.rs` がビルドのときに生成する)
-
-## 4. sandbox を動かす
-
-1. このリポジトリを clone し、`.env.example` を `.env` にコピーして、`make sandbox-server` でサーバーを起動する(MySQL を Docker で起動し、`localhost:50051` で待ち受ける)
-2. Unity で `sandbox/UnityProject` を開き、`Assets/Scenes/Sample.unity` を Play する。Start を押すと、デバイス登録 → サインイン(初回はサインアップ)→ ガチャの画面に進む
-3. `Window > VolTech gRPC > gRPC Monitor` で、通信ごとのヘッダーと Body を見られる([ツール](tools.md))
-
-サーバーの状態(メンテナンス・強制アップデート・日付が変わる時刻)は `sandbox/server/config/server_status.toml` で決める。サーバーが 5 秒ごとに読み直すので、書き換えれば再起動しなくても効く([サーバーの状態](../server/status.md))。
-
-必要なツールとコマンドの一覧は [環境構築とよく使うコマンド](../ops/setup.md) にある。
 
 ## 次に読むもの
 
-- [API を足す](add-api.md)
-- 組み込み方は [クライアントのリファレンス](client-reference.md)・[サーバーのリファレンス](server-reference.md)。sandbox での実例は、サーバーが `sandbox/server/server/src/lib.rs`、クライアントが `sandbox/UnityProject/Assets/Scripts/Sample/SampleLifetimeScope.cs`
+- [クライアントとサーバーをつなぐ](connect.md) — サーバーとクライアントを組み立て、つながるのを確かめる
+- [基盤とアプリの役割分担](roles.md) — アプリが作るもの・作らないもの

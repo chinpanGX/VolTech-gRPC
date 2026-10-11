@@ -2,7 +2,7 @@
 title: "環境構築とよく使うコマンド"
 status: current
 area: ops
-related: [ops/proto-management, ops/testing, guide/getting-started, api/codegen]
+related: [api/codegen, ops/testing, guide/getting-started]
 proto: []
 code: [Makefile, mk, local.mk.example, scripts/proto-tools.sh, .env.example, buf.gen.yaml, buf.gen.sandbox.yaml]
 updated: 2026-10-11

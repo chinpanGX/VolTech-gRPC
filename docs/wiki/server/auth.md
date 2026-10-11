@@ -2,7 +2,7 @@
 title: "認証(サーバー)"
 status: confirmed
 area: server
-related: [repo/boundary, api/auth, api/device-service]
+related: [guide/roles, api/auth, api/device-service]
 proto: [server/rust/auth/proto/voltech/v1/device.proto]
 code: [server/rust/auth]
 updated: 2026-10-10
@@ -15,9 +15,9 @@ updated: 2026-10-10
 - テーブル(`devices`・`access_tokens`)のマイグレーションはクレートに埋め込み(sqlx の `migrate!()`)、アプリは起動時に実行する
 - **デバイス登録**: `secret_key` は Argon2 でハッシュ化して保存する(平文は保存しない)
 - **トークン**: ランダムな文字列(Atlasは ULID を2つ連結)。`device_id` と有効期限と一緒にDBに保存する。有効期限は1時間、1デバイスにつき1つ(発行し直すと上書き)
-- **`player_id`**: デバイス登録で ULID を発行し、`devices.player_id`(`BINARY(16)`)に保存する。デバイスとプレイヤーの対応はここだけで持ち、`players` は `device_id` を持たない([基盤とアプリの境界](../repo/boundary.md))
+- **`player_id`**: デバイス登録で ULID を発行し、`devices.player_id`(`BINARY(16)`)に保存する。デバイスとプレイヤーの対応はここだけで持ち、`players` は `device_id` を持たない([基盤とアプリの役割分担](../guide/roles.md))
 - **検証**: `AuthLayer` がメタデータ `authorization` を検証する。BAN・アカウント停止もここで判定する
-- トークンは有効だがプレイヤーがまだいない状態(サインアップの前)を、`PlayerResolver`([基盤とアプリの境界](../repo/boundary.md))が扱えるようにする
+- トークンは有効だがプレイヤーがまだいない状態(サインアップの前)を、`PlayerResolver`([基盤とアプリの役割分担](../guide/roles.md))が扱えるようにする
 - **サーバーがプレイヤーを特定する根拠は、トークンだけ**。`device_id`・`player_id` はクライアントから受け取らない(秘密の値ではないので、信じるとなりすましができる)
 - **`skip_auth` は v1 では読まず、ルーターで要認証のサービスにだけ `AuthLayer` を付ける**。付け分けのずれは結合テストで確かめる([開発運用](../ops/index.md))。ずれても `UNAUTHENTICATED` になってすぐ気づける(冪等性のずれのように、エラーが出ないまま二重実行になることは無い)
 
