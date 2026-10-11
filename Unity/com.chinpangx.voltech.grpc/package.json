@@ -1,17 +1,21 @@
 {
-  "name": "com.chinpangx.voltech.grpc",
-  "displayName": "VolTech gRPC",
-  "version": "0.1.0",
-  "unity": "6000.3",
-  "description": "Unity client foundation for gRPC game backends.",
-  "keywords": ["grpc", "unity", "game-backend"],
-  "license": "MIT",
-  "dependencies": {
-    "com.cysharp.unitask": "2.5.11",
-    "com.cysharp.yetanotherhttphandler": "1.11.6",
-    "org.nuget.google.protobuf": "3.36.2",
-    "org.nuget.grpc.core.api": "2.84.0",
-    "org.nuget.grpc.net.client": "2.84.0",
-    "org.nuget.system.io.pipelines": "10.0.12"
-  }
+    "name": "com.chinpangx.voltech.grpc",
+    "displayName": "VolTech gRPC",
+    "version": "0.2.0",
+    "unity": "6000.3",
+    "description": "Unity client foundation for gRPC game backends.",
+    "keywords": [
+        "grpc",
+        "unity",
+        "game-backend"
+    ],
+    "license": "MIT",
+    "dependencies": {
+        "com.cysharp.unitask": "2.5.11",
+        "com.cysharp.yetanotherhttphandler": "1.11.6",
+        "org.nuget.google.protobuf": "3.36.2",
+        "org.nuget.grpc.core.api": "2.84.0",
+        "org.nuget.grpc.net.client": "2.84.0",
+        "org.nuget.system.io.pipelines": "10.0.12"
+    }
 }
