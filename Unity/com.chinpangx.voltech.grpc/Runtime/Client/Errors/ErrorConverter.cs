@@ -27,8 +27,7 @@ namespace VolTech.Client
                     if (errorInfo != null && policy.IsKnown(code))
                     {
                         errorInfo.Metadata.TryGetValue(ActionMetadataKey, out var actionOverride);
-                        var metadata = new Dictionary<string, string>(errorInfo.Metadata);
-                        return Create(code, exception.StatusCode, message, policy, actionOverride, metadata);
+                        return Create(code, exception.StatusCode, message, policy, actionOverride, errorInfo.Metadata);
                     }
 
                     return Create(ReservedErrors.UnknownError, exception.StatusCode, message, policy);
@@ -51,7 +50,7 @@ namespace VolTech.Client
         }
 
         // エラーの詳細が壊れていたら(途中の機器が書き換えた、など)、詳細が無いものとして UNKNOWN_ERROR にする
-        private static Google.Rpc.ErrorInfo TryGetErrorInfo(RpcException exception)
+        private static RpcErrorInfo TryGetErrorInfo(RpcException exception)
         {
             try
             {

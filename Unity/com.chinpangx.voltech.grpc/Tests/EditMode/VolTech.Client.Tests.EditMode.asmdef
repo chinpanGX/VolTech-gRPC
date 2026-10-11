@@ -18,7 +18,6 @@
     "precompiledReferences": [
         "nunit.framework.dll",
         "Google.Protobuf.dll",
-        "Google.Api.CommonProtos.dll",
         "Grpc.Core.Api.dll",
         "Grpc.Net.Client.dll"
     ],

@@ -1,7 +1,4 @@
 ﻿using System.Collections.Generic;
-using Google.Protobuf;
-using Google.Protobuf.WellKnownTypes;
-using Google.Rpc;
 using Grpc.Core;
 
 namespace VolTech.Client
@@ -20,22 +17,9 @@ namespace VolTech.Client
             string message = "",
             IReadOnlyDictionary<string, string> metadata = null)
         {
-            var errorInfo = new ErrorInfo { Reason = code.Reason, Domain = code.Domain };
-            if (metadata != null)
-            {
-                foreach (var pair in metadata)
-                {
-                    errorInfo.Metadata.Add(pair.Key, pair.Value);
-                }
-            }
-
-            var status = new Google.Rpc.Status
-            {
-                Code = (int)StatusCode.FailedPrecondition,
-                Message = message,
-                Details = { Any.Pack(errorInfo) },
-            };
-            var trailers = new Metadata { { RpcErrorDetails.TrailerKey, status.ToByteArray() } };
+            var errorInfo = new RpcErrorInfo(code.Reason, code.Domain, metadata);
+            var status = RpcErrorDetails.EncodeStatus((int)StatusCode.FailedPrecondition, message, errorInfo);
+            var trailers = new Metadata { { RpcErrorDetails.TrailerKey, status } };
             return new RpcException(new global::Grpc.Core.Status(StatusCode.FailedPrecondition, message), trailers);
         }
 

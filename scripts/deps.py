@@ -7,8 +7,9 @@
 check で確かめること(どれも、一緒に上げないと壊れる組み合わせ):
   - Unity のパッケージ(package.json)の依存が、sandbox の packages-lock.json で同じ版に解決されていること
     (lock が古い、または別のパッケージが高い版を引き込んでいると、宣言と違う版で動く)
-  - Google.Protobuf が、Google.Api.CommonProtos の依存する版と同じこと
-    (違うと、Unity のエディタの中で CommonProtos がエディタ同梱の Google.Protobuf に結び付き、ErrorInfo を読めなくなる)
+  - Google.Protobuf を参照するビルド済みの DLL のパッケージ(lock の中のもの)が、package.json と同じ版の Google.Protobuf を参照すること
+    (違うと、Unity のエディタの中でその DLL がエディタ同梱の Google.Protobuf に結び付き、型が食い違う。
+     Google.Api.CommonProtos を使わずに google.rpc.Status を自分で読むのはこのため)
   - Grpc.Core.Api・Grpc.Tools(scripts/proto-tools.sh)が、Grpc.Net.Client と同じ版であること
   - protoc プラグイン(tools/)の Google.Protobuf が、Unity のパッケージと同じ版であること
   - sandbox のサーバーの Cargo.toml の外部クレートが、基盤(server/rust)と同じ版であること
@@ -33,7 +34,6 @@ CARGO_FOUNDATION = "server/rust/Cargo.toml"
 CARGO_SANDBOX = "sandbox/server/Cargo.toml"
 
 PROTOBUF = "org.nuget.google.protobuf"
-COMMON_PROTOS = "org.nuget.google.api.commonprotos"
 GRPC_CLIENT = "org.nuget.grpc.net.client"
 GRPC_CORE = "org.nuget.grpc.core.api"
 
@@ -90,10 +90,12 @@ def check():
                           "(sandbox/UnityProject を Unity で開いて lock を更新する。別の依存が高い版を引き込んでいないかも確かめる)"
                           % (name, want, LOCK_JSON, got))
 
-    needs = lock.get(COMMON_PROTOS, {}).get("dependencies", {}).get(PROTOBUF)
-    if needs and pkg.get(PROTOBUF) != needs:
-        errors.append("%s: %s %s は %s %s を参照する。package.json の %s を %s にそろえる"
-                      % (PROTOBUF, COMMON_PROTOS, pkg.get(COMMON_PROTOS), PROTOBUF, needs, PROTOBUF, needs))
+    for name, entry in sorted(lock.items()):
+        needs = entry.get("dependencies", {}).get(PROTOBUF)
+        if needs and needs != pkg.get(PROTOBUF):
+            errors.append("%s %s は %s %s を参照する(package.json は %s)。Unity のエディタの中で型が食い違うので、"
+                          "同じ版を参照するものにするか、使わないようにする"
+                          % (name, entry.get("version"), PROTOBUF, needs, pkg.get(PROTOBUF)))
 
     grpc = pkg.get(GRPC_CLIENT)
     if pkg.get(GRPC_CORE) != grpc:
@@ -193,19 +195,12 @@ def outdated():
             print("warn: %s %s を取得できない: %s" % (fn.__name__, args[0], e))
             return None
 
-    # Google.Protobuf は、最新の CommonProtos が参照する版までしか上げられない
-    got = safe(upm_latest, COMMON_PROTOS)
-    protobuf_cap = got[1].get(PROTOBUF) if got else None
-    protobuf_note = "%s の最新が参照する %s までしか上げない" % (COMMON_PROTOS, protobuf_cap) if protobuf_cap else ""
-
     for name, current in package_deps().items():
         got = safe(upm_latest, name)
         latest, deps = got if got else (None, {})
         note = ""
-        if name == COMMON_PROTOS and latest and PROTOBUF in deps:
+        if latest and PROTOBUF in deps:
             note = "最新は %s %s を参照する" % (PROTOBUF, deps[PROTOBUF])
-        if name == PROTOBUF:
-            note = protobuf_note
         if name == GRPC_CORE:
             note = "%s と同じ版にする" % GRPC_CLIENT
         row("Unity", name, current, latest, note)
