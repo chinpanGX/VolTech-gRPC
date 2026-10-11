@@ -17,7 +17,7 @@
     <!-- Unity のパッケージ(package.json)の org.nuget.google.protobuf と同じにする(make deps-check が確かめる) -->
     <PackageReference Include="Google.Protobuf" Version="3.36.2" />
     <!-- errors サブコマンドがエラーの定義ファイル(errors.toml)を読む -->
-    <PackageReference Include="Tomlyn" Version="0.19.0" />
+    <PackageReference Include="Tomlyn" Version="2.10.1" />
   </ItemGroup>
 
   <ItemGroup>

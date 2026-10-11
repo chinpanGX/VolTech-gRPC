@@ -5,6 +5,7 @@
 - `Google.Protobuf` を 3.36.2 に上げ、`Google.Api.CommonProtos` への依存を外す。Unity 6000.6 以降のエディタの中で、Google.Protobuf を CommonProtos の参照する版より上げると、業務エラーがすべて `CLIENT_ERROR` になっていたのを直す(#1)。エラーの詳細(`google.rpc.Status` / `ErrorInfo`)は `RpcErrorDetails` が自前で読む
   - Unity: `RpcErrorDetails.GetErrorInfo` は `Google.Rpc.ErrorInfo` の代わりに `RpcErrorInfo`(`Reason`・`Domain`・`Metadata`)を返す。タグを上げたら Unity でプロジェクトを開き直してパッケージを解決し直す。アプリが `Google.Rpc` の型を使っていたら、`org.nuget.google.api.commonprotos` を自分で足すか `RpcErrorInfo` に替える(足すときは、参照する Google.Protobuf の版がパッケージと同じものにする)。テストの asmdef の `precompiledReferences` から `Google.Api.CommonProtos.dll` を消す
   - protoc プラグインの `Google.Protobuf` も 3.36.2 に上げる
+- protoc プラグインの `Tomlyn` を 2.10.1 に上げる(`errors.toml` は TOML 1.1 として読む。いまの書き方のままで読める)
 
 ## [0.1.0] - 2026-10-11
 
