@@ -59,7 +59,7 @@ description: 基盤の依存パッケージ(Unity の package.json の UPM・NuG
 
 6. **記録する**
    - `CHANGELOG.md` の `[Unreleased]` に、上げたものと、利用側がすること(Unity で開き直す、など)を書く
-   - 版を書いている wiki のページを直す(ツールの版は `docs/wiki/ops/setup.md`、Unity の依存の決まりは `docs/wiki/client/structure.md`)。`/wiki-update` の手順で、ほかに直すページが無いかも確かめる
+   - 版を書いている wiki のページを直す(ツールの版は `docs/wiki/appendix/setup.md`、Unity の依存の決まりは `docs/wiki/client/structure.md`)。`/wiki-update` の手順で、ほかに直すページが無いかも確かめる
    - **新しい組み合わせの決まりを見つけたら**(一緒に上げないと壊れたもの)、`scripts/deps.py` の `check` に確かめる処理を足し、上の「組み合わせ」の表にも足す
 
 7. **報告する**。上げたもの(前の版 → 新しい版)、上げなかったものとその理由、流したテストと結果を短く挙げる。コミットは組ごとに分ける(`chore(deps): ...`)
@@ -69,7 +69,7 @@ description: 基盤の依存パッケージ(Unity の package.json の UPM・NuG
 エディタは自分でも DLL(Google.Protobuf・Grpc など)を同梱していて、パッケージの DLL と食い違うことがある。エディタを上げたら、依存を変えていなくても手順 5 の Unity の確かめを行う。
 
 - 落ちたら、どの版の DLL が読み込まれているかを確かめる(`unity command eval` で `AppDomain.CurrentDomain.GetAssemblies()` を見る)。同じ名前で版の違うアセンブリが2つ読み込まれていたら、版のずれが原因
-- `docs/wiki/ops/setup.md` の Unity の版を直す
+- `docs/wiki/appendix/setup.md` の Unity の版を直す
 
 ## 注意
 

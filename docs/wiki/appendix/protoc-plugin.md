@@ -1,8 +1,8 @@
 ---
 title: "protoc プラグインの中身"
 status: current
-area: dev
-related: [api/codegen, guide/add-api, dev/code-map]
+area: appendix
+related: [api/codegen, guide/add-api, appendix/code-map]
 proto: []
 code: [tools/protoc-gen-voltech-grpc]
 updated: 2026-10-11

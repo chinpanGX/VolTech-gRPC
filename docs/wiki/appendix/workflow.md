@@ -1,8 +1,8 @@
 ---
 title: "基盤を直すときの流れ"
 status: current
-area: dev
-related: [dev/code-map, ops/testing, ops/setup]
+area: appendix
+related: [appendix/code-map, appendix/testing, appendix/setup]
 proto: []
 code: [Makefile, .claude/skills/wiki-update/SKILL.md, .claude/skills/deps-update/SKILL.md, scripts/wiki_affected.py, scripts/deps.py]
 updated: 2026-10-11
@@ -39,7 +39,7 @@ unity command run_tests --mode EditMode --result-only
 - エディタを閉じているなら、Test Runner の代わりに batchmode でも流せる(エディタで開いていると batchmode は起動できない)
 - サーバーを動かしたまま Rust をビルドすると、Windows では `server.exe` がロックされて失敗する。先にサーバーを止める
 
-まとめて流すのは `make test`(基盤と sandbox の Rust・プラグイン・クライアントの書き方・wiki の確認・依存の組み合わせの確認。Unity のコンパイルとテストは含まない)。
+まとめて流すのは `make test`(基盤と sandbox の Rust・プラグイン・wiki の確認・依存の組み合わせの確認。Unity のコンパイルとテストは含まない)。
 
 ## 3. wiki を直す
 

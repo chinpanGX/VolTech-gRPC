@@ -2,7 +2,7 @@
 title: "エラー"
 status: confirmed
 area: api
-related: [api/auth, server/auth, server/status, client/error-handling, client/response-items, ops/testing]
+related: [api/auth, server/auth, server/status, client/error-handling, client/response-items, appendix/testing]
 proto: []
 code: [server/rust/error, server/rust/error-build, server/rust/error/errors.toml, sandbox/errors.toml, tools/protoc-gen-voltech-grpc/src/Errors, Unity/com.chinpangx.voltech.grpc/Runtime/Client/Errors]
 updated: 2026-10-11

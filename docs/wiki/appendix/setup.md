@@ -1,8 +1,8 @@
 ---
 title: "環境構築とよく使うコマンド"
 status: current
-area: ops
-related: [api/codegen, ops/testing, guide/getting-started]
+area: appendix
+related: [api/codegen, appendix/testing, guide/getting-started]
 proto: []
 code: [Makefile, mk, local.mk.example, scripts/proto-tools.sh, .env.example, buf.gen.yaml, buf.gen.sandbox.yaml]
 updated: 2026-10-11
@@ -10,7 +10,7 @@ updated: 2026-10-11
 
 # 環境構築とよく使うコマンド
 
-このリポジトリ(VolTech gRPC)で、基盤を直して sandbox で確かめるまでの手順とコマンド。アプリから基盤を使う手順は [始め方](../guide/getting-started.md) にある。
+このリポジトリ(VolTech gRPC)で、基盤を直して sandbox で確かめるまでの手順とコマンド。ここの `make` のコマンドは、このリポジトリでだけ使う。アプリから基盤を使う手順は [始め方](../guide/getting-started.md) にある。
 
 | フォルダ | 内容 |
 |---|---|

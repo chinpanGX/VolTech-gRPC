@@ -44,7 +44,7 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 
 ## 基盤そのものを直す人
 
-[基盤開発者向けガイド](dev/index.md) から読む(コードの地図、直すときの流れ)。wiki の書き方は [CLAUDE.md](CLAUDE.md)。決まっていないことは [未確定・保留](open-questions.md)。
+[付録: 基盤開発者向け](appendix/index.md) から読む(コードの地図、直すときの流れ、このリポジトリの環境構築)。wiki の書き方は [CLAUDE.md](CLAUDE.md)。決まっていないことは [未確定・保留](open-questions.md)。
 
 ## ページ一覧
 
@@ -65,14 +65,6 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 | [クライアントのリファレンス](guide/client-reference.md) | `current` | `ApiCore`・ラッパー・基盤の実装・テスト用の部品 |
 | [サーバーのリファレンス](guide/server-reference.md) | `current` | `voltech-grpc-*` のクレートで使うもの |
 
-### [基盤開発者向けガイド](dev/index.md)
-
-| ページ | 状態 | 内容 |
-|---|---|---|
-| [コードの地図](dev/code-map.md) | `current` | どこに何があるか、依存の向き、テストの場所 |
-| [基盤を直すときの流れ](dev/workflow.md) | `current` | 確かめること、テストの流し方、wiki の更新、コミット |
-| [protoc プラグインの中身](dev/protoc-plugin.md) | `current` | `protoc-gen-voltech-grpc` のファイルと決まりごと |
-
 ### 概要
 
 | ページ | 状態 | 内容 |
@@ -86,7 +78,7 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 | [運用(パッケージとサンプル)](repo/operations.md) | `current` | 基盤をパッケージとして配り、サンプルを sandbox に置く運用 |
 | [リポジトリ名と命名](repo/naming.md) | `current` | リポジトリ・パッケージ・クレート・.proto パッケージの命名と理由 |
 | [サーバーの分け方](repo/server-split.md) | `deferred` | モジュラーモノリスの採用と、プロセスを分ける基準 |
-| [フォルダ構成](repo/folder-layout.md) | `deferred` | 当初の案のフォルダ構成(いまの形は [コードの地図](dev/code-map.md)) |
+| [フォルダ構成](repo/folder-layout.md) | `deferred` | 当初の案のフォルダ構成(いまの形は [コードの地図](appendix/code-map.md)) |
 | [当面の実装方針](repo/current-plan.md) | `current` | 単一リポジトリでの framework / app 分離と、実装の中で決めたこと |
 
 ### [API定義](api/index.md)
@@ -127,17 +119,15 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 | [サーバーが無いときの差し替えとテスト](client/fake-testing.md) | `confirmed` | FakeCallInvoker と汎用テスト |
 | [gRPC Monitor(エディタ拡張)](client/grpc-monitor.md) | `current` | リクエストとレスポンスのヘッダー・Body(JSON)を1件ずつ見るウィンドウ |
 
-### [開発運用](ops/index.md)
+### [付録: 基盤開発者向け](appendix/index.md)
 
 | ページ | 状態 | 内容 |
 |---|---|---|
-| [環境構築とよく使うコマンド](ops/setup.md) | `current` | 必須のツール、.proto の生成、make のコマンド、接続の確かめ方 |
-| [テスト](ops/testing.md) | `confirmed` | 結合テストの観点と、実行するタイミング |
-
-### 付録
-
-| ページ | 状態 | 内容 |
-|---|---|---|
+| [コードの地図](appendix/code-map.md) | `current` | どこに何があるか、依存の向き、テストの場所 |
+| [基盤を直すときの流れ](appendix/workflow.md) | `current` | 確かめること、テストの流し方、wiki の更新、コミット |
+| [protoc プラグインの中身](appendix/protoc-plugin.md) | `current` | `protoc-gen-voltech-grpc` のファイルと決まりごと |
+| [環境構築とよく使うコマンド](appendix/setup.md) | `current` | このリポジトリで要るツール、make のコマンド、sandbox での確かめ方 |
+| [テスト](appendix/testing.md) | `confirmed` | 基盤のテストの観点と、流すタイミング |
 | [付録: Atlasの乗せ換え](appendix/atlas-migration.md) | `appendix` | Atlas の REST から gRPC への乗せ換えメモ |
 
 ### 判断の記録

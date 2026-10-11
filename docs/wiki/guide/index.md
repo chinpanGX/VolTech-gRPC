@@ -2,7 +2,7 @@
 title: "アプリ開発者向けガイド"
 status: index
 area: guide
-related: [overview, dev/index]
+related: [overview, appendix/index]
 proto: []
 updated: 2026-10-11
 ---

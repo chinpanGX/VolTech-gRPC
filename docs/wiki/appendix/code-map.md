@@ -1,8 +1,8 @@
 ---
 title: "コードの地図"
 status: current
-area: dev
-related: [repo/current-plan, dev/workflow, guide/client-reference, guide/server-reference]
+area: appendix
+related: [repo/current-plan, appendix/workflow, guide/client-reference, guide/server-reference]
 proto: []
 code: [server/rust/Cargo.toml, server/rust, sandbox/server, Unity/com.chinpangx.voltech.grpc, tools/protoc-gen-voltech-grpc, sandbox/proto, scripts, mk, buf.yaml, buf.gen.yaml]
 updated: 2026-10-11

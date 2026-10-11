@@ -9,7 +9,7 @@ updated: 2026-10-11
 
 # フォルダ構成
 
-> **当初の案で、いまの形ではない。** いまは基盤をパッケージとして配り、サンプルはこのリポジトリの sandbox に置く([運用](operations.md))。いまのフォルダは [コードの地図](../dev/code-map.md) にある。下は、テンプレートをサンプル(`grpc-foundation-samples`)が兼ね、基盤を別のパッケージのリポジトリにする案の形。`foundation/` も当初の案で、いまは機能ごとのクレート(`voltech-grpc-transaction` など)にしている
+> **当初の案で、いまの形ではない。** いまは基盤をパッケージとして配り、サンプルはこのリポジトリの sandbox に置く([運用](operations.md))。いまのフォルダは [コードの地図](../appendix/code-map.md) にある。下は、テンプレートをサンプル(`grpc-foundation-samples`)が兼ね、基盤を別のパッケージのリポジトリにする案の形。`foundation/` も当初の案で、いまは機能ごとのクレート(`voltech-grpc-transaction` など)にしている
 
 テンプレート(アプリを作るときのいつもの形に合わせ、一番上を `Client/`・`Server/`・`Shared/` に分ける):
 
