@@ -45,11 +45,11 @@ updated: 2026-10-11
 
 ```toml
 [workspace.dependencies]
-voltech-grpc-auth = { git = "https://github.com/chinpanGX/VolTech-gRPC", tag = "v0.1.0" }
-voltech-grpc-error = { git = "https://github.com/chinpanGX/VolTech-gRPC", tag = "v0.1.0" }
-voltech-grpc-error-build = { git = "https://github.com/chinpanGX/VolTech-gRPC", tag = "v0.1.0" }
-voltech-grpc-status = { git = "https://github.com/chinpanGX/VolTech-gRPC", tag = "v0.1.0" }
-voltech-grpc-transaction = { git = "https://github.com/chinpanGX/VolTech-gRPC", tag = "v0.1.0" }
+voltech-grpc-auth = { git = "https://github.com/chinpanGX/VolTech-gRPC", tag = "v0.2.0" }
+voltech-grpc-error = { git = "https://github.com/chinpanGX/VolTech-gRPC", tag = "v0.2.0" }
+voltech-grpc-error-build = { git = "https://github.com/chinpanGX/VolTech-gRPC", tag = "v0.2.0" }
+voltech-grpc-status = { git = "https://github.com/chinpanGX/VolTech-gRPC", tag = "v0.2.0" }
+voltech-grpc-transaction = { git = "https://github.com/chinpanGX/VolTech-gRPC", tag = "v0.2.0" }
 ```
 
 クライアント(Unity の `Packages/manifest.json`)。パッケージが依存する UniTask・YetAnotherHttpHandler(OpenUPM)と gRPC の DLL(Unity NuGet)を解決できるように、`scopedRegistries` も足す。
@@ -57,7 +57,7 @@ voltech-grpc-transaction = { git = "https://github.com/chinpanGX/VolTech-gRPC", 
 ```json
 {
   "dependencies": {
-    "com.chinpangx.voltech.grpc": "https://github.com/chinpanGX/VolTech-gRPC.git?path=/Unity/com.chinpangx.voltech.grpc#v0.1.0"
+    "com.chinpangx.voltech.grpc": "https://github.com/chinpanGX/VolTech-gRPC.git?path=/Unity/com.chinpangx.voltech.grpc#v0.2.0"
   },
   "scopedRegistries": [
     { "name": "Unity NuGet", "url": "https://unitynuget-registry.openupm.com", "scopes": ["org.nuget"] },
@@ -84,7 +84,7 @@ protoc プラグイン(`protoc-gen-voltech-grpc`)はパッケージとして配�
 
 ```make
 # 基盤のタグ。client/Packages/manifest.json・server/Cargo.toml のタグと同じにする
-VOLTECH_TAG := v0.1.0
+VOLTECH_TAG := v0.2.0
 VOLTECH_REPO := https://github.com/chinpanGX/VolTech-gRPC
 VOLTECH_ROOT := .tools/voltech-grpc-src/$(VOLTECH_TAG)
 
