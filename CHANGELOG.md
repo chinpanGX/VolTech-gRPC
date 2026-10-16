@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-16
+
 - サーバーのログの仕組みとして `voltech-grpc-log` クレートを足す(#3)。`LogConfig` を渡して `init` で準備し、`RpcLogLayer` を全サービスの一番外側に付けると、RPC ごとの span(`request_id`・`rpc.method` など。フィルターを上げても消えない)と、RPC の終わりのアクセスログ(ステータス・業務エラーの reason・処理時間)が出る。JSON(既定)は span の値を一番上の項目に並べ、GCP 向けの項目名(`severity` など)も選べる
   - アプリ: `tower_http::TraceLayer` と `tracing_subscriber::fmt().init()` を、`voltech_grpc_log::init(&config)` と `.layer(RpcLogLayer::new(&config))` に置き換える。基盤は環境変数を読まないので、`LOG_FORMAT`・`RUST_LOG` などはアプリが読んで `LogConfig` に入れる(sandbox の `config.rs` が見本)
   - ハンドラーが panic したとき、接続を切る代わりに INTERNAL(`INTERNAL_ERROR`)を返す
