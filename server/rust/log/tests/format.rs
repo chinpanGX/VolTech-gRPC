@@ -1,7 +1,9 @@
 mod common;
 
 use common::{Output, config, subscriber};
-use voltech_grpc_log::{FieldNames, GAME_LOG_TARGET, InitError, LogFormat, RPC_SPAN_TARGET};
+use voltech_grpc_log::{
+    FieldNames, GAME_LOG_FIELDS, GAME_LOG_TARGET, InitError, LogFormat, RPC_SPAN_TARGET,
+};
 
 /// JSON の1行には、時刻・レベル・メッセージ・サービス名・環境名と、span と event の値が一番上の項目として並ぶ。
 #[test]
@@ -116,6 +118,28 @@ fn game_log_survives_filter() {
     assert_eq!(lines.len(), 1);
     assert_eq!(lines[0]["message"], "game log");
     assert_eq!(lines[0]["log_type"], "game");
+}
+
+/// ゲームログの名前付きの値(JSON の文字列)は、一番上の項目に展開する。基盤が付ける項目は上書きしない。
+/// ゲームログでないログでは展開しない。
+#[test]
+fn game_log_fields_are_flattened() {
+    let output = Output::default();
+    let fields = r#"{"unit_id":"u-1","slots":[1,2],"level":"x"}"#;
+    let other = r#"{"unit_id":"u-1"}"#;
+    tracing::subscriber::with_default(subscriber(&config(), &output), || {
+        // tracing のマクロは、定数の名前の項目を先頭に置けないので、ほかの項目の後に置く
+        tracing::info!(target: GAME_LOG_TARGET, log_type = "game", { GAME_LOG_FIELDS } = fields, "game log");
+        tracing::info!(log_type = "other", { GAME_LOG_FIELDS } = other, "other");
+    });
+
+    let lines = output.lines();
+    assert_eq!(lines[0]["unit_id"], "u-1");
+    assert_eq!(lines[0]["slots"], serde_json::json!([1, 2]));
+    assert_eq!(lines[0]["level"], "INFO");
+    assert!(lines[0].get(GAME_LOG_FIELDS).is_none());
+    assert!(lines[1].get("unit_id").is_none());
+    assert_eq!(lines[1][GAME_LOG_FIELDS], r#"{"unit_id":"u-1"}"#);
 }
 
 /// フィルターの書き方が間違っていると、Layer を作るときにエラーになる。

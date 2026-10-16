@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fmt;
 use std::io::Write;
 
@@ -10,6 +11,7 @@ use tracing_subscriber::layer::{Context, Layer};
 use tracing_subscriber::registry::LookupSpan;
 
 use crate::config::FieldNames;
+use crate::{GAME_LOG_FIELDS, GAME_LOG_TARGET};
 
 /// span と event の値を一番上の項目に並べて、1行1件の JSON で出す Layer。
 ///
@@ -58,17 +60,22 @@ where
             FieldNames::Standard => ("timestamp", "level", standard_level(metadata.level())),
             FieldNames::Gcp => ("time", "severity", gcp_severity(metadata.level())),
         };
-        let mut line = Line(vec![
-            (time_key, Value::String(now())),
-            (level_key, Value::String(level.to_owned())),
-            ("message", message),
-            ("target", Value::String(metadata.target().to_owned())),
-            ("service.name", Value::String(self.service_name.clone())),
-            (
-                "deployment.environment.name",
-                Value::String(self.environment.clone()),
-            ),
-        ]);
+        let mut line = Line(
+            [
+                (time_key, Value::String(now())),
+                (level_key, Value::String(level.to_owned())),
+                ("message", message),
+                ("target", Value::String(metadata.target().to_owned())),
+                ("service.name", Value::String(self.service_name.clone())),
+                (
+                    "deployment.environment.name",
+                    Value::String(self.environment.clone()),
+                ),
+            ]
+            .into_iter()
+            .map(|(name, value)| (Cow::Borrowed(name), value))
+            .collect(),
+        );
         let reserved = line.0.len();
 
         // 外側の span から順に足し、同じ名前は内側の span・event の値で上書きする
@@ -81,8 +88,19 @@ where
                 }
             }
         }
+        let game_log_fields = (metadata.target() == GAME_LOG_TARGET)
+            .then(|| take(&mut event_fields, GAME_LOG_FIELDS))
+            .flatten();
         for (name, value) in event_fields {
             line.set(reserved, name, value);
+        }
+        // ゲームログの名前付きの値は、名前が実行時に決まるので JSON の文字列で受け取り、一番上の項目に並べる
+        if let Some(Value::String(fields)) = game_log_fields
+            && let Ok(Value::Object(fields)) = serde_json::from_str::<Value>(&fields)
+        {
+            for (name, value) in fields {
+                line.set_owned(reserved, name, value);
+            }
         }
 
         let mut buf = line.to_json();
@@ -92,11 +110,16 @@ where
     }
 }
 
-struct Line(Vec<(&'static str, Value)>);
+struct Line(Vec<(Cow<'static, str>, Value)>);
 
 impl Line {
     /// 値を足す。基盤が付ける項目(先頭の `reserved` 件)は上書きしない。
     fn set(&mut self, reserved: usize, name: &'static str, value: Value) {
+        self.set_owned(reserved, Cow::Borrowed(name), value);
+    }
+
+    fn set_owned(&mut self, reserved: usize, name: impl Into<Cow<'static, str>>, value: Value) {
+        let name = name.into();
         match self.0.iter().position(|(key, _)| *key == name) {
             Some(index) if index < reserved => {}
             Some(index) => self.0[index].1 = value,
@@ -112,7 +135,7 @@ impl Line {
                 buf.push(b',');
             }
             // 文字列と serde_json::Value の書き出しは失敗しない
-            let _ = serde_json::to_writer(&mut buf, key);
+            let _ = serde_json::to_writer(&mut buf, key.as_ref());
             buf.push(b':');
             let _ = serde_json::to_writer(&mut buf, value);
         }

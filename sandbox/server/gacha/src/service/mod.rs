@@ -6,12 +6,14 @@ use player::notification::Notification;
 use sqlx::{Executor, MySql};
 use ulid::Ulid;
 use voltech_grpc_error::Internal;
-use voltech_grpc_transaction::TxContext;
+use voltech_grpc_transaction::{GameLog, TxContext};
 
 use crate::model::{DRAW_COST, pick, total_weight};
 
 // ゲームログの理由
 const GACHA_DRAW: &str = "gacha_draw";
+// ゲームログの種別: 1日1回の無料ガチャを使った
+const FREE_DRAW: &str = "free_draw";
 
 /// ガチャを引いた結果。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -115,7 +117,11 @@ pub async fn free_draw_available<'e>(
 
 // 無料ガチャを引いた日を記録する。同じプレイヤーの処理は、冪等性の行のロックで1つずつ動くので、
 // free_draw_available で確かめてから書いても、同時に2回引かれることはない
-async fn record_free_draw(ctx: &mut TxContext, player_id: Ulid, today: Date) -> sqlx::Result<()> {
+async fn record_free_draw(
+    ctx: &mut TxContext,
+    player_id: Ulid,
+    today: Date,
+) -> Result<(), Internal> {
     let today = today.to_string();
     sqlx::query(
         "INSERT INTO gacha_free_draws (player_id, last_drawn_on) VALUES (?, ?) \
@@ -126,5 +132,7 @@ async fn record_free_draw(ctx: &mut TxContext, player_id: Ulid, today: Date) -> 
     .bind(&today)
     .execute(&mut **ctx.tx())
     .await?;
+    // 数量の変化でないので、増減を持たないゲームログにし、使った日を名前付きの値で残す
+    ctx.write_game_log(GameLog::event(FREE_DRAW, GACHA_DRAW).field("drawn_on", today))?;
     Ok(())
 }
