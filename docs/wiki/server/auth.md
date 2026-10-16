@@ -2,10 +2,10 @@
 title: "認証(サーバー)"
 status: confirmed
 area: server
-related: [guide/roles, api/auth, api/device-service]
+related: [guide/roles, api/auth, api/device-service, server/logging]
 proto: [server/rust/auth/proto/voltech/v1/device.proto]
 code: [server/rust/auth]
-updated: 2026-10-10
+updated: 2026-10-16
 ---
 
 # 認証(サーバー)
@@ -41,7 +41,8 @@ updated: 2026-10-10
 
 ## 実装で決めたこと
 
-- `AuthLayer` は `access_tokens` と `devices` を結合して、トークンから `device_id` と `player_id` を1回の問い合わせで引く
+- `AuthLayer` は `access_tokens` と `devices` を結合して、トークンから `device_id` と `player_id` を1回の問い合わせで引く。期限切れかどうかは条件ではなく値として読み、期限切れと知らないトークンをログで見分ける(どちらも `UNAUTHENTICATED` を返す)
+- 認証した `player_id` は、`AuthLayer` が RPC の span に書く。デバイス登録・トークンの発行・認証の失敗はログに出す。トークンと `secret_key` は出さない(出来事とレベルの一覧は [運用ログ](logging.md))
 - `PlayerResolver::resolve` は `player_id` を受け取り、`PlayerStatus`(`NotCreated` / `Active` / `Suspended`)を返す。`Suspended` なら `AuthLayer` が `ACCOUNT_SUSPENDED` で弾く
 - `AuthContext` は `player_id` を必ず持ち、サインアップ済みかを `player_created` で持つ。作成済みのプレイヤーが要るハンドラーは、未作成なら `PLAYER_NOT_FOUND` を返す(アプリの `api::context::player_id`)。サインアップだけは、作成済みかを問わずに `player_id` を使う
 - 既存のデバイスには `player_id` を決められないので、マイグレーション(`20261004000003_add_player_id_to_devices.sql`)で開発・テストのデータを消してから列を足した。アプリ側も `20261004100005_remove_device_id_from_players.sql` で `players` から `device_id` を外した

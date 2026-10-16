@@ -4,8 +4,8 @@ status: current
 area: guide
 related: [guide/getting-started, guide/add-api, guide/roles, guide/debugging, guide/client-reference, guide/server-reference, server/request-flow, server/status, client/api-core]
 proto: []
-code: [sandbox/server/server/src/lib.rs, sandbox/server/server/src/main.rs, sandbox/server/server/src/player_lookup.rs, sandbox/server/config/server_status.toml, sandbox/UnityProject/Assets/Scripts/Sample/SampleLifetimeScope.cs, Unity/com.chinpangx.voltech.grpc/Runtime/Unity/ApiChannel.cs]
-updated: 2026-10-11
+code: [sandbox/server/server/src/lib.rs, sandbox/server/server/src/main.rs, sandbox/server/server/src/config.rs, sandbox/server/server/src/player_lookup.rs, sandbox/server/config/server_status.toml, sandbox/UnityProject/Assets/Scripts/Sample/SampleLifetimeScope.cs, Unity/com.chinpangx.voltech.grpc/Runtime/Unity/ApiChannel.cs]
+updated: 2026-10-16
 ---
 
 # クライアントとサーバーをつなぐ
@@ -18,14 +18,18 @@ updated: 2026-10-11
 
 用意するもの:
 
-- **MySQL**。基盤のテーブル(デバイス・トークン・直前のレスポンス)は、基盤のクレートのマイグレーションが作る。アプリのテーブル(`players` など)は、アプリのマイグレーションで作る
+- **MySQL**。基盤のテーブル(デバイス・トークン・直前のレスポンス・ゲームログ)は、基盤のクレートのマイグレーションが作る。アプリのテーブル(`players` など)は、アプリのマイグレーションで作る
 - **`PlayerResolver` の実装**。`player_id` からプレイヤーの状態(`NotCreated`・`Active`・`Suspended`)を返す。`players` テーブルを持つのはアプリなので、アプリが実装する([基盤とアプリの役割分担](roles.md))。sandbox の `PlayerLookup`(`sandbox/server/server/src/player_lookup.rs`)が実例
 - **サーバーの状態の設定ファイル**(`server_status.toml`)。メンテナンス・最低バージョン・日付が変わる時刻を書く([サーバーの状態](../server/status.md))。sandbox の `sandbox/server/config/server_status.toml` を写して始める
 
 組み立て方(Layer の順番に意味がある。[リクエストの処理の流れ](../server/request-flow.md)):
 
 ```rust
-// 起動時: 基盤とアプリのマイグレーション
+// 起動時: ログの準備(設定はアプリが環境変数などから読む)
+let log_config = LogConfig::new("app-server", "production");
+voltech_grpc_log::init(&log_config)?;
+
+// 基盤とアプリのマイグレーション
 voltech_grpc_auth::migrate(&pool).await?;
 voltech_grpc_transaction::migrate(&pool).await?;
 sqlx::migrate!("../migrations").run(&pool).await?;
@@ -33,15 +37,17 @@ sqlx::migrate!("../migrations").run(&pool).await?;
 // サーバーの状態を読み込み、以後 interval ごとに読み直す(書き換えれば再起動しなくても効く)
 let status = ServerStatus::watch(FileStatusSource::new(path), Duration::from_secs(5)).await?;
 
-// 冪等性の扱いは、アプリの .proto の idempotency_level から決める
+// 冪等性の扱いは、アプリの .proto の idempotency_level から決める。ゲームログの出力先もここで選ぶ
 let transactions = Transactions::new(
     pool.clone(),
     IdempotencyLevels::from_file_descriptor_set(proto::FILE_DESCRIPTOR_SET)?,
+    GameLogSink::Database,
 );
 let auth = AuthLayer::new(pool.clone(), PlayerLookup::new(pool.clone())); // PlayerLookup はアプリの PlayerResolver
 let date_change = DateChangeLayer::new(status.clone());
 
 Server::builder()
+    .layer(RpcLogLayer::new(&log_config))    // RPC ごとの span とアクセスログ(一番外側)
     .layer(ServerStatusLayer::new(status))   // 強制アップデート・メンテナンス(全サービス。認証より先)
     .layer(RpcMethodLayer)                   // Transactions::run が RPC の名前を読めるように
     .add_service(DeviceServiceImpl::new(pool.clone()).into_server())        // 基盤のデバイス登録。認証なし
