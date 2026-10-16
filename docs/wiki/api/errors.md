@@ -5,7 +5,7 @@ area: api
 related: [api/auth, server/auth, server/status, client/error-handling, client/response-items, appendix/testing]
 proto: []
 code: [server/rust/error, server/rust/error-build, server/rust/error/errors.toml, sandbox/errors.toml, tools/protoc-gen-voltech-grpc/src/Errors, Unity/com.chinpangx.voltech.grpc/Runtime/Client/Errors]
-updated: 2026-10-11
+updated: 2026-10-16
 ---
 
 # エラー
@@ -62,7 +62,7 @@ description = "ジェムが足りず、ガチャを引けない。"
 
 ## 返す・受け取る
 
-- サーバー: `voltech_grpc_error::failed_precondition(code, message)` で業務エラーを返す。`code` は生成した定数(例: `proto::errors::INSUFFICIENT_GEMS`)。表示用の値を付けるときは `failed_precondition_with_metadata`。内部エラーは `internal(err)`(詳細はログにだけ出る)
+- サーバー: `voltech_grpc_error::failed_precondition(code, message)` で業務エラーを返す。`code` は生成した定数(例: `proto::errors::INSUFFICIENT_GEMS`)。表示用の値を付けるときは `failed_precondition_with_metadata`。内部エラーは、原因を `Internal` で運び、`Status` にすると INTERNAL になる(`internal(err)`・`or_internal()` も同じ)。原因の連なりと発生した場所はログにだけ出る([運用ログ](../server/logging.md))
 - クライアント: `ApiError.Code` が `ErrorCode`(domain と reason)になる。画面で自分で処理したいエラーは、生成した定数を `handledCodes` に渡す(例: `new[] { SandboxErrors.InsufficientGems }`)。予約エラーは渡しても、必ず共通エラーハンドラーが処理する([エラー処理](../client/error-handling.md))
 - クライアントの既定の action は、`ErrorPolicyProvider` に生成した一覧(例: `SandboxErrors.All`)を渡して引く。予約エラー(`ReservedErrors.All`)は自動で入る
 - **サーバーによる action の上書き**: 必要なときだけ `metadata["action"]` に action の名前を入れる。クライアントが読むのは `ERROR_ACTION_STAY`・`ERROR_ACTION_RETRY`・`ERROR_ACTION_HOME`・`ERROR_ACTION_TITLE`・`ERROR_ACTION_UPDATE` で、知らない値なら既定の action を使う。画面名は指定しない

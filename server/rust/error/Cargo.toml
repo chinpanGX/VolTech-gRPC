@@ -10,5 +10,8 @@ tonic = { workspace = true }
 tonic-types = { workspace = true }
 tracing = { workspace = true }
 
+[dev-dependencies]
+tracing-subscriber = { workspace = true }
+
 [build-dependencies]
 voltech-grpc-error-build = { workspace = true }

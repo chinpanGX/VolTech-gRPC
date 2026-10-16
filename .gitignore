@@ -43,6 +43,7 @@ local.mk
 .vscode/
 *.iml
 .claude/settings.local.json
+.zed/
 
 # --- 開発ツール(make voltech-tools が入れる)---
 /.tools/

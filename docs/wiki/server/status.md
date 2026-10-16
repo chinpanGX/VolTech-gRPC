@@ -2,10 +2,10 @@
 title: "サーバーの状態(メンテナンス・強制アップデート・日付変更)"
 status: confirmed
 area: server
-related: [api/metadata]
+related: [api/metadata, server/logging]
 proto: []
 code: [server/rust/status, sandbox/server/config/server_status.toml]
-updated: 2026-10-11
+updated: 2026-10-16
 ---
 
 # サーバーの状態(メンテナンス・強制アップデート・日付変更)
@@ -52,6 +52,7 @@ timezone = "Asia/Tokyo"
 - ゲーム内の日付は、`timezone` の壁時計の時刻から `reset_hour` 時間を引いた日付。ヘッダーの形は `YYYY-MM-DD`。リクエストの日付は文字列のまま比べる(形が違えば日付が違うのと同じで、`DATE_CHANGED` になる)
 - 設定は5秒ごとに読み直す(`server` の `main.rs`)。設定ファイルの場所は環境変数 `SERVER_STATUS_PATH`(既定はアプリが決める。sandbox は `sandbox/server/config/server_status.toml`。リポジトリのルートからのパス)
 - 設定の読み込みでは、知らないキーや範囲外の値(`reset_hour` が 0〜23 でない、知らないタイムゾーンなど)をエラーにする。書き間違いを、黙って既定値で動かさずに気づけるようにするため。読み直しで失敗したときは、ログに出して直前の設定を使い続ける
+- 読み直しでメンテナンスが始まった・終わったときは、info でログに出す(`maintenance started`・`maintenance ended`)。いつ切り替わったかを、後から運用ログで確かめられるようにするため
 - **リクエストを受けたときのゲーム内の日付は、`ServerStatusLayer` がリクエストの extensions に `voltech_grpc_status::GameDate` として入れる**。ハンドラーは日付で決まる処理(無料ガチャなど)にこれを使い、レスポンスヘッダー `x-game-date` と `DateChangeLayer` の判定も同じ日付を使う。日付が変わる時刻をまたいだリクエストでも、処理に使った日付とクライアントに返す日付がずれないようにするため
 - 読み込み元の trait は `StatusSource`、ファイルから読む実装は `FileStatusSource`。テストでは時計(`Clock`)も差し替えられる
 

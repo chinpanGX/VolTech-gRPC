@@ -3,10 +3,15 @@ use player::badge::BadgeKind;
 use player::collector::Collectors;
 use player::model::PlayerItem;
 use player::notification::Notification;
-use sqlx::{Executor, MySql, Transaction};
+use sqlx::{Executor, MySql};
 use ulid::Ulid;
+use voltech_grpc_error::Internal;
+use voltech_grpc_transaction::TxContext;
 
 use crate::model::{DRAW_COST, pick, total_weight};
+
+// ゲームログの理由
+const GACHA_DRAW: &str = "gacha_draw";
 
 /// ガチャを引いた結果。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -31,43 +36,57 @@ pub enum DrawError {
     InsufficientGems,
     /// 今日の無料ガチャはもう引いた。
     FreeDrawUsed,
-    Database(sqlx::Error),
+    Internal(Internal),
 }
 
-impl From<sqlx::Error> for DrawError {
-    fn from(err: sqlx::Error) -> Self {
-        Self::Database(err)
+impl<E: Into<Internal>> From<E> for DrawError {
+    #[track_caller]
+    fn from(err: E) -> Self {
+        Self::Internal(err.into())
     }
 }
 
 /// ガチャを1回引き、排出されたアイテムを付与する。引けなければ何も変えない。
 ///
-/// 変わったもの(ジェム・アイテム)は `collected.diff` に、無料ガチャのバッジは `collected.badges` に、
+/// 変わったもの(ジェム・アイテム)は `collected.diff` とゲームログに、無料ガチャのバッジは `collected.badges` に、
 /// レアが出たことは `collected.notifications` に記録する。
 pub async fn draw(
-    tx: &mut Transaction<'_, MySql>,
+    ctx: &mut TxContext,
     collected: &mut Collectors,
     player_id: Ulid,
     cost: DrawCost,
 ) -> Result<DrawResult, DrawError> {
     match cost {
         DrawCost::Gems => {
-            player::service::consume_gems(tx, &mut collected.diff, player_id, DRAW_COST)
-                .await?
-                .ok_or(DrawError::InsufficientGems)?;
+            player::service::consume_gems(
+                ctx,
+                &mut collected.diff,
+                player_id,
+                DRAW_COST,
+                GACHA_DRAW,
+            )
+            .await?
+            .ok_or(DrawError::InsufficientGems)?;
         }
         DrawCost::Free { today } => {
-            if !free_draw_available(&mut **tx, player_id, today).await? {
+            if !free_draw_available(&mut **ctx.tx(), player_id, today).await? {
                 return Err(DrawError::FreeDrawUsed);
             }
-            record_free_draw(tx, player_id, today).await?;
+            record_free_draw(ctx, player_id, today).await?;
             collected.badges.mark(BadgeKind::FreeGacha);
         }
     }
 
     let drawn = pick(rand::random_range(0..total_weight()));
-    let item =
-        player::service::add_item(tx, &mut collected.diff, player_id, drawn.item_id, 1).await?;
+    let item = player::service::add_item(
+        ctx,
+        &mut collected.diff,
+        player_id,
+        drawn.item_id,
+        1,
+        GACHA_DRAW,
+    )
+    .await?;
     if drawn.rare {
         collected
             .notifications
@@ -96,11 +115,7 @@ pub async fn free_draw_available<'e>(
 
 // 無料ガチャを引いた日を記録する。同じプレイヤーの処理は、冪等性の行のロックで1つずつ動くので、
 // free_draw_available で確かめてから書いても、同時に2回引かれることはない
-async fn record_free_draw(
-    tx: &mut Transaction<'_, MySql>,
-    player_id: Ulid,
-    today: Date,
-) -> sqlx::Result<()> {
+async fn record_free_draw(ctx: &mut TxContext, player_id: Ulid, today: Date) -> sqlx::Result<()> {
     let today = today.to_string();
     sqlx::query(
         "INSERT INTO gacha_free_draws (player_id, last_drawn_on) VALUES (?, ?) \
@@ -109,7 +124,7 @@ async fn record_free_draw(
     .bind(player_id.to_bytes().as_slice())
     .bind(&today)
     .bind(&today)
-    .execute(&mut **tx)
+    .execute(&mut **ctx.tx())
     .await?;
     Ok(())
 }

@@ -13,6 +13,7 @@ publish = false          # sandbox は公開しない
 voltech-grpc-auth = { path = "../../server/rust/auth" }
 voltech-grpc-error = { path = "../../server/rust/error" }
 voltech-grpc-error-build = { path = "../../server/rust/error-build" }
+voltech-grpc-log = { path = "../../server/rust/log" }
 voltech-grpc-status = { path = "../../server/rust/status" }
 voltech-grpc-transaction = { path = "../../server/rust/transaction" }
 
@@ -27,6 +28,7 @@ jiff = "0.2"
 prost = "0.14"
 protox = "0.10"
 rand = "0.10"
+serde_json = "1"
 sqlx = { version = "0.9", default-features = false, features = ["runtime-tokio", "mysql", "mysql-rsa", "migrate", "macros"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal"] }
 tokio-stream = { version = "0.1", features = ["net"] }
@@ -36,7 +38,5 @@ tonic-prost-build = "0.14"
 tonic-reflection = "0.14"
 tonic-types = "0.14"
 tower = "0.5"
-tower-http = { version = "0.7", features = ["trace"] }
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 ulid = "3"

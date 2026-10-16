@@ -4,7 +4,7 @@ use proto::sandbox::v1::{
     Player, PlayerItem, SignInRequest, SignInResponse, SignUpRequest, SignUpResponse,
 };
 use tonic::{Request, Response, Status};
-use voltech_grpc_error::internal;
+use voltech_grpc_error::ResultExt;
 use voltech_grpc_transaction::Transactions;
 
 use crate::badge;
@@ -39,15 +39,13 @@ impl PlayerService for PlayerServiceImpl {
 
         let response = self
             .transactions
-            .run(&request, None, move |tx| {
+            .run(&request, None, move |ctx| {
                 Box::pin(async move {
-                    let player = player::service::create(tx, player_id)
-                        .await
-                        .map_err(internal)?;
+                    let player = player::service::create(ctx, player_id).await?;
                     // 冪等性の対象の RPC でロックする行を、プレイヤーと一緒に作っておく
-                    voltech_grpc_transaction::create_last_response(tx, player.player_id)
+                    voltech_grpc_transaction::create_last_response(ctx.tx(), player.player_id)
                         .await
-                        .map_err(internal)?;
+                        .or_internal()?;
                     Ok(SignUpResponse {
                         player: Some(to_proto(player)),
                     })
@@ -66,24 +64,24 @@ impl PlayerService for PlayerServiceImpl {
 
         let response = self
             .transactions
-            .run(&request, Some(player_id), move |tx| {
+            .run(&request, Some(player_id), move |ctx| {
                 Box::pin(async move {
-                    let player = player::service::find_by_id(&mut **tx, player_id)
+                    let player = player::service::find_by_id(&mut **ctx.tx(), player_id)
                         .await
-                        .map_err(internal)?
+                        .or_internal()?
                         .ok_or_else(player_not_found)?;
-                    let items = player::service::list_items(&mut **tx, player_id)
+                    let items = player::service::list_items(&mut **ctx.tx(), player_id)
                         .await
-                        .map_err(internal)?;
+                        .or_internal()?;
                     // サインインでは全種類のバッジを返す(運営の操作で変わるバッジも、ここで更新される)
                     let mut badges = BadgeCollector::default();
                     badges.mark_all();
                     Ok(SignInResponse {
                         player: Some(to_proto(player)),
                         items: items.into_iter().map(item_to_proto).collect(),
-                        badges: badge::to_proto(tx, &badges, player_id, today)
+                        badges: badge::to_proto(ctx.tx(), &badges, player_id, today)
                             .await
-                            .map_err(internal)?,
+                            .or_internal()?,
                     })
                 })
             })

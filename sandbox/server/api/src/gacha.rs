@@ -4,7 +4,7 @@ use proto::errors;
 use proto::sandbox::v1::gacha_service_server::{GachaService, GachaServiceServer};
 use proto::sandbox::v1::{DrawRequest, DrawResponse};
 use tonic::{Request, Response, Status};
-use voltech_grpc_error::{failed_precondition, internal};
+use voltech_grpc_error::{ResultExt, failed_precondition};
 use voltech_grpc_transaction::Transactions;
 
 use crate::context::{game_date, player_id};
@@ -42,10 +42,10 @@ impl GachaService for GachaServiceImpl {
 
         let response = self
             .transactions
-            .run(&request, Some(player_id), move |tx| {
+            .run(&request, Some(player_id), move |ctx| {
                 Box::pin(async move {
                     let mut collected = Collectors::default();
-                    let result = gacha::service::draw(tx, &mut collected, player_id, cost)
+                    let result = gacha::service::draw(ctx, &mut collected, player_id, cost)
                         .await
                         .map_err(|err| match err {
                             DrawError::InsufficientGems => {
@@ -55,14 +55,14 @@ impl GachaService for GachaServiceImpl {
                                 errors::FREE_DRAW_USED,
                                 "free draw already used today",
                             ),
-                            DrawError::Database(err) => internal(err),
+                            DrawError::Internal(err) => err.into(),
                         })?;
                     Ok(DrawResponse {
                         item: Some(item_to_proto(result.item)),
                         player_diff: diff::to_proto(&collected.diff),
-                        badges: badge::to_proto(tx, &collected.badges, player_id, today)
+                        badges: badge::to_proto(ctx.tx(), &collected.badges, player_id, today)
                             .await
-                            .map_err(internal)?,
+                            .or_internal()?,
                         notifications: notification::to_proto(&collected.notifications),
                     })
                 })

@@ -596,6 +596,8 @@ dependencies = [
  "rand",
  "sqlx",
  "ulid",
+ "voltech-grpc-error",
+ "voltech-grpc-transaction",
 ]
 
 [[package]]
@@ -1323,6 +1325,8 @@ version = "0.0.0"
 dependencies = [
  "sqlx",
  "ulid",
+ "voltech-grpc-error",
+ "voltech-grpc-transaction",
 ]
 
 [[package]]
@@ -1678,6 +1682,7 @@ dependencies = [
  "jiff",
  "player",
  "proto",
+ "serde_json",
  "sqlx",
  "tokio",
  "tokio-stream",
@@ -1685,12 +1690,11 @@ dependencies = [
  "tonic-reflection",
  "tonic-types",
  "tower",
- "tower-http",
  "tracing",
- "tracing-subscriber",
  "ulid",
  "voltech-grpc-auth",
  "voltech-grpc-error",
+ "voltech-grpc-log",
  "voltech-grpc-status",
  "voltech-grpc-transaction",
 ]
@@ -2290,23 +2294,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tower-http"
-version = "0.7.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08a05a66a4fdd61cbbe0a1d755ffe0ca6aba159dd4820936a0ff8a8278245b9c"
-dependencies = [
- "bitflags 2.13.2",
- "bytes",
- "http",
- "http-body",
- "percent-encoding",
- "pin-project-lite",
- "tower-layer",
- "tower-service",
- "tracing",
-]
-
-[[package]]
 name = "tower-layer"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2496,6 +2483,7 @@ dependencies = [
  "tracing",
  "ulid",
  "voltech-grpc-error",
+ "voltech-grpc-log",
 ]
 
 [[package]]
@@ -2514,6 +2502,24 @@ version = "0.2.0"
 dependencies = [
  "serde",
  "toml",
+]
+
+[[package]]
+name = "voltech-grpc-log"
+version = "0.2.0"
+dependencies = [
+ "futures-util",
+ "http",
+ "http-body",
+ "jiff",
+ "pin-project-lite",
+ "serde_json",
+ "tonic",
+ "tonic-types",
+ "tower",
+ "tracing",
+ "tracing-subscriber",
+ "voltech-grpc-error",
 ]
 
 [[package]]
@@ -2538,11 +2544,15 @@ dependencies = [
  "http",
  "prost",
  "prost-types",
+ "serde_json",
  "sqlx",
  "tonic",
  "tower",
+ "tracing",
  "ulid",
+ "voltech-grpc-auth",
  "voltech-grpc-error",
+ "voltech-grpc-log",
 ]
 
 [[package]]

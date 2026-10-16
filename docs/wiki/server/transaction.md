@@ -2,10 +2,10 @@
 title: "with_transaction() と冪等性"
 status: confirmed
 area: server
-related: [server/collectors, client/api-core]
+related: [server/collectors, server/game-log, server/logging, client/api-core]
 proto: []
 code: [server/rust/transaction]
-updated: 2026-10-10
+updated: 2026-10-16
 ---
 
 # with_transaction() と冪等性
@@ -35,4 +35,6 @@ updated: 2026-10-10
 - 冪等性の表は、起動時にアプリの FileDescriptorSet の `idempotency_level` から作る(`IdempotencyLevels`)。表に無い RPC は対象として扱う
 - tonic はサーバーのハンドラーに RPC の名前を渡さないので、全サービスの外側に `RpcMethodLayer` を付け、HTTP のパスから取り出した名前を extensions に入れる
 - 保存用の行は、サインアップで作るのに加えて、無ければ最初の対象のリクエストで作る(この仕組みより前に作られたプレイヤーのため)。行が無いときの `SELECT ... FOR UPDATE` は隙間のロックを取るので、それを持ったまま作ると、同時に行を作る別のプレイヤーのトランザクションとデッドロックする。いったんロールバックしてから別のトランザクションで作り、ロックを取り直す
-- 冪等性の対象の RPC で `x-request-id` が無い・形が違う(英数字とハイフンの1〜64文字でない)、または同じ RequestID で別のメソッドが呼ばれたら、`INVALID_ARGUMENT` を返す(クライアントでは `UNKNOWN_ERROR` になる)
+- 冪等性の対象の RPC で `x-request-id` が無い・形が違う(英数字とハイフンの1〜64文字でない)、または同じ RequestID で別のメソッドが呼ばれたら、`INVALID_ARGUMENT` を返す(クライアントでは `UNKNOWN_ERROR` になる)。別のメソッドで使い回されたときは、クライアントの不具合なので warn のログも出す([運用ログ](logging.md))
+- ハンドラーの本体には `TxContext` を渡す。トランザクションは `ctx.tx()` で使い、ゲームログは `ctx.write_game_log` でだけ書ける。ゲームログはコミットのときに出力先へ書くので、ロールバックと、保存済みのレスポンスを返したときには残らない([ゲームログ](game-log.md))
+- 冪等性の対象の RPC では、保存済みのレスポンスを返したか(`replayed`)を RPC の span に書く。アクセスログで、再送が来たことと、処理を動かしていないことが分かる

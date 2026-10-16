@@ -16,6 +16,7 @@ tokio = { workspace = true }
 tonic = { workspace = true }
 tonic-prost = { workspace = true }
 voltech-grpc-error = { workspace = true }
+voltech-grpc-log = { workspace = true }
 tower = { workspace = true }
 tracing = { workspace = true }
 ulid = { workspace = true }
@@ -26,6 +27,9 @@ protox = { workspace = true }
 tonic-prost-build = { workspace = true }
 
 [dev-dependencies]
+tokio = { workspace = true, features = ["sync"] }
+serde_json = { workspace = true }
 tonic-types = { workspace = true }
 tokio-stream = { workspace = true }
 tonic-health = { workspace = true }
+tracing-subscriber = { workspace = true }

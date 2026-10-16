@@ -2,17 +2,17 @@
 title: "リクエストの処理の流れ"
 status: confirmed
 area: server
-related: [api/metadata, server/transaction, server/auth, server/status]
+related: [api/metadata, server/transaction, server/auth, server/status, server/logging]
 proto: []
 code: [sandbox/server/server/src/lib.rs]
-updated: 2026-10-10
+updated: 2026-10-16
 ---
 
 # リクエストの処理の流れ
 
 | 順 | 処理 | 実装 | 返すもの |
 |---|---|---|---|
-| 1 | ログ | `tower_http::TraceLayer` などの汎用Layer | |
+| 1 | ログ | `voltech-grpc-log` クレートの `RpcLogLayer`([運用ログ](logging.md))。RPC ごとの span とアクセスログ。ほかの Layer が返したエラーもアクセスログに出すように、一番外側に付ける | ハンドラーが panic したときは `INTERNAL_ERROR` |
 | 2 | 強制アップデートの判定 | `voltech-grpc-status` クレートの `ServerStatusLayer`([サーバーの状態](status.md)。DBを使わない) | `UPDATE_REQUIRED` |
 | 3 | メンテナンスの判定 | `voltech-grpc-status` クレートの `ServerStatusLayer`([サーバーの状態](status.md)。DBを使わない) | `MAINTENANCE` |
 | 4 | 認証 | `voltech-grpc-auth` クレートの `AuthLayer`(非同期の `tower::Service`。[認証(サーバー)](auth.md))。`skip_auth` 以外のサービスにだけルーターで付ける | `UNAUTHENTICATED`・`ACCOUNT_SUSPENDED` |

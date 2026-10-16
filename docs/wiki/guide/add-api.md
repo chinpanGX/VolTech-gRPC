@@ -2,10 +2,10 @@
 title: "API を足す"
 status: current
 area: guide
-related: [guide/connect, guide/client-reference, guide/server-reference, guide/debugging, api/codegen, api/errors, api/idempotency, api/common-response]
+related: [guide/connect, guide/client-reference, guide/server-reference, guide/debugging, api/codegen, api/errors, api/idempotency, api/common-response, server/game-log]
 proto: [sandbox/proto/sandbox/v1/gacha.proto, sandbox/proto/sandbox/v1/player.proto]
-code: [sandbox/server/api/src, sandbox/server/server/src/lib.rs, sandbox/server/proto/build.rs, sandbox/errors.toml, buf.gen.sandbox.yaml]
-updated: 2026-10-11
+code: [sandbox/server/api/src, sandbox/server/gacha/src/service, sandbox/server/player/src/service, sandbox/server/server/src/lib.rs, sandbox/server/proto/build.rs, sandbox/errors.toml, buf.gen.sandbox.yaml]
+updated: 2026-10-16
 ---
 
 # API を足す
@@ -66,14 +66,15 @@ async fn draw(&self, request: Request<DrawRequest>) -> Result<Response<DrawRespo
     let player_id = player_id(&request)?; // AuthLayer が入れた認証の情報から取る
     let response = self
         .transactions
-        .run(&request, Some(player_id), move |tx| {
+        .run(&request, Some(player_id), move |ctx| {
             Box::pin(async move {
-                // tx で DB を読み書きする。業務エラーは failed_precondition で返す
-                gacha::service::draw(tx, /* ... */).await.map_err(|err| match err {
+                // ctx.tx() で DB を読み書きし、所持データを変えたら ctx.write_game_log でゲームログを書く。
+                // 業務エラーは failed_precondition で返す
+                gacha::service::draw(ctx, /* ... */).await.map_err(|err| match err {
                     DrawError::InsufficientGems => {
                         failed_precondition(errors::INSUFFICIENT_GEMS, "not enough gems")
                     }
-                    DrawError::Database(err) => internal(err),
+                    DrawError::Internal(err) => err.into(), // INTERNAL。原因はログにだけ出る
                     // ...
                 })?;
                 Ok(DrawResponse { /* ... */ })
@@ -83,6 +84,21 @@ async fn draw(&self, request: Request<DrawRequest>) -> Result<Response<DrawRespo
     Ok(Response::new(response))
 }
 ```
+
+業務の本体は、DB のエラーなどの原因を `voltech_grpc_error::Internal` で運ぶ。`?` で `Internal` になり、ハンドラーで `Status` に戻すと INTERNAL になって、原因の連なりと発生した場所がログに出る。業務エラーの `Status` を `?` で包んでも、`Status` に戻すときは元の業務エラーのまま返る。
+
+```rust
+pub async fn consume_gems(ctx: &mut TxContext, /* ... */) -> Result<Option<i64>, Internal> {
+    sqlx::query("UPDATE players SET gems = gems - ? WHERE player_id = ?")
+        /* ... */
+        .execute(&mut **ctx.tx())
+        .await?;                                                       // sqlx のエラーは ? で Internal に
+    ctx.write_game_log(GameLog::new("gems", -amount, remaining, reason))?; // ジェムの増減を残す
+    /* ... */
+}
+```
+
+ゲームログは、所持データ(ジェム・アイテムなど)を変えたところで書く。処理が失敗してロールバックしたときと、再送で保存済みのレスポンスを返したときには残らない([ゲームログ](../server/game-log.md))。
 
 作ったサービスは、サーバーを組み立てるところ(sandbox では `sandbox/server/server/src/lib.rs`)で登録する。認証が要るサービスには `AuthLayer` と `DateChangeLayer` を付ける(付け忘れると、ハンドラーで認証の情報が取れずに INTERNAL になる)。
 

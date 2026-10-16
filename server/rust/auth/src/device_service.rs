@@ -6,6 +6,7 @@ use argon2::password_hash::phc::PasswordHash;
 use argon2::password_hash::{PasswordHasher, PasswordVerifier};
 use sqlx::MySqlPool;
 use tonic::{Request, Response, Status};
+use tracing::Span;
 use ulid::Ulid;
 
 use crate::proto::voltech::v1::device_service_server::{DeviceService, DeviceServiceServer};
@@ -13,7 +14,8 @@ use crate::proto::voltech::v1::{
     IssueTokenRequest, IssueTokenResponse, RegisterRequest, RegisterResponse,
 };
 use crate::token;
-use voltech_grpc_error::internal;
+use voltech_grpc_error::ResultExt;
+use voltech_grpc_log::field;
 
 const DEFAULT_TOKEN_TTL: Duration = Duration::from_secs(60 * 60);
 const SECRET_KEY_LEN: RangeInclusive<usize> = 16..=128;
@@ -65,7 +67,9 @@ impl DeviceService for DeviceServiceImpl {
             .bind(&secret_hash)
             .execute(&self.pool)
             .await
-            .map_err(internal)?;
+            .or_internal()?;
+        Span::current().record(field::PLAYER_ID, player_id.to_string());
+        tracing::info!(device_id, "device registered");
 
         Ok(Response::new(RegisterResponse {
             device_id,
@@ -82,23 +86,37 @@ impl DeviceService for DeviceServiceImpl {
             secret_key,
         } = request.into_inner();
 
-        let secret_hash: Option<String> =
-            sqlx::query_scalar("SELECT secret_hash FROM devices WHERE device_id = ?")
+        let row: Option<(String, Vec<u8>)> =
+            sqlx::query_as("SELECT secret_hash, player_id FROM devices WHERE device_id = ?")
                 .bind(&device_id)
                 .fetch_optional(&self.pool)
                 .await
-                .map_err(internal)?;
-        let Some(secret_hash) = secret_hash else {
+                .or_internal()?;
+        let Some((secret_hash, player_id)) = row else {
+            tracing::warn!(
+                reason = "unknown_device",
+                device_id,
+                "access token issue failed"
+            );
             return Err(invalid_credentials());
         };
+        // 誰のデバイスかは、secret_key を確かめる前からログに付ける(失敗の調査に使うため)
+        if let Ok(player_id) = <[u8; 16]>::try_from(player_id) {
+            Span::current().record(field::PLAYER_ID, Ulid::from_bytes(player_id).to_string());
+        }
         if !verify_secret(secret_key, secret_hash).await? {
+            tracing::warn!(
+                reason = "invalid_secret",
+                device_id,
+                "access token issue failed"
+            );
             return Err(invalid_credentials());
         }
 
         let access_token = token::generate();
         let expires_at = (SystemTime::now() + self.token_ttl)
             .duration_since(UNIX_EPOCH)
-            .map_err(internal)?
+            .or_internal()?
             .as_secs() as i64;
         sqlx::query(
             "INSERT INTO access_tokens (device_id, token, expires_at) \
@@ -110,7 +128,9 @@ impl DeviceService for DeviceServiceImpl {
         .bind(expires_at)
         .execute(&self.pool)
         .await
-        .map_err(internal)?;
+        .or_internal()?;
+        // トークンそのものはログに出さない
+        tracing::info!(device_id, "access token issued");
 
         Ok(Response::new(IssueTokenResponse {
             access_token,
@@ -148,8 +168,8 @@ async fn hash_secret(secret_key: String) -> Result<String, Status> {
             .map(|hash| hash.to_string())
     })
     .await
-    .map_err(internal)?
-    .map_err(internal)
+    .or_internal()?
+    .or_internal()
 }
 
 async fn verify_secret(secret_key: String, secret_hash: String) -> Result<bool, Status> {
@@ -162,6 +182,6 @@ async fn verify_secret(secret_key: String, secret_hash: String) -> Result<bool, 
         )
     })
     .await
-    .map_err(internal)?
-    .map_err(internal)
+    .or_internal()?
+    .or_internal()
 }

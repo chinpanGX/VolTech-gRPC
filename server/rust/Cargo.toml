@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["auth", "error", "error-build", "status", "transaction"]
+members = ["auth", "error", "error-build", "log", "status", "transaction"]
 
 [workspace.package]
 version = "0.2.0"
@@ -12,17 +12,24 @@ publish = false
 voltech-grpc-auth = { path = "auth" }
 voltech-grpc-error = { path = "error" }
 voltech-grpc-error-build = { path = "error-build" }
+voltech-grpc-log = { path = "log" }
 voltech-grpc-status = { path = "status" }
 voltech-grpc-transaction = { path = "transaction" }
 
 argon2 = "0.6"
+bytes = "1"
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
 http = "1"
+http-body = "1"
+http-body-util = "0.1"
 jiff = "0.2"
+pin-project-lite = "0.2"
 prost = "0.14"
 prost-types = "0.14"
 protox = "0.10"
 rand = "0.10"
 serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 sqlx = { version = "0.9", default-features = false, features = ["runtime-tokio", "mysql", "mysql-rsa", "migrate", "macros"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal"] }
 tokio-stream = { version = "0.1", features = ["net"] }
@@ -34,4 +41,5 @@ tonic-prost-build = "0.14"
 tonic-types = "0.14"
 tower = "0.5"
 tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 ulid = "3"

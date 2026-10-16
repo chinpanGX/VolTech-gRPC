@@ -2,7 +2,7 @@
 title: "VolTech gRPC wiki"
 status: index
 area: root
-updated: 2026-10-11
+updated: 2026-10-16
 ---
 
 # VolTech gRPC wiki
@@ -37,6 +37,8 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 | 課金のような RPC を二重に実行させたくない / 読むだけの RPC にしたい | [冪等性](api/idempotency.md) |
 | 所持データの変化をクライアントに反映したい | [共通レスポンス項目](api/common-response.md)・[反映](client/response-items.md) |
 | メンテナンス・強制アップデートにしたい | [サーバーの状態](server/status.md) |
+| サーバーのログを RequestID で探したい / ログの形式を送り先に合わせたい | [運用ログ](server/logging.md)・[サーバーのリファレンス](guide/server-reference.md) |
+| 所持データの変化の履歴(ゲームログ)を残したい・調べたい | [ゲームログ](server/game-log.md) |
 | 接続先・タイムアウトを変えたい | [接続設定](client/connection.md) |
 | サーバー無しでクライアントを試したい・テストしたい | [サーバーが無いときの差し替えとテスト](client/fake-testing.md) |
 | 通信の中身を見たい | [通信を見る・調べる](guide/debugging.md) |
@@ -97,7 +99,9 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 |---|---|---|
 | [レイヤー構成](server/layers.md) | `confirmed` | api → service → model の3層、トランザクションを型で強制する理由、クレートの分け方 |
 | [リクエストの処理の流れ](server/request-flow.md) | `confirmed` | Layer の順序(アップデート→メンテ→認証→日付変更)とタイムアウト |
+| [運用ログ](server/logging.md) | `current` | RPC ごとの span とアクセスログ、JSON の項目、設定 |
 | [with_transaction() と冪等性](server/transaction.md) | `confirmed` | トランザクションの手順と、最新1件保存による冪等性の実装 |
+| [ゲームログ](server/game-log.md) | `current` | 所持データの変化の履歴。TxContext からの書き方と、出力先(DB・標準出力) |
 | [コレクター(差分・バッジ・通知)](server/collectors.md) | `confirmed` | 共通レスポンス項目を集めて詰める仕組み |
 | [認証(サーバー)](server/auth.md) | `confirmed` | デバイス登録・トークン・AuthLayer・PlayerResolver |
 | [サーバーの状態(メンテナンス・強制アップデート・日付変更)](server/status.md) | `confirmed` | 状態の設定ファイル、判定、後から足すもの |

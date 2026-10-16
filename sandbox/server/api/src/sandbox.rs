@@ -7,7 +7,7 @@ use proto::sandbox::v1::{
     FailRequest, FailResponse, IncrementRequest, IncrementResponse, PingRequest, PingResponse,
 };
 use tonic::{Request, Response, Status};
-use voltech_grpc_error::{failed_precondition, internal, reserved};
+use voltech_grpc_error::{ResultExt, failed_precondition, reserved};
 use voltech_grpc_transaction::Transactions;
 
 use crate::context::{game_date, player_id, player_not_found};
@@ -39,11 +39,11 @@ impl SandboxService for SandboxServiceImpl {
 
         let response = self
             .transactions
-            .run(&request, Some(player_id), move |tx| {
+            .run(&request, Some(player_id), move |ctx| {
                 Box::pin(async move {
-                    let player = player::service::find_by_id(&mut **tx, player_id)
+                    let player = player::service::find_by_id(&mut **ctx.tx(), player_id)
                         .await
-                        .map_err(internal)?
+                        .or_internal()?
                         .ok_or_else(player_not_found)?;
                     let mut collected = Collectors::default();
                     // Ping ではカウンターの現在値・バッジと、疎通できたことの通知を返す
@@ -53,9 +53,9 @@ impl SandboxService for SandboxServiceImpl {
                     Ok(PingResponse {
                         player_id: player_id.to_string(),
                         player_diff: diff::to_proto(&collected.diff),
-                        badges: badge::to_proto(tx, &collected.badges, player_id, today)
+                        badges: badge::to_proto(ctx.tx(), &collected.badges, player_id, today)
                             .await
-                            .map_err(internal)?,
+                            .or_internal()?,
                         notifications: notification::to_proto(&collected.notifications),
                     })
                 })
@@ -92,17 +92,16 @@ impl SandboxService for SandboxServiceImpl {
 
         let response = self
             .transactions
-            .run(&request, Some(player_id), move |tx| {
+            .run(&request, Some(player_id), move |ctx| {
                 Box::pin(async move {
                     let mut collected = Collectors::default();
                     let counter = player::service::increment_counter(
-                        tx,
+                        ctx,
                         &mut collected.diff,
                         player_id,
                         amount,
                     )
-                    .await
-                    .map_err(internal)?;
+                    .await?;
                     Ok(IncrementResponse {
                         counter,
                         player_diff: diff::to_proto(&collected.diff),

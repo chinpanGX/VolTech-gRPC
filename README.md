@@ -4,7 +4,7 @@ gRPC でゲームのバックエンドを作るための基盤。Rust のサー�
 
 | 場所 | 中身 |
 | --- | --- |
-| `server/rust/` | サーバーの基盤クレート(`voltech-grpc-auth`・`-error`・`-error-build`・`-status`・`-transaction`) |
+| `server/rust/` | サーバーの基盤クレート(`voltech-grpc-auth`・`-error`・`-error-build`・`-log`・`-status`・`-transaction`) |
 | `Unity/com.chinpangx.voltech.grpc/` | Unity クライアントの UPM パッケージ |
 | `tools/protoc-gen-voltech-grpc/` | ApiCore を通して呼ぶ C# ラッパーを生成する protoc プラグイン |
 | `sandbox/` | 基盤の動作確認とガチャのサンプル(proto・サーバー・Unity プロジェクト)。組み込み方の実例 |

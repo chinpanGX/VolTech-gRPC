@@ -48,6 +48,7 @@ updated: 2026-10-11
 voltech-grpc-auth = { git = "https://github.com/chinpanGX/VolTech-gRPC", tag = "v0.2.0" }
 voltech-grpc-error = { git = "https://github.com/chinpanGX/VolTech-gRPC", tag = "v0.2.0" }
 voltech-grpc-error-build = { git = "https://github.com/chinpanGX/VolTech-gRPC", tag = "v0.2.0" }
+voltech-grpc-log = { git = "https://github.com/chinpanGX/VolTech-gRPC", tag = "v0.2.0" }
 voltech-grpc-status = { git = "https://github.com/chinpanGX/VolTech-gRPC", tag = "v0.2.0" }
 voltech-grpc-transaction = { git = "https://github.com/chinpanGX/VolTech-gRPC", tag = "v0.2.0" }
 ```

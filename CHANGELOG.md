@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+- サーバーのログの仕組みとして `voltech-grpc-log` クレートを足す(#3)。`LogConfig` を渡して `init` で準備し、`RpcLogLayer` を全サービスの一番外側に付けると、RPC ごとの span(`request_id`・`rpc.method` など。フィルターを上げても消えない)と、RPC の終わりのアクセスログ(ステータス・業務エラーの reason・処理時間)が出る。JSON(既定)は span の値を一番上の項目に並べ、GCP 向けの項目名(`severity` など)も選べる
+  - アプリ: `tower_http::TraceLayer` と `tracing_subscriber::fmt().init()` を、`voltech_grpc_log::init(&config)` と `.layer(RpcLogLayer::new(&config))` に置き換える。基盤は環境変数を読まないので、`LOG_FORMAT`・`RUST_LOG` などはアプリが読んで `LogConfig` に入れる(sandbox の `config.rs` が見本)
+  - ハンドラーが panic したとき、接続を切る代わりに INTERNAL(`INTERNAL_ERROR`)を返す
+  - `RpcMethod` は `voltech-grpc-log` に移す。`voltech_grpc_transaction::RpcMethod` のままでも使える
+- RPC の span に、認証したプレイヤー(`player_id`。`AuthLayer`・`DeviceService` が書く)と、再送で保存済みのレスポンスを返したか(`replayed`。`Transactions::run` が書く)が入り、アクセスログにも付く。デバイス登録・トークンの発行・認証の失敗・`x-request-id` の別の RPC での使い回し・メンテナンスの開始と終了をログに出す(トークンと `secret_key` は出さない)
+- 内部エラーの原因を運ぶ `voltech_grpc_error::Internal` を足す(#3)。`std::error::Error` を実装したエラーから `?` で作れ、`Status` にするときに INTERNAL にして、原因を最後までたどった連なりと発生した場所をログに出す。業務エラーの `Status` を `?` で包んでも、`Status` に戻すときは元のまま返る。`result.or_internal()`(INTERNAL の `Status` に)と `result.context("...")`(説明を付ける)も使える
+  - アプリ(壊れる変更): `internal()` は文字列を受け取らない。`internal("...")` は `internal(Internal::msg("..."))` か `Internal::msg("...").into()` に、`internal(format!(...))` は `Internal::msg(format!(...))` に、`Box<dyn Error>` は `Internal::from_boxed(err)` に替える。`.map_err(internal)` はそのまま使えるが発生した場所が残らないので、`.or_internal()` に替えるのをすすめる
+  - 内部エラーのログの項目名は `err` から `exception.message` に変わり、`code.file.path`・`code.line.number` が付く
+- ゲームログ(所持データの変化の履歴)を足す(#3)。`Transactions::run` の処理が受け取る `TxContext` の `write_game_log(GameLog::new(kind, delta, after, reason))` で書き、コミットしたときだけ残る(ロールバック・再送で保存済みのレスポンスを返したときは残らない)。出力先は `GameLogSink::Database`(`game_logs` テーブル)か `GameLogSink::Stdout`(標準出力の JSON。`RUST_LOG` で消えない)。`NO_SIDE_EFFECTS` の RPC で書くと INTERNAL
+  - アプリ(壊れる変更): `Transactions::new(pool, levels)` は `Transactions::new(pool, levels, GameLogSink::Database)` に替える(出力先の環境変数の名前のおすすめは `GAME_LOG_SINK`)
+  - アプリ(壊れる変更): `run` に渡す処理の引数が `&mut Transaction` から `&mut TxContext` になる。`move |tx| ...` は `move |ctx| ...` に、その中の `tx` は `ctx.tx()` に、`&mut **tx` は `&mut **ctx.tx()` に替える
+  - アプリ: `voltech_grpc_transaction::migrate` が `game_logs` テーブルを作る。起動時のマイグレーションでそのまま作られる
+
 ## [0.2.0] - 2026-10-11
 
 - `Google.Protobuf` を 3.36.2 に上げ、`Google.Api.CommonProtos` への依存を外す。Unity 6000.6 以降のエディタの中で、Google.Protobuf を CommonProtos の参照する版より上げると、業務エラーがすべて `CLIENT_ERROR` になっていたのを直す(#1)。エラーの詳細(`google.rpc.Status` / `ErrorInfo`)は `RpcErrorDetails` が自前で読む
