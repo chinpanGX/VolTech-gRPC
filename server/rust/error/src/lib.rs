@@ -1,8 +1,12 @@
+mod internal;
+
 use std::collections::HashMap;
 use std::fmt::{self, Display};
 
 use tonic::{Code, Status};
 use tonic_types::{ErrorDetails, StatusExt};
+
+pub use internal::{Internal, ResultExt};
 
 /// 基盤の予約エラー。`errors.toml` から生成する。
 pub mod reserved {
@@ -55,15 +59,14 @@ pub fn failed_precondition_with_metadata(
     with_code(Code::FailedPrecondition, code, message, metadata)
 }
 
-/// サーバー内部エラーを作る。詳細はクライアントに返さず、ログにだけ出す。
-pub fn internal(err: impl Display) -> Status {
-    tracing::error!(%err, "internal error");
-    with_code(
-        Code::Internal,
-        reserved::INTERNAL_ERROR,
-        "internal error",
-        HashMap::new(),
-    )
+/// サーバー内部エラーを作る。原因をたどってログに error で出し、クライアントには詳細を返さない。
+///
+/// `std::error::Error` を実装したエラーと `Internal` を受け取る。文字列だけのときは `Internal::msg` で包む。
+/// 受け取ったのが `tonic::Status` なら、INTERNAL にせずにそのまま返す。
+/// `.map_err(internal)` と関数を渡すと発生した場所が残らないので、`ResultExt::or_internal` を使う。
+#[track_caller]
+pub fn internal(err: impl Into<Internal>) -> Status {
+    err.into().into_status()
 }
 
 fn with_code(

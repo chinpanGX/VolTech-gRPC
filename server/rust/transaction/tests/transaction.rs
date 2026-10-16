@@ -18,7 +18,7 @@ fn response(seconds: i64) -> Duration {
 fn counting_handler(
     calls: &Arc<AtomicI64>,
 ) -> impl for<'t> FnOnce(
-    &'t mut sqlx::Transaction<'static, sqlx::MySql>,
+    &'t mut voltech_grpc_transaction::TxContext,
 ) -> voltech_grpc_transaction::HandlerFuture<'t, Duration>
 + Send
 + use<> {
@@ -115,11 +115,11 @@ async fn failure_is_rolled_back_and_not_saved() {
         .run(
             &request(DRAW, Some("request-1")),
             Some(player_id),
-            move |tx| {
+            move |ctx| {
                 Box::pin(async move {
                     sqlx::query("INSERT INTO last_responses (player_id) VALUES (?)")
                         .bind(written_in_failed_call.to_bytes().to_vec())
-                        .execute(&mut **tx)
+                        .execute(&mut **ctx.tx())
                         .await
                         .unwrap();
                     Err::<Duration, _>(Status::failed_precondition("business error"))
@@ -188,11 +188,11 @@ async fn no_side_effects_is_read_only() {
     let (transactions, _) = start().await;
 
     let write_failed = transactions
-        .run(&request(READ, None), None, move |tx| {
+        .run(&request(READ, None), None, move |ctx| {
             Box::pin(async move {
                 let result = sqlx::query("INSERT INTO last_responses (player_id) VALUES (?)")
                     .bind(Ulid::generate().to_bytes().to_vec())
-                    .execute(&mut **tx)
+                    .execute(&mut **ctx.tx())
                     .await;
                 Ok(response(i64::from(result.is_err())))
             })

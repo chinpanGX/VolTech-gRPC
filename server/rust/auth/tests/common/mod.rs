@@ -1,5 +1,10 @@
 //! テストで使うサーバーの起動と、API を呼ぶ処理。
 
+#![allow(
+    dead_code,
+    reason = "テストのファイルごとに使う関数が違い、使わないファイルでは dead_code になるため"
+)]
+
 use std::time::Duration;
 
 use sqlx::MySqlPool;
@@ -15,6 +20,7 @@ use voltech_grpc_auth::proto::voltech::v1::{IssueTokenRequest, RegisterRequest, 
 use voltech_grpc_auth::{
     AuthLayer, BoxError, DeviceServiceImpl, PlayerId, PlayerResolver, PlayerStatus,
 };
+use voltech_grpc_log::{LogConfig, RpcLogLayer};
 
 const DEFAULT_DATABASE_URL: &str = "mysql://app:app@localhost:13306/app";
 /// テストで登録に使う secret_key。
@@ -36,7 +42,7 @@ pub struct TestServer {
 }
 
 impl TestServer {
-    /// DeviceService と、AuthLayer を付けたヘルスチェックのサービスを起動して接続する。
+    /// DeviceService と、AuthLayer を付けたヘルスチェックのサービスを、本番と同じく RpcLogLayer を外側に付けて起動して接続する。
     pub async fn start(player_status: PlayerStatus, token_ttl: Duration) -> Self {
         let database_url =
             std::env::var("DATABASE_URL").unwrap_or_else(|_| DEFAULT_DATABASE_URL.to_owned());
@@ -51,8 +57,12 @@ impl TestServer {
             .with_token_ttl(token_ttl)
             .into_server();
         let protected = AuthLayer::new(pool, FixedResolver(player_status)).layer(health);
+        // ヘルスチェックを認証が必要なサービスの代わりにするので、アクセスログから除かない
+        let mut log_config = LogConfig::new("test-server", "test");
+        log_config.excluded_rpcs.clear();
         tokio::spawn(
             Server::builder()
+                .layer(RpcLogLayer::new(&log_config))
                 .add_service(device)
                 .add_service(protected)
                 .serve_with_incoming(TcpListenerStream::new(listener)),

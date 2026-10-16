@@ -1,11 +1,18 @@
-use sqlx::{MySql, MySqlExecutor, Transaction};
+use sqlx::MySqlExecutor;
 use ulid::Ulid;
+use voltech_grpc_error::Internal;
+use voltech_grpc_transaction::{GameLog, TxContext};
 
 use crate::diff::PlayerDiffCollector;
 use crate::model::{Player, PlayerItem};
 
 /// プレイヤーを作ったときに持たせるジェムの数。
 pub const INITIAL_GEMS: i64 = 3000;
+
+// ゲームログの種別
+const GEMS: &str = "gems";
+const ITEM: &str = "item";
+const COUNTER: &str = "counter";
 
 // sqlx は SQL を &'static str で受け取るので、format! ではなく concat! で組み立てる
 macro_rules! select_player {
@@ -33,35 +40,44 @@ pub async fn find_by_id<'e>(
 }
 
 /// デバイス登録で発行した `player_id` で、プレイヤーと初期データを作る。作成済みなら作らずに、作成済みのプレイヤーを返す。
-pub async fn create(tx: &mut Transaction<'_, MySql>, player_id: Ulid) -> sqlx::Result<Player> {
-    // 同じデバイスから同時に作られても1人だけになるように、player_id の主キーに任せる
-    sqlx::query(
-        "INSERT INTO players (player_id, gems) VALUES (?, ?) \
-         ON DUPLICATE KEY UPDATE player_id = player_id",
-    )
-    .bind(player_id.to_bytes().as_slice())
-    .bind(INITIAL_GEMS)
-    .execute(&mut **tx)
-    .await?;
+///
+/// 作ったときだけ、初期データのジェムをゲームログに書く。
+pub async fn create(ctx: &mut TxContext, player_id: Ulid) -> Result<Player, Internal> {
+    // 同じデバイスから同時に作られても1人だけになるように、player_id の主キーに任せる。
+    // 作ったかどうかを件数で見分けるため、ON DUPLICATE KEY UPDATE ではなく INSERT IGNORE にする
+    // (sqlx は CLIENT_FOUND_ROWS で接続するので、ON DUPLICATE KEY UPDATE では作成済みでも 1 件になる)
+    let inserted = sqlx::query("INSERT IGNORE INTO players (player_id, gems) VALUES (?, ?)")
+        .bind(player_id.to_bytes().as_slice())
+        .bind(INITIAL_GEMS)
+        .execute(&mut **ctx.tx())
+        .await?
+        .rows_affected()
+        == 1;
+    if inserted {
+        ctx.write_game_log(GameLog::new(GEMS, INITIAL_GEMS, INITIAL_GEMS, "sign_up"))?;
+    }
 
     let row: PlayerRow = sqlx::query_as(select_player!("player_id = ?"))
         .bind(player_id.to_bytes().as_slice())
-        .fetch_one(&mut **tx)
+        .fetch_one(&mut **ctx.tx())
         .await?;
-    into_player(row)
+    Ok(into_player(row)?)
 }
 
 /// ジェムを `amount` だけ消費し、残りを返す。足りなければ消費せずに `None` を返す。
+///
+/// 消費したら、`reason` を理由にしてゲームログに書く。
 pub async fn consume_gems(
-    tx: &mut Transaction<'_, MySql>,
+    ctx: &mut TxContext,
     diff: &mut PlayerDiffCollector,
     player_id: Ulid,
     amount: i64,
-) -> sqlx::Result<Option<i64>> {
+    reason: &str,
+) -> Result<Option<i64>, Internal> {
     // 同時に消費されても残りを超えないように、行をロックしてから確かめる
     let gems: i64 = sqlx::query_scalar("SELECT gems FROM players WHERE player_id = ? FOR UPDATE")
         .bind(player_id.to_bytes().as_slice())
-        .fetch_one(&mut **tx)
+        .fetch_one(&mut **ctx.tx())
         .await?;
     if gems < amount {
         return Ok(None);
@@ -70,20 +86,23 @@ pub async fn consume_gems(
     sqlx::query("UPDATE players SET gems = gems - ? WHERE player_id = ?")
         .bind(amount)
         .bind(player_id.to_bytes().as_slice())
-        .execute(&mut **tx)
+        .execute(&mut **ctx.tx())
         .await?;
-    diff.record_gems(gems - amount);
-    Ok(Some(gems - amount))
+    let remaining = gems - amount;
+    ctx.write_game_log(GameLog::new(GEMS, -amount, remaining, reason))?;
+    diff.record_gems(remaining);
+    Ok(Some(remaining))
 }
 
-/// アイテムを `count` 個増やし、増やした後の所持数を返す。
+/// アイテムを `count` 個増やし、増やした後の所持数を返す。`reason` を理由にしてゲームログに書く。
 pub async fn add_item(
-    tx: &mut Transaction<'_, MySql>,
+    ctx: &mut TxContext,
     diff: &mut PlayerDiffCollector,
     player_id: Ulid,
     item_id: i32,
     count: i64,
-) -> sqlx::Result<PlayerItem> {
+    reason: &str,
+) -> Result<PlayerItem, Internal> {
     sqlx::query(
         "INSERT INTO player_items (player_id, item_id, count) VALUES (?, ?, ?) AS new \
          ON DUPLICATE KEY UPDATE count = player_items.count + new.count",
@@ -91,16 +110,20 @@ pub async fn add_item(
     .bind(player_id.to_bytes().as_slice())
     .bind(item_id)
     .bind(count)
-    .execute(&mut **tx)
+    .execute(&mut **ctx.tx())
     .await?;
 
-    let count: i64 =
+    let after: i64 =
         sqlx::query_scalar("SELECT count FROM player_items WHERE player_id = ? AND item_id = ?")
             .bind(player_id.to_bytes().as_slice())
             .bind(item_id)
-            .fetch_one(&mut **tx)
+            .fetch_one(&mut **ctx.tx())
             .await?;
-    let item = PlayerItem { item_id, count };
+    ctx.write_game_log(GameLog::new(ITEM, count, after, reason).target(item_id))?;
+    let item = PlayerItem {
+        item_id,
+        count: after,
+    };
     diff.record_item(item);
     Ok(item)
 }
@@ -122,22 +145,23 @@ pub async fn list_items<'e>(
         .collect())
 }
 
-/// カウンターに `amount` を足し、足した後の値を返す。
+/// カウンターに `amount` を足し、足した後の値を返す。ゲームログにも書く。
 pub async fn increment_counter(
-    tx: &mut Transaction<'_, MySql>,
+    ctx: &mut TxContext,
     diff: &mut PlayerDiffCollector,
     player_id: Ulid,
     amount: i64,
-) -> sqlx::Result<i64> {
+) -> Result<i64, Internal> {
     sqlx::query("UPDATE players SET counter = counter + ? WHERE player_id = ?")
         .bind(amount)
         .bind(player_id.to_bytes().as_slice())
-        .execute(&mut **tx)
+        .execute(&mut **ctx.tx())
         .await?;
     let counter: i64 = sqlx::query_scalar("SELECT counter FROM players WHERE player_id = ?")
         .bind(player_id.to_bytes().as_slice())
-        .fetch_one(&mut **tx)
+        .fetch_one(&mut **ctx.tx())
         .await?;
+    ctx.write_game_log(GameLog::new(COUNTER, amount, counter, "increment"))?;
     diff.record_counter(counter);
     Ok(counter)
 }

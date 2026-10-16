@@ -1,0 +1,26 @@
+[package]
+name = "voltech-grpc-log"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+voltech-grpc-error = { workspace = true }
+futures-util = { workspace = true }
+http = { workspace = true }
+http-body = { workspace = true }
+jiff = { workspace = true }
+pin-project-lite = { workspace = true }
+serde_json = { workspace = true }
+tonic = { workspace = true }
+tonic-types = { workspace = true }
+tower = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+[dev-dependencies]
+bytes = { workspace = true }
+http-body-util = { workspace = true }
+tokio = { workspace = true }
+tower = { workspace = true, features = ["util"] }

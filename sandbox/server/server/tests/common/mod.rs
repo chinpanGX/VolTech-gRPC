@@ -19,7 +19,9 @@ use tonic::transport::Channel;
 use ulid::Ulid;
 use voltech_grpc_auth::proto::voltech::v1::device_service_client::DeviceServiceClient;
 use voltech_grpc_auth::proto::voltech::v1::{IssueTokenRequest, RegisterRequest, RegisterResponse};
+use voltech_grpc_log::RpcLogLayer;
 use voltech_grpc_status::{FileStatusSource, ServerStatus, StatusSource};
+use voltech_grpc_transaction::GameLogSink;
 
 const DEFAULT_DATABASE_URL: &str = "mysql://app:app@localhost:13306/voltech_sandbox";
 
@@ -52,6 +54,8 @@ impl TestServer {
             listener,
             pool.clone(),
             status,
+            RpcLogLayer::default(),
+            GameLogSink::Database,
             true,
             std::future::pending(),
         ));

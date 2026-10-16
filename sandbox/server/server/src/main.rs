@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use server::{BoxError, Config};
 use tokio::net::TcpListener;
-use tracing_subscriber::EnvFilter;
+use voltech_grpc_log::RpcLogLayer;
 use voltech_grpc_status::{FileStatusSource, ServerStatus};
 
 // サーバーの状態の設定を読み直す間隔。再起動せずにメンテナンスを切り替えられる
@@ -12,13 +12,9 @@ const STATUS_RELOAD_INTERVAL: Duration = Duration::from_secs(5);
 async fn main() -> Result<(), BoxError> {
     // .env が無くても既定値で動くので、読めなくても続ける
     let _ = dotenvy::dotenv();
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
-        )
-        .init();
-
     let config = Config::from_env()?;
+    voltech_grpc_log::init(&config.log)?;
+
     // 一度も読めなければ起動しない
     let status = ServerStatus::watch(
         FileStatusSource::new(&config.server_status_path),
@@ -33,6 +29,8 @@ async fn main() -> Result<(), BoxError> {
         listener,
         pool,
         status,
+        RpcLogLayer::new(&config.log),
+        config.game_log_sink,
         config.enable_reflection,
         shutdown_signal(),
     )

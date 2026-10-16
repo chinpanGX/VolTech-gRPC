@@ -5,7 +5,7 @@ use jiff::Timestamp;
 use jiff::civil::Date;
 
 use crate::BoxError;
-use crate::config::StatusConfig;
+use crate::config::{Maintenance, StatusConfig};
 use crate::source::StatusSource;
 
 /// 今の時刻を返す。テストでは決まった時刻を返すものに差し替える。
@@ -55,7 +55,9 @@ impl ServerStatus {
                 };
                 match source.load().await {
                     Ok(loaded) => {
-                        *config.write().unwrap_or_else(|e| e.into_inner()) = Arc::new(loaded)
+                        let mut current = config.write().unwrap_or_else(|e| e.into_inner());
+                        log_maintenance_change(&current.maintenance, &loaded.maintenance);
+                        *current = Arc::new(loaded);
                     }
                     Err(err) => {
                         tracing::warn!(%err, "failed to reload server status; keep the previous one")
@@ -88,5 +90,78 @@ impl ServerStatus {
     /// 今のゲーム内の日付。
     pub fn game_date(&self) -> Date {
         self.config().game_day.date_at(self.now())
+    }
+}
+
+fn log_maintenance_change(previous: &Maintenance, loaded: &Maintenance) {
+    match (previous.enabled, loaded.enabled) {
+        (false, true) => {
+            let end_at = loaded.end_at.map(tracing::field::display);
+            tracing::info!(end_at, "maintenance started");
+        }
+        (true, false) => tracing::info!("maintenance ended"),
+        _ => {}
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Mutex;
+
+    use tracing_subscriber::fmt::MakeWriter;
+
+    use super::*;
+
+    #[derive(Clone, Default)]
+    struct Output(Arc<Mutex<Vec<u8>>>);
+
+    impl std::io::Write for Output {
+        fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+            self.0.lock().unwrap().extend_from_slice(buf);
+            Ok(buf.len())
+        }
+
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+
+    impl<'a> MakeWriter<'a> for Output {
+        type Writer = Self;
+
+        fn make_writer(&'a self) -> Self::Writer {
+            self.clone()
+        }
+    }
+
+    fn maintenance(enabled: bool) -> Maintenance {
+        Maintenance {
+            enabled,
+            end_at: enabled.then(|| "2026-10-06T06:00:00Z".parse().unwrap()),
+        }
+    }
+
+    /// メンテナンスが始まった・終わったときだけ info で出し、変わらなければ何も出さない。
+    #[test]
+    fn logs_only_maintenance_switch() {
+        let output = Output::default();
+        let subscriber = tracing_subscriber::fmt()
+            .with_writer(output.clone())
+            .with_ansi(false)
+            .finish();
+        tracing::subscriber::with_default(subscriber, || {
+            log_maintenance_change(&maintenance(false), &maintenance(true));
+            log_maintenance_change(&maintenance(true), &maintenance(true));
+            log_maintenance_change(&maintenance(true), &maintenance(false));
+            log_maintenance_change(&maintenance(false), &maintenance(false));
+        });
+
+        let logs = String::from_utf8(output.0.lock().unwrap().clone()).unwrap();
+        let lines: Vec<&str> = logs.lines().collect();
+        assert_eq!(lines.len(), 2, "{logs}");
+        assert!(lines[0].contains(" INFO "), "{logs}");
+        assert!(lines[0].contains("maintenance started"), "{logs}");
+        assert!(lines[0].contains("end_at=2026-10-06T06:00:00Z"), "{logs}");
+        assert!(lines[1].contains("maintenance ended"), "{logs}");
     }
 }

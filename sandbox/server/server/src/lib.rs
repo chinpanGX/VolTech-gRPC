@@ -9,10 +9,10 @@ use tokio::net::TcpListener;
 use tokio_stream::wrappers::TcpListenerStream;
 use tonic::transport::Server;
 use tower::Layer;
-use tower_http::trace::TraceLayer;
 use voltech_grpc_auth::{AuthLayer, DeviceServiceImpl};
+use voltech_grpc_log::RpcLogLayer;
 use voltech_grpc_status::{DateChangeLayer, ServerStatus, ServerStatusLayer};
-use voltech_grpc_transaction::{IdempotencyLevels, RpcMethodLayer, Transactions};
+use voltech_grpc_transaction::{GameLogSink, IdempotencyLevels, RpcMethodLayer, Transactions};
 
 pub use config::Config;
 pub use player_lookup::PlayerLookup;
@@ -33,6 +33,8 @@ pub async fn serve(
     listener: TcpListener,
     pool: MySqlPool,
     status: ServerStatus,
+    rpc_log: RpcLogLayer,
+    game_log_sink: GameLogSink,
     enable_reflection: bool,
     shutdown: impl Future<Output = ()>,
 ) -> Result<(), BoxError> {
@@ -51,12 +53,14 @@ pub async fn serve(
     let transactions = Transactions::new(
         pool.clone(),
         IdempotencyLevels::from_file_descriptor_set(proto::FILE_DESCRIPTOR_SET)?,
+        game_log_sink,
     );
     let auth = AuthLayer::new(pool.clone(), PlayerLookup::new(pool.clone()));
     let date_change = DateChangeLayer::new(status.clone());
 
     Server::builder()
-        .layer(TraceLayer::new_for_grpc())
+        // メンテナンスや認証で返したエラーもアクセスログに出すように、一番外側に付ける
+        .layer(rpc_log)
         // 強制アップデートとメンテナンスは、認証より先に全サービスで判定する
         .layer(ServerStatusLayer::new(status))
         // Transactions::run が RPC の名前を読めるように、全サービスの外側に付ける

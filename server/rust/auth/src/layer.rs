@@ -7,9 +7,11 @@ use sqlx::MySqlPool;
 use tonic::Status;
 use tonic::server::NamedService;
 use tower::{Layer, Service};
+use tracing::Span;
 
 use crate::resolver::{PlayerId, PlayerResolver, PlayerStatus};
-use voltech_grpc_error::{failed_precondition, internal};
+use voltech_grpc_error::{Internal, ResultExt, failed_precondition, internal};
+use voltech_grpc_log::field;
 
 /// 認証済みのリクエストに付く情報。ハンドラーは `request.extensions()` から取り出す。
 #[derive(Clone, Debug)]
@@ -100,28 +102,53 @@ async fn authenticate<R: PlayerResolver>(
     resolver: &R,
     headers: &HeaderMap,
 ) -> Result<AuthContext, Status> {
-    let token = headers
+    let Some(token) = headers
         .get("authorization")
         .and_then(|value| value.to_str().ok())
         .and_then(|value| value.strip_prefix("Bearer "))
-        .ok_or_else(|| Status::unauthenticated("missing access token"))?;
+    else {
+        tracing::warn!(reason = "missing_token", "authentication failed");
+        return Err(Status::unauthenticated("missing access token"));
+    };
 
-    // トークンから device_id と、デバイス登録で発行した player_id を1回で引く
-    let row: Option<(String, Vec<u8>)> = sqlx::query_as(
-        "SELECT d.device_id, d.player_id FROM access_tokens t          JOIN devices d ON d.device_id = t.device_id          WHERE t.token = ? AND t.expires_at > NOW(3)",
+    // トークンから device_id と、デバイス登録で発行した player_id を1回で引く。
+    // 期限切れと、知らないトークンをログで見分けるため、期限は WHERE ではなく値として読む
+    let row: Option<(String, Vec<u8>, i64)> = sqlx::query_as(
+        "SELECT d.device_id, d.player_id, t.expires_at > NOW(3) FROM access_tokens t \
+         JOIN devices d ON d.device_id = t.device_id \
+         WHERE t.token = ?",
     )
     .bind(token)
     .fetch_optional(pool)
     .await
-    .map_err(internal)?;
-    let (device_id, player_id) =
-        row.ok_or_else(|| Status::unauthenticated("invalid or expired access token"))?;
+    .or_internal()?;
+    let (device_id, player_id) = match row {
+        Some((device_id, player_id, 1)) => (device_id, player_id),
+        Some((device_id, _, _)) => {
+            // 期限切れは、クライアントがトークンを発行し直す前の普段の動作でも起きるので warn にしない
+            tracing::info!(reason = "expired_token", device_id, "authentication failed");
+            return Err(invalid_token());
+        }
+        None => {
+            // 発行し直す前の古いトークンもここに来る(発行し直すと行を上書きするため)
+            tracing::info!(reason = "unknown_token", "authentication failed");
+            return Err(invalid_token());
+        }
+    };
     let player_id: [u8; 16] = player_id.try_into().map_err(|bytes: Vec<u8>| {
-        internal(format!("player_id must be 16 bytes, got {}", bytes.len()))
+        internal(Internal::msg(format!(
+            "player_id must be 16 bytes, got {}",
+            bytes.len()
+        )))
     })?;
     let player_id = PlayerId::from_bytes(player_id);
+    Span::current().record(field::PLAYER_ID, player_id.to_string());
 
-    let player_created = match resolver.resolve(player_id).await.map_err(internal)? {
+    let player_created = match resolver
+        .resolve(player_id)
+        .await
+        .map_err(|err| internal(Internal::from_boxed(err)))?
+    {
         PlayerStatus::NotCreated => false,
         PlayerStatus::Active => true,
         PlayerStatus::Suspended => {
@@ -137,4 +164,8 @@ async fn authenticate<R: PlayerResolver>(
         player_id,
         player_created,
     })
+}
+
+fn invalid_token() -> Status {
+    Status::unauthenticated("invalid or expired access token")
 }

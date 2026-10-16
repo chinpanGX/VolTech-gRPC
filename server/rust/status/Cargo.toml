@@ -20,3 +20,4 @@ tracing = { workspace = true }
 voltech-grpc-error = { workspace = true }
 tonic-types = { workspace = true }
 tower = { workspace = true, features = ["util"] }
+tracing-subscriber = { workspace = true }

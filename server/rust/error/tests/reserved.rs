@@ -1,6 +1,6 @@
 use tonic::Code;
 use tonic_types::StatusExt;
-use voltech_grpc_error::{failed_precondition, internal, reserved};
+use voltech_grpc_error::{Internal, failed_precondition, internal, reserved};
 
 /// 予約エラーは domain voltech で、サーバーが返すものだけが一覧に入る。
 #[test]
@@ -25,6 +25,8 @@ fn error_code_goes_into_error_info() {
     assert_eq!(info.domain, "voltech");
     assert_eq!(info.reason, "DATE_CHANGED");
 
-    let info = internal("boom").get_details_error_info().unwrap();
+    let info = internal(Internal::msg("boom"))
+        .get_details_error_info()
+        .unwrap();
     assert_eq!(info.reason, reserved::INTERNAL_ERROR.reason());
 }
