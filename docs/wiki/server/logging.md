@@ -5,7 +5,7 @@ area: server
 related: [server/request-flow, server/game-log, server/transaction, server/auth, server/status, guide/server-reference, guide/debugging, api/errors, api/metadata]
 proto: []
 code: [server/rust/log, server/rust/error/src/internal.rs, server/rust/auth/src/layer.rs, server/rust/auth/src/device_service.rs, server/rust/status/src/status.rs, sandbox/server/server/src/config.rs, sandbox/server/server/src/main.rs]
-updated: 2026-10-16
+updated: 2026-10-17
 ---
 
 # 運用ログ
@@ -115,3 +115,4 @@ INTERNAL を返すときは、`voltech_grpc_error::Internal` で原因を運び�
 - RPC の名前(`RpcMethod`)と `x-request-id` の形の確認(`is_valid_request_id`)は、このクレートに置き、`voltech-grpc-transaction` と共有する。パスの解析と形の確認を1か所にするため
 - 認証の失敗の理由(期限切れか、知らないトークンか)を見分けるため、トークンの期限は SQL の条件ではなく値として読み、期限切れを判定する
 - ゲームログの target(`voltech_grpc_log::game`)のログは、運用ログのフィルター(`RUST_LOG`)にかかわらず出す。問い合わせ・補填に使う履歴が、レベルの設定で消えないようにするため
+- ゲームログの名前付きの値は、名前が実行時に決まり tracing の項目にできないので、`GAME_LOG_FIELDS`(`game.fields`)に JSON の文字列で受け取り、JSON の形式では一番上の項目に展開する。基盤が付ける項目は上書きしない。ゲームログ以外のログでは展開しない([ゲームログ](game-log.md))

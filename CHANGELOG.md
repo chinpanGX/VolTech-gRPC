@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- ゲームログを `Transactions::run` の外からも書け、数量の変化でない値も持てるようにする(#5)
+  - サーバー間の内部 API や定期実行のジョブのように `run` を通らない処理は、`GameLogs::new(処理の名前)` に `write(player_id, log)` でためて、`GameLogSink::commit(tx, logs)` でコミットする。`Database` は同じトランザクションで書き、`Stdout` はコミットの後に出す(`run` と同じ)
+  - 数量の変化でないもの(キャラクターの入手・編成の変更など)は `GameLog::event(kind, reason)` で作る。名前付きの値は `GameLog::field(name, value)` で足し、`game_logs.body` の JSON と標準出力の項目に並ぶ
+  - `game_logs.body` は、無い値(`target_id` の無いときの `null` など)を入れなくなる。`GameLog` は `Eq` を実装しなくなる
+  - アプリ: `GameLog::new` と `TxContext::write_game_log` はそのまま使える
+
 ## [0.3.0] - 2026-10-16
 
 - サーバーのログの仕組みとして `voltech-grpc-log` クレートを足す(#3)。`LogConfig` を渡して `init` で準備し、`RpcLogLayer` を全サービスの一番外側に付けると、RPC ごとの span(`request_id`・`rpc.method` など。フィルターを上げても消えない)と、RPC の終わりのアクセスログ(ステータス・業務エラーの reason・処理時間)が出る。JSON(既定)は span の値を一番上の項目に並べ、GCP 向けの項目名(`severity` など)も選べる
