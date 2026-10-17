@@ -4,8 +4,8 @@ status: current
 area: repo
 related: [repo/naming, guide/getting-started, guide/upgrade]
 proto: []
-code: [tools/protoc-gen-voltech-grpc/src, sandbox/server/Cargo.toml, sandbox/UnityProject/Packages/manifest.json, Unity/com.chinpangx.voltech.grpc/package.json]
-updated: 2026-10-11
+code: [tools/protoc-gen-voltech-grpc/src, sandbox/server/Cargo.toml, sandbox/UnityProject/Packages/manifest.json, Unity/com.chinpangx.voltech.grpc/package.json, server/rust/Cargo.toml, CHANGELOG.md, .github/workflows/release.yml]
+updated: 2026-10-17
 ---
 
 # 運用(パッケージとサンプル)
@@ -26,7 +26,19 @@ updated: 2026-10-11
 - アプリのエラーは、アプリの `errors.toml`(アプリの domain)に書く。基盤の予約エラーは基盤が持つので、アプリに書き写さない([エラー](../api/errors.md))
 - 基盤はアプリのコードに依存しない。サーバーでアプリとつなぐのは `PlayerResolver` の trait だけ
 - 基盤とアプリを同時に直すときは、手元のパスに差し替える([基盤の版を上げる・基盤を一緒に直す](../guide/upgrade.md))
-- タグの付け方とリリースの手順は未確定([未確定・保留](../open-questions.md) #16)
+
+## リリース
+
+基盤の版は、クレート・UPM パッケージ・プラグインで1つにそろえ、`v0.4.0` の形のタグで出す。0.x のあいだは、機能を足したときと壊れる変更のときに minor を上げ、直しだけのときに patch を上げる。
+
+1. PR を main にマージする。変更は `CHANGELOG.md` の `## [Unreleased]` に書いておく
+2. main に「chore: 0.4.0 にする」のコミットを積む。書き換えるのは次のとおり
+   - `CHANGELOG.md`: `## [Unreleased]` の下に `## [0.4.0] - 日付` を足す
+   - `Unity/com.chinpangx.voltech.grpc/package.json` の `version` と、`server/rust/Cargo.toml` の `workspace.package.version`
+   - `docs/wiki/guide/getting-started.md` と `docs/wiki/guide/upgrade.md` に書いたタグ
+   - `server/rust/Cargo.lock` と `sandbox/server/Cargo.lock`(`cargo update --workspace` で版の行だけを直す)
+3. そのコミットに `v0.4.0` のタグを付け、main とタグを push する
+4. タグの push で `.github/workflows/release.yml` が動き、GitHub の Release を作る(本文は GitHub が自動で作る、前のタグからの PR の一覧)
 
 ## サンプル(sandbox)
 
@@ -39,3 +51,5 @@ updated: 2026-10-11
 - 基盤はリポジトリだけで配り、パッケージのレジストリ(crates.io・NuGet・OpenUPM)には出さない(2026-10-11)。Cargo も UPM も git の URL とタグで取り込めるので、リポジトリにタグを打てばリリースになる。レジストリに出すと、クレート・UPM パッケージ・プラグインを別々に公開することになり、同じタグでそろえる手間が増える
 
 - サンプルは、別のリポジトリにせず sandbox に置く(2026-10-11)。アプリは基盤をパッケージとして参照するので、サンプルを clone の元にする必要が無い。別のリポジトリにすると、基盤を直すたびにタグを打ってサンプルの参照を上げることになり、壊れたことに気づくのも遅れる
+
+- GitHub の Release は、手で作らずにタグの push で CI に作らせる(2026-10-17)。手で作る手順にすると、タグだけ付けて Release を作り忘れる。workflow の中身は、ほかのリポジトリと共有する [chinpanGX/workflows](https://github.com/chinpanGX/workflows) に置き、このリポジトリはそれを呼ぶだけにする
