@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-17
+
 - ゲームログを `Transactions::run` の外からも書け、数量の変化でない値も持てるようにする(#5)
   - サーバー間の内部 API や定期実行のジョブのように `run` を通らない処理は、`GameLogs::new(処理の名前)` に `write(player_id, log)` でためて、`GameLogSink::commit(tx, logs)` でコミットする。`Database` は同じトランザクションで書き、`Stdout` はコミットの後に出す(`run` と同じ)
   - 数量の変化でないもの(キャラクターの入手・編成の変更など)は `GameLog::event(kind, reason)` で作る。名前付きの値は `GameLog::field(name, value)` で足し、`game_logs.body` の JSON と標準出力の項目に並ぶ
