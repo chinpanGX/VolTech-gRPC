@@ -79,3 +79,25 @@ async fn failed_draw_writes_no_game_logs() {
     assert_eq!(logs.len(), 1, "{logs:?}");
     assert_eq!(logs[0].2["reason"], "sign_up");
 }
+
+/// 無料ガチャは、数量の変化でないゲームログ(free_draw)に、使ったゲーム内の日付を名前付きの値で残す。
+#[tokio::test]
+async fn free_draw_writes_event_game_log() {
+    let server = TestServer::start().await;
+    let (player_id, token) = server.register_and_issue_token().await;
+    server.sign_up(Some(&token)).await.unwrap();
+
+    server.draw_free(&token).await.unwrap();
+
+    let logs = game_logs(&server, player_id).await;
+    let (_, kind, body) = logs
+        .iter()
+        .find(|(_, kind, _)| kind == "free_draw")
+        .unwrap();
+    assert_eq!(kind, "free_draw");
+    assert_eq!(body["reason"], "gacha_draw");
+    let drawn_on = body["drawn_on"].as_str().unwrap();
+    assert!(drawn_on.parse::<jiff::civil::Date>().is_ok(), "{drawn_on}");
+    assert!(body.get("delta").is_none());
+    assert!(body.get("after").is_none());
+}

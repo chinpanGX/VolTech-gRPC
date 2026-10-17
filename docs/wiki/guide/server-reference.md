@@ -5,7 +5,7 @@ area: guide
 related: [guide/add-api, server/request-flow, server/transaction, server/game-log, server/logging, server/auth, server/status, api/errors]
 proto: []
 code: [server/rust/auth/src, server/rust/error/src, server/rust/log/src, server/rust/status/src, server/rust/transaction/src, sandbox/server/server/src/lib.rs, sandbox/server/server/src/main.rs, sandbox/server/server/src/config.rs, sandbox/server/server/src/player_lookup.rs, sandbox/server/api/src, sandbox/server/proto/build.rs]
-updated: 2026-10-16
+updated: 2026-10-17
 ---
 
 # サーバーのリファレンス
@@ -35,7 +35,8 @@ updated: 2026-10-16
 |---|---|
 | `voltech_grpc_transaction::Transactions::run(&request, player_id, \|ctx\| ...)` | ハンドラーの本体をトランザクションの中で動かす。成功したらコミット、失敗したらロールバックする。冪等性の対象の RPC では、同じ `x-request-id` の再送なら本体を呼ばずに保存済みのレスポンスを返す(`player_id` が要る)。`NO_SIDE_EFFECTS` は読み取り専用のトランザクションになる([with_transaction() と冪等性](../server/transaction.md)) |
 | `voltech_grpc_transaction::TxContext` | `run` に渡す処理が受け取る。`ctx.tx()` でトランザクション(`&mut sqlx::Transaction`)を、`ctx.write_game_log(log)` でゲームログを書く。ゲームログは `NO_SIDE_EFFECTS` の RPC と、`AuthLayer` を付けていないサービスでは書けない(INTERNAL) |
-| `voltech_grpc_transaction::GameLog` | ゲームログの1件。`GameLog::new(kind, delta, after, reason)` に、対象があれば `.target(id)` を付ける。`player_id`・`request_id`・RPC・時刻は基盤が付ける([ゲームログ](../server/game-log.md)) |
+| `voltech_grpc_transaction::GameLog` | ゲームログの1件。数量の変化は `GameLog::new(kind, delta, after, reason)`、数量の変化でないもの(キャラクターの入手・編成の変更など)は `GameLog::event(kind, reason)`。対象があれば `.target(id)`、名前付きの値は `.field(name, value)` を付ける。`player_id`・`request_id`・RPC・時刻は基盤が付ける([ゲームログ](../server/game-log.md)) |
+| `voltech_grpc_transaction::GameLogs` / `GameLogSink::commit(tx, logs)` | `Transactions::run` を通らない処理(サーバー間の内部 API・定期実行のジョブ)でゲームログを書く。`GameLogs::new(処理の名前)` に `write(player_id, log)` でためて、`commit` で出力先へ書いてトランザクションをコミットする |
 | `voltech_grpc_transaction::create_last_response(ctx.tx(), player_id)` | プレイヤーを作るときに、同じトランザクションで呼ぶ(冪等性のために直前のレスポンスを保存する行を作る) |
 | `voltech_grpc_auth::AuthContext` | `AuthLayer` がリクエストの `extensions()` に入れる認証の情報。`device_id`・`player_id`・`player_created`(サインアップ済みか) |
 | `voltech_grpc_status::GameDate` | `ServerStatusLayer` がリクエストの `extensions()` に入れる、リクエストを受けたときのゲーム内の日付。1つのリクエストの中では、この日付を使う |

@@ -5,7 +5,7 @@ area: appendix
 related: [repo/operations, appendix/workflow, guide/client-reference, guide/server-reference]
 proto: []
 code: [server/rust/Cargo.toml, server/rust, sandbox/server, Unity/com.chinpangx.voltech.grpc, tools/protoc-gen-voltech-grpc, sandbox/proto, scripts, mk, buf.yaml, buf.gen.yaml]
-updated: 2026-10-16
+updated: 2026-10-17
 ---
 
 # コードの地図
@@ -19,9 +19,9 @@ updated: 2026-10-16
 | `server/rust/auth/` | `voltech-grpc-auth` | `device_service.rs`(デバイス登録・トークンの発行)、`layer.rs`(`AuthLayer`)、`resolver.rs`(`PlayerResolver`)、`token.rs`(アクセストークンの値の生成)、`migrations/`、`proto/voltech/v1/`(`device.proto`・`auth_options.proto`) | `tests/`(MySQL を使う) |
 | `server/rust/error/` | `voltech-grpc-error` | `lib.rs`(`ErrorCode` とエラーのレスポンスの作り方)、`internal.rs`(`Internal`・`ResultExt`)、`errors.toml`(基盤の予約エラーの定義。`build.rs` で `reserved` を生成する) | `tests/` |
 | `server/rust/error-build/` | `voltech-grpc-error-build` | `errors.toml` の検証と、Rust の定数の生成(アプリと基盤の `build.rs` から使う) | `tests/` |
-| `server/rust/log/` | `voltech-grpc-log` | `config.rs`(`LogConfig`)、`subscriber.rs`(`init`・`layer`、フィルター)、`json.rs`(JSON の1行の書き出し)、`rpc.rs`(`RpcLogLayer`・アクセスログ)、`method.rs`(`RpcMethod`)、`lib.rs`(span の項目名、`x-request-id` の形の確認) | `tests/` |
+| `server/rust/log/` | `voltech-grpc-log` | `config.rs`(`LogConfig`)、`subscriber.rs`(`init`・`layer`、フィルター)、`json.rs`(JSON の1行の書き出し、ゲームログの名前付きの値の展開)、`rpc.rs`(`RpcLogLayer`・アクセスログ)、`method.rs`(`RpcMethod`)、`lib.rs`(span の項目名、`x-request-id` の形の確認) | `tests/` |
 | `server/rust/status/` | `voltech-grpc-status` | `config.rs`(`server_status.toml` の読み込みと検証)、`status.rs`(`ServerStatus`・時計)、`source.rs`(読み込み元)、`layer.rs`(`ServerStatusLayer`・`DateChangeLayer`) | `tests/` |
-| `server/rust/transaction/` | `voltech-grpc-transaction` | `lib.rs`(`Transactions::run`)、`context.rs`(`TxContext`)、`game_log.rs`(`GameLog`・`GameLogSink`、出力先への書き込み)、`idempotency.rs`(`idempotency_level` の表)、`method.rs`(`RpcMethodLayer`)、`migrations/`(`last_responses`・`game_logs`) | `tests/`(MySQL を使う) |
+| `server/rust/transaction/` | `voltech-grpc-transaction` | `lib.rs`(`Transactions::run`)、`context.rs`(`TxContext`)、`game_log.rs`(`GameLog`・`GameLogs`・`GameLogSink`、出力先への書き込み)、`idempotency.rs`(`idempotency_level` の表)、`method.rs`(`RpcMethodLayer`)、`migrations/`(`last_responses`・`game_logs`) | `tests/`(MySQL を使う) |
 | `Unity/com.chinpangx.voltech.grpc/Runtime/Client/` | `VolTech.Client` | `ApiCore.cs`(共通処理)、`Errors/`(エラーの変換、`ErrorCode`、`ErrorPolicyProvider`、生成した予約エラー `ReservedErrors`)、`ErrorHandling/`(エラーハンドラー)、`Hooks/`(アプリが実装する interface)、`Clock/`(サーバー時刻)、`Testing/`(`FakeCallInvoker`) | `Tests/EditMode/`、sandbox の `ApiCoreTests` など |
 | `Unity/com.chinpangx.voltech.grpc/Runtime/Auth/` | `VolTech.Client.Auth` | 認証(`DeviceTokenProvider`)とアカウントの保存先 | `Tests/EditMode/DeviceTokenProviderTests.cs` |
 | `Unity/com.chinpangx.voltech.grpc/Runtime/Unity/` | `VolTech.Client.Unity` | Unity 用の層(`ApiChannel`・`UnityApiLogger` など) | sandbox の結合テスト |

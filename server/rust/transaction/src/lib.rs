@@ -16,10 +16,8 @@ use voltech_grpc_auth::AuthContext;
 use voltech_grpc_error::{Internal, ResultExt, internal};
 use voltech_grpc_log::{MAX_REQUEST_ID_LEN, REQUEST_ID_HEADER, field, is_valid_request_id};
 
-use crate::game_log::GameLogOrigin;
-
 pub use context::TxContext;
-pub use game_log::{GameLog, GameLogSink};
+pub use game_log::{GameLog, GameLogSink, GameLogs};
 pub use idempotency::{Idempotency, IdempotencyLevels};
 pub use method::{RpcMethodLayer, RpcMethodService};
 pub use voltech_grpc_log::RpcMethod;
@@ -102,16 +100,16 @@ impl Transactions {
                     .begin_with("START TRANSACTION READ ONLY")
                     .await
                     .or_internal()?;
-                let mut ctx = TxContext::new(tx, call.auth_player_id, true);
+                let mut ctx = TxContext::new(tx, call.auth_player_id, true, call.game_logs());
                 let response = handler(&mut ctx).await?;
-                self.commit(&call, ctx).await?;
+                self.commit(ctx).await?;
                 Ok(response)
             }
             Idempotency::Idempotent => {
                 let tx = self.pool.begin().await.or_internal()?;
-                let mut ctx = TxContext::new(tx, call.auth_player_id, false);
+                let mut ctx = TxContext::new(tx, call.auth_player_id, false, call.game_logs());
                 let response = handler(&mut ctx).await?;
-                self.commit(&call, ctx).await?;
+                self.commit(ctx).await?;
                 Ok(response)
             }
         }
@@ -171,7 +169,7 @@ impl Transactions {
         }
         Span::current().record(field::REPLAYED, false);
 
-        let mut ctx = TxContext::new(tx, call.auth_player_id, false);
+        let mut ctx = TxContext::new(tx, call.auth_player_id, false, call.game_logs());
         let response = handler(&mut ctx).await?;
 
         sqlx::query(
@@ -184,35 +182,14 @@ impl Transactions {
         .execute(&mut **ctx.tx())
         .await
         .or_internal()?;
-        self.commit(call, ctx).await?;
+        self.commit(ctx).await?;
         Ok(response)
     }
 
     /// ゲームログを出力先へ書いてコミットする。標準出力へは、コミットに成功してから出す。
-    async fn commit(&self, call: &Call, ctx: TxContext) -> Result<(), Status> {
-        let (mut tx, game_logs) = ctx.into_parts();
-        let game_logs = game_logs.map(|(player_id, logs)| {
-            let origin = GameLogOrigin {
-                player_id,
-                request_id: call.request_id.clone(),
-                method: call.method_name.clone(),
-            };
-            (origin, logs)
-        });
-
-        if self.game_log_sink == GameLogSink::Database
-            && let Some((origin, logs)) = &game_logs
-        {
-            game_log::write_to_database(&mut tx, origin, logs)
-                .await
-                .or_internal()?;
-        }
-        tx.commit().await.or_internal()?;
-        if self.game_log_sink == GameLogSink::Stdout
-            && let Some((origin, logs)) = &game_logs
-        {
-            game_log::write_to_stdout(origin, logs);
-        }
+    async fn commit(&self, ctx: TxContext) -> Result<(), Status> {
+        let (tx, game_logs) = ctx.into_parts();
+        self.game_log_sink.commit(tx, game_logs).await?;
         Ok(())
     }
 }
@@ -224,6 +201,12 @@ struct Call {
     request_id: Option<String>,
     /// `AuthLayer` が認証したプレイヤー。ゲームログに付ける。
     auth_player_id: Option<Ulid>,
+}
+
+impl Call {
+    fn game_logs(&self) -> GameLogs {
+        GameLogs::new(&self.method_name).with_optional_request_id(self.request_id.clone())
+    }
 }
 
 /// プレイヤーの直前のレスポンスを保存する行を作る。プレイヤーを作るときに、同じトランザクションで呼ぶ。作成済みなら何もしない。

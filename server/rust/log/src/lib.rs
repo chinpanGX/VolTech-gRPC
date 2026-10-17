@@ -17,6 +17,8 @@ pub const RPC_SPAN_TARGET: &str = "voltech_grpc_log::rpc";
 pub const ACCESS_LOG_TARGET: &str = "voltech_grpc_log::access";
 /// 標準出力に出すゲームログの target。レベルのフィルターにかかわらず出す。
 pub const GAME_LOG_TARGET: &str = "voltech_grpc_log::game";
+/// ゲームログの名前付きの値を JSON の文字列で入れる項目。JSON の形式では、中身を一番上の項目に展開する。
+pub const GAME_LOG_FIELDS: &str = "game.fields";
 
 /// RPC ごとの span の項目の名前。基盤のほかのクレートは、この名前で span に書き込む。
 pub mod field {

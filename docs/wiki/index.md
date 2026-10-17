@@ -2,7 +2,7 @@
 title: "VolTech gRPC wiki"
 status: index
 area: root
-updated: 2026-10-16
+updated: 2026-10-17
 ---
 
 # VolTech gRPC wiki
@@ -101,7 +101,7 @@ Unity のクライアントと Rust のサーバーを gRPC でつなぐため�
 | [リクエストの処理の流れ](server/request-flow.md) | `confirmed` | Layer の順序(アップデート→メンテ→認証→日付変更)とタイムアウト |
 | [運用ログ](server/logging.md) | `current` | RPC ごとの span とアクセスログ、JSON の項目、設定 |
 | [with_transaction() と冪等性](server/transaction.md) | `confirmed` | トランザクションの手順と、最新1件保存による冪等性の実装 |
-| [ゲームログ](server/game-log.md) | `current` | 所持データの変化の履歴。TxContext からの書き方と、出力先(DB・標準出力) |
+| [ゲームログ](server/game-log.md) | `current` | 所持データの変化の履歴。数量の変化とそれ以外の形、run の中と外からの書き方、出力先(DB・標準出力) |
 | [コレクター(差分・バッジ・通知)](server/collectors.md) | `confirmed` | 共通レスポンス項目を集めて詰める仕組み |
 | [認証(サーバー)](server/auth.md) | `confirmed` | デバイス登録・トークン・AuthLayer・PlayerResolver |
 | [サーバーの状態(メンテナンス・強制アップデート・日付変更)](server/status.md) | `confirmed` | 状態の設定ファイル、判定、後から足すもの |
