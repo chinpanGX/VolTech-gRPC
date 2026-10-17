@@ -30,7 +30,7 @@ namespace VolTech.Client
         private readonly IErrorNavigator navigator;
         private readonly IReadOnlyList<IApiActivityHandler> activityHandlers;
 
-        // null ならログを出さない。?. で呼ぶので、ログの文字列(リクエスト・レスポンスの整形)も作らない
+        // null ならログを出さない。?. で呼ぶので、ログの文字列も作らない
         private readonly IApiLogger logger;
         private readonly ServerClock serverClock;
 
@@ -226,7 +226,7 @@ namespace VolTech.Client
                 if (attempt.Outcome == SendOutcome.Unauthenticated)
                 {
                     // サーバーが処理を始める前に弾いたものなので、トークンを取り直して1回だけ送り直しても二重実行にならない
-                    logger?.Log($"[Api] ← {settings.MethodName} UNAUTHENTICATED. reissue token and resend");
+                    logger?.Log($"[Api] {settings.MethodName} UNAUTHENTICATED. reissue token and resend");
                     tokenProvider.Invalidate(attempt.Token);
                     reauthenticated = true;
                     continue;
@@ -238,7 +238,7 @@ namespace VolTech.Client
                 }
 
                 var error = attempt.Error;
-                logger?.Log($"[Api] ← {settings.MethodName} {error}");
+                logger?.Log($"[Api] {settings.MethodName} {error}");
 
                 if (IsHandledByCaller(error, handledCodes))
                 {
@@ -278,12 +278,12 @@ namespace VolTech.Client
                     CreateHeaders(token, requestId),
                     DateTime.UtcNow.Add(options.Deadline),
                     cancellationToken);
-                logger?.Log($"[Api] → {settings.MethodName}\n{request}");
                 // Task は AsUniTask() を通さずにそのまま await する(本体の決まり)
                 var rpc = call(client, request, callOptions);
                 var response = await rpc.ResponseAsync;
                 var responseHeaders = await rpc.ResponseHeadersAsync;
-                logger?.Log($"[Api] ← {settings.MethodName} OK\n{response}");
+                // 通信のログは、応答を受け取ったときに1行のまとめだけを出す。リクエスト・レスポンスの中身は gRPC Monitor で見る
+                logger?.Log($"[Api] {settings.MethodName} OK");
                 return SendAttempt<TResponse>.Success(response, responseHeaders);
             }
             catch (RpcException exception) when (

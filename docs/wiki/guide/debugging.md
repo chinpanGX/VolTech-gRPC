@@ -5,7 +5,7 @@ area: guide
 related: [client/grpc-monitor, guide/connect, api/metadata, api/errors, server/logging]
 proto: []
 code: [Unity/com.chinpangx.voltech.grpc/Editor, Unity/com.chinpangx.voltech.grpc/Runtime/Tracing, Unity/com.chinpangx.voltech.grpc/Runtime/Unity/ApiChannel.cs, server/rust/log/src]
-updated: 2026-10-16
+updated: 2026-10-18
 ---
 
 # 通信を見る・調べる
@@ -40,7 +40,7 @@ grpcurl -plaintext -H "authorization: Bearer <token>" -H "x-request-id: <毎回�
 
 ## ログ
 
-- クライアント: `ApiCore` に `UnityApiLogger` を渡すと、通信のログを Console に出す(開発中だけ渡す)
+- クライアント: `ApiCore` に `UnityApiLogger` を渡すと、通信のログを Console に出す(開発中だけ渡す)。出すのは、応答を受け取ったときの1行のまとめ(RPC と、`OK` かエラー)と、クライアントで起きた例外(反映処理・ハンドラーの例外など。スタックトレース付き)。リクエスト・レスポンスの中身は出さないので、gRPC Monitor で見る
 - サーバー: 業務エラー以外のエラー(INTERNAL)の詳細は、サーバーのログにだけ出る。クライアントには返らない([エラー](../api/errors.md))。ログはメッセージ `internal error` の行で、原因の連なり(`exception.message`)と発生した場所(`code.file.path`・`code.line.number`)が付く
 - 認証やトークンの発行で失敗したときは、`authentication failed`・`access token issue failed` の行の `reason` で理由が分かる(期限切れか、知らないトークンかなど)。基盤が出すログの一覧は [運用ログ](../server/logging.md)
 - 所持データ(ジェム・アイテムなど)がいつ・どの RPC で変わったかは、ゲームログで調べる。DB に書く設定なら `game_logs` テーブルを `player_id` で引く([ゲームログ](../server/game-log.md))
