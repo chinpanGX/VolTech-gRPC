@@ -1,0 +1,12 @@
+# v0.4.0 のようなタグを push すると、そのタグの GitHub Release を作る(中身は chinpanGX/workflows)
+name: release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    uses: chinpanGX/workflows/.github/workflows/release.yml@v1

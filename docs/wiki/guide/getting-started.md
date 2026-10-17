@@ -5,7 +5,7 @@ area: guide
 related: [guide/connect, guide/add-api, guide/upgrade, guide/roles, repo/operations, api/errors]
 proto: []
 code: [mk, local.mk.example, scripts/proto-tools.sh, tools/protoc-gen-voltech-grpc/src, sandbox/server/Cargo.toml, sandbox/server/proto/build.rs, sandbox/UnityProject/Packages/manifest.json, sandbox/errors.toml, buf.gen.sandbox.yaml, sandbox/server/server/src/lib.rs, sandbox/UnityProject/Assets/Scripts/Sample/SampleLifetimeScope.cs, .env.example]
-updated: 2026-10-11
+updated: 2026-10-17
 ---
 
 # 始め方
@@ -67,7 +67,7 @@ voltech-grpc-transaction = { git = "https://github.com/chinpanGX/VolTech-gRPC", 
 }
 ```
 
-- タグは Cargo と UPM で同じ値を使う(リリースの手順は [未確定・保留](../open-questions.md) #16)
+- タグは Cargo と UPM で同じ値を使う。タグごとの変更は [GitHub の Releases](https://github.com/chinpanGX/VolTech-gRPC/releases) と `CHANGELOG.md` にある
 - 版の上げ方と、基盤とアプリを同時に直すときの手順は [基盤の版を上げる・基盤を一緒に直す](upgrade.md)
 
 ## 2. アプリの .proto とエラーを用意する
