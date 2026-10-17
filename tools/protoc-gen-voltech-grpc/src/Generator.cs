@@ -178,14 +178,16 @@ internal static class Generator
                     .Summary(comments.ForMethod(serviceIndex, i))
                     .Line($"public UniTask<ApiResult<{responseType}>> {method.Name}Async(")
                     .Line($"    {requestType} request,")
-                    .Line("    IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null)")
+                    .Line("    IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null,")
+                    .Line("    bool notifyActivity = true)")
                     .Line("{");
                 writer.Line($"    return core.InvokeAsync(")
                     .Line($"        {SettingsField(method)},")
                     .Line("        client,")
                     .Line("        request,")
                     .Line("        handledCodes,")
-                    .Line($"        static (c, r, options) => c.{method.Name}Async(r, options));")
+                    .Line($"        static (c, r, options) => c.{method.Name}Async(r, options),")
+                    .Line("        notifyActivity);")
                     .Line("}");
             }
         }

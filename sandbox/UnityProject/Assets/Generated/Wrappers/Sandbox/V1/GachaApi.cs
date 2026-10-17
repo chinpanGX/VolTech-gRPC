@@ -45,14 +45,16 @@ namespace Sandbox.V1
         /// </summary>
         public UniTask<ApiResult<global::Sandbox.V1.DrawResponse>> DrawAsync(
             global::Sandbox.V1.DrawRequest request,
-            IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null)
+            IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null,
+            bool notifyActivity = true)
         {
             return core.InvokeAsync(
                 drawSettings,
                 client,
                 request,
                 handledCodes,
-                static (c, r, options) => c.DrawAsync(r, options));
+                static (c, r, options) => c.DrawAsync(r, options),
+                notifyActivity);
         }
     }
 

@@ -71,7 +71,9 @@ namespace Sample
                     clock,
                     navigator,
                     new BadgeApplier(resolver.Resolve<BadgeStore>()),
-                    new NotificationApplier(resolver.Resolve<NotificationQueue>())),
+                    new NotificationApplier(resolver.Resolve<NotificationQueue>()),
+                    // 通信中の表示の代わりに、通知が届いたことをログに出す
+                    new IApiActivityHandler[] { new DebugLogActivityHandler() }),
                 Lifetime.Singleton);
             builder.Register(resolver => new PlayerApi(resolver.Resolve<ApiCore>(), callInvoker), Lifetime.Singleton);
             builder.Register(resolver => new GachaApi(resolver.Resolve<ApiCore>(), callInvoker), Lifetime.Singleton);

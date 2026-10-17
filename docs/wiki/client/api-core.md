@@ -4,8 +4,8 @@ status: confirmed
 area: client
 related: [api/metadata, client/error-handling, client/auth-account, client/response-items]
 proto: []
-code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/ApiCore.cs]
-updated: 2026-10-11
+code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/ApiCore.cs, Unity/com.chinpangx.voltech.grpc/Runtime/Client/Hooks/IApiActivityHandler.cs]
+updated: 2026-10-18
 ---
 
 # ApiCore の共通処理
@@ -22,7 +22,7 @@ updated: 2026-10-11
 | 6 | `UNAUTHENTICATED` のときの再認証(Auth にトークンを発行し直させる)と、1回だけの再送 | [認証とアカウント情報](auth-account.md) |
 | 7 | ログ | |
 | 8 | エラー時にエラーハンドラーを待ち、再送するか諦めるかを受け取る | [エラー処理](error-handling.md) |
-| 9 | 通信中の入力ブロックと、通信中の表示 | アプリ側のフックを呼ぶ。表示するかは呼び出しごとに指定でき、既定はオン |
+| 9 | 通信中の入力ブロックと、通信中の表示 | 進行中の呼び出しの開始・終了を `IApiActivityHandler` でアプリに知らせる(下記)。知らせるかは呼び出しごとに指定でき(`notifyActivity`)、既定はオン |
 | 10 | タイトル・ホームに戻るときの順番待ちの破棄 | 待っているリクエストは送らずに、失敗として終わらせる |
 | 11 | サーバー時刻の同期 | 成功したレスポンスのヘッダーのサーバー時刻と、そこからの経過時間(`Stopwatch`)から今のサーバー時刻を計算し、`ApiCore.ServerClock`(`IServerClock`)でアプリに提供する。端末の時計は使わないので、端末の時刻を変えられても影響を受けない。アプリが前面に戻ると、次に API が成功するまで「受け取る前」に戻る(下記) |
 | 12 | 日付の保持 | セッションの最初に受け取ったゲーム内の日付を覚え、以降のリクエストに付ける([メタデータ](../api/metadata.md))。受け取るたびには更新しない(更新すると日付の変化に気づけない)。`ResetSession`(タイトルに戻るときも呼ばれる)で消える |
@@ -31,8 +31,21 @@ updated: 2026-10-11
 
 - チャネル(`GrpcChannel` + YetAnotherHttpHandler)は1つを使い回す
 
+## 通信中の表示と入力ブロック
+
+`ApiCore` は「いつ通信中か」だけを決めて、`IApiActivityHandler` の `OnActivityStarted()`・`OnActivityEnded()` で知らせる。表示の見た目、入力ブロックのやり方、表示を遅らせるかは、アプリのハンドラーが決める。重なり・再送・エラー・解除のし忘れといった間違えやすいところを基盤に寄せ、画面ごとに扱いがずれないようにするため。
+
+- 呼び出し1回ごとではなく、進行中の呼び出しの数が 0 から 1 になったときに開始、1 から 0 になったときに終了を知らせる。冪等性の対象でない RPC は順番待ちをせずに重なるので、1回ごとに知らせると、先に終わった呼び出しで表示が消えてしまう
+- 進行中の範囲は、`InvokeAsync` に入ってから結果を返す直前まで。順番待ち・トークンの取得・再認証と再送・エラーハンドラー・共通レスポンス項目の反映を含む。途中で表示が切れて出直すことがない
+- エラーハンドラーの間も進行中のまま。エラーの見せ方(ダイアログ・画面の中の表示・UI を出さない自動の再試行)は `ICommonErrorHandler` の実装で変わり、基盤からは分からないため。エラーハンドラーが入力を受け付ける UI を出すなら、アプリがその UI を通信中の表示より手前に出すか、入力ブロックを外す
+- 終了は、タイトル・ホームへの遷移より前に知らせる。遷移先の画面が呼ぶ API は、新しく開始から知らせる
+- 失敗・捨てた・例外のどれで抜けても、`finally` で必ず終了を知らせる。知らせ損ねると、入力ブロックが残ってフリーズしたように見える
+- ハンドラーは複数を登録できる(`ApiCore` のコンストラクタの `activityHandlers`)。表示・入力ブロック・計測を別のクラスに分けられるようにするため。開始は登録した順、終了は逆の順に呼ぶ。1つのハンドラーが例外を投げてもログに出して残りを呼ぶので、ほかのハンドラーの解除は止まらない。ほかのフックが1つだけなのに対して、これだけ複数にしているのは、解除を全員に確実に届けることを基盤が受け持つため
+- 画面を止めずに裏で呼ぶもの(バッジの更新など)は、ラッパーの `notifyActivity: false` で数に入れない
+
 ## 実装で決めたこと
 
 - アプリのプラットフォームとバージョンは `ApiCoreOptions` の `AppVersion` で渡す。`ApiCore` と `DeviceTokenProvider` の両方が付ける(タイトル画面で最初に呼ぶトークン発行で、強制アップデートが分かるように)。Unity では `UnityAppVersion.Create(version)` で作る。エディタでは OS によらず `editor` になる([サーバーの状態](../server/status.md))。バージョンは Unity から実行時に読めないので、アプリが渡す
 - サーバー時刻の経過時間は、Unity の `realtimeSinceStartup` ではなく `Stopwatch` で測る。`realtimeSinceStartup` はメインスレッドからしか読めず、通信の後の処理がメインスレッドで動くとは限らないため。どちらも端末の時刻の変更には影響されない
 - **ただし iOS・Android の `Stopwatch` は、端末のスリープ中に止まる**。スリープの後はその分だけ遅れるので、アプリが前面に戻ったら(`OnApplicationPause(false)`)`ServerClock.Reset()` で「受け取る前」に戻し、次に API が成功したときに合わせ直す。Unity では `ServerClockResetter.Create(clock)` が行う。アプリは `ServerClock` を自分で作り、`ApiCore` と `ServerClockResetter` の両方に同じものを渡す。画面は、時刻を使う前に `IsSynchronized` を確かめる
+- 進行中の数の更新と `IApiActivityHandler` の呼び出しは、同じロックの中で行う。開始と終了が別のスレッドで入れ違って、終了の後に開始が届く(表示が残る)ことを防ぐため

@@ -5,7 +5,7 @@ area: client
 related: [api/codegen, client/connection]
 proto: []
 code: [sandbox/UnityProject/Assets/Generated/Wrappers]
-updated: 2026-10-10
+updated: 2026-10-18
 ---
 
 # ラッパー
@@ -30,10 +30,11 @@ public sealed class GachaApi
     private static readonly RpcSettings drawSettings = new(GachaServiceMethods.Draw, isIdempotencyTarget: true, requiresAuth: true);
 
     public UniTask<ApiResult<DrawResponse>> DrawAsync(
-        DrawRequest request, IReadOnlyList<ErrorCode> handledCodes = null)
+        DrawRequest request, IReadOnlyList<ErrorCode> handledCodes = null, bool notifyActivity = true)
     {
-        return core.InvokeAsync(drawSettings, client, request, handledCodes?.Select(code => (int)code),
-            static (c, r, options) => c.DrawAsync(r, options));   // options: ヘッダーとdeadline
+        return core.InvokeAsync(drawSettings, client, request, handledCodes,
+            static (c, r, options) => c.DrawAsync(r, options),   // options: ヘッダーとdeadline
+            notifyActivity);
     }
 }
 
@@ -47,6 +48,7 @@ if (!result.IsSuccess) return;   // 失敗時の共通の処理(ダイアログ�
 - **gRPCサービスごとに1クラス、RPCごとに1メソッド**。クラス名は gRPCサービス名の末尾の `Service` を `Api` に置き換える(例: `GachaService` → `GachaApi`。[コード生成](../api/codegen.md))
 - メソッド名は、生成クライアントと同じ **`{RPC名}Async`**。`.proto` から呼び出し箇所までを名前で追える
 - ラッパーは、`ApiCore` に「RPCを呼ぶ処理」を **`static` ラムダ**で渡すだけ。キャプチャしないラムダは delegate が使い回されるので、呼び出しごとのアロケーションは起きない。`static` を付けると、うっかりキャプチャしたときにコンパイルエラーになる
+- `notifyActivity` を false にすると、その呼び出しを通信中として知らせない(通信中の表示・入力ブロックの対象にしない)。既定はオン。画面を止めずに裏で呼ぶものに使う([ApiCore の共通処理](api-core.md))
 - RPCごとの設定(冪等性の対象か)と、サービスごとの設定(認証が要るか)は、プラグインが `.proto` から読んで埋め込む([コード生成](../api/codegen.md))
 - **一度呼んだ通信はキャンセルできない**。ラッパーは `CancellationToken` を受け取らず、`ApiCore` は共通レスポンス項目の反映まで必ず最後まで行う
   - 送信後に打ち切ると、サーバーでは処理が終わっているのにクライアントには反映されない(例: ガチャを引いた直後に画面を閉じると、ジェムは減っているのにクライアントのデータは変わらない)
