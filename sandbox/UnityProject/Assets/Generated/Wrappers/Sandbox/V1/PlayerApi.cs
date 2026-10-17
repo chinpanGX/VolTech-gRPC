@@ -44,14 +44,16 @@ namespace Sandbox.V1
         /// </summary>
         public UniTask<ApiResult<global::Sandbox.V1.SignUpResponse>> SignUpAsync(
             global::Sandbox.V1.SignUpRequest request,
-            IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null)
+            IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null,
+            bool notifyActivity = true)
         {
             return core.InvokeAsync(
                 signUpSettings,
                 client,
                 request,
                 handledCodes,
-                static (c, r, options) => c.SignUpAsync(r, options));
+                static (c, r, options) => c.SignUpAsync(r, options),
+                notifyActivity);
         }
 
         /// <summary>
@@ -60,14 +62,16 @@ namespace Sandbox.V1
         /// </summary>
         public UniTask<ApiResult<global::Sandbox.V1.SignInResponse>> SignInAsync(
             global::Sandbox.V1.SignInRequest request,
-            IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null)
+            IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null,
+            bool notifyActivity = true)
         {
             return core.InvokeAsync(
                 signInSettings,
                 client,
                 request,
                 handledCodes,
-                static (c, r, options) => c.SignInAsync(r, options));
+                static (c, r, options) => c.SignInAsync(r, options),
+                notifyActivity);
         }
     }
 

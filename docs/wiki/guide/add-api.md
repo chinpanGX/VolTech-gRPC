@@ -5,7 +5,7 @@ area: guide
 related: [guide/connect, guide/client-reference, guide/server-reference, guide/debugging, api/codegen, api/errors, api/idempotency, api/common-response, server/game-log]
 proto: [sandbox/proto/sandbox/v1/gacha.proto, sandbox/proto/sandbox/v1/player.proto]
 code: [sandbox/server/api/src, sandbox/server/gacha/src/service, sandbox/server/player/src/service, sandbox/server/server/src/lib.rs, sandbox/server/proto/build.rs, sandbox/errors.toml, buf.gen.sandbox.yaml]
-updated: 2026-10-16
+updated: 2026-10-18
 ---
 
 # API を足す
@@ -129,6 +129,7 @@ var item = result.Value.Item;
 
 - `player_diff`・`badges`・`notifications` は、`ApiCore` がアプリの反映処理(`IPlayerDiffApplier` など)を呼んで反映してから結果を返す
 - 画面で自分で処理したいエラーは `handledCodes` に渡す。ダイアログを出さずに失敗として返る
+- 画面を止めずに裏で呼ぶもの(定期的な更新など)は `notifyActivity: false` にする。通信中の表示と入力ブロックの対象にならない
 
 ```csharp
 var result = await gachaApi.DrawAsync(request, new[] { AppErrors.InsufficientGems });

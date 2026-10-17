@@ -5,7 +5,7 @@ area: guide
 related: [guide/add-api, client/api-core, client/error-handling, client/response-items, client/auth-account, client/fake-testing, client/structure]
 proto: []
 code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client, Unity/com.chinpangx.voltech.grpc/Runtime/Auth, Unity/com.chinpangx.voltech.grpc/Runtime/Unity, Unity/com.chinpangx.voltech.grpc/Runtime/Client/Errors/ErrorPolicyProvider.cs, sandbox/UnityProject/Assets/Scripts/Sample/SampleLifetimeScope.cs]
-updated: 2026-10-11
+updated: 2026-10-18
 ---
 
 # クライアントのリファレンス
@@ -26,13 +26,13 @@ Unity のクライアントで使う、基盤の型の一覧。各型の細か�
 
 | 型 | 使い方 |
 |---|---|
-| ラッパー(`GachaApi` など。生成) | サービスごとに1クラス。RPC ごとに `XxxAsync(request, handledCodes)` を持ち、`ApiResult<TResponse>` を返す。`handledCodes` に渡したエラーコードは、ダイアログを出さずに失敗として返る |
+| ラッパー(`GachaApi` など。生成) | サービスごとに1クラス。RPC ごとに `XxxAsync(request, handledCodes, notifyActivity)` を持ち、`ApiResult<TResponse>` を返す。`handledCodes` に渡したエラーコードは、ダイアログを出さずに失敗として返る。`notifyActivity: false` の呼び出しは、通信中として知らせない |
 | `XxxServiceMethods`(生成) | RPC のパスの定数(`"/app.v1.GachaService/Draw"`)。`FakeCallInvoker` への登録に使う |
 | `ApiResult<T>` | 結果。`IsSuccess`・`Value`(成功のとき)・`Error`(失敗のとき)。失敗のときに `Value` を読むと例外になる |
 | `ApiError` | 失敗の内容。`Code`・`CodeName`(エラーコード)・`Action`(取る行動)・`StatusCode`(gRPC のステータス)・`Metadata`(表示用の値。例: メンテナンスの `end_at`)・`IsDiscarded`(タイトル・ホームに戻ったので送らずに捨てた) |
 | `ApiCore` | 共通処理。ラッパーが呼ぶので、アプリが直接呼ぶのは `ResetSession()`(アカウントを入れ替えた後)と `ServerClock` くらい |
 
-`ApiCore` がまとめて行うこと: トークンとヘッダーの付与、冪等性の対象の RPC の順番待ちと RequestID、UNAUTHENTICATED のときのトークンの発行し直しと再送、エラーの変換とエラーハンドラーの呼び出し、サーバー時刻とゲーム内の日付の保持、共通レスポンス項目の反映。詳しくは [ApiCore の共通処理](../client/api-core.md)。
+`ApiCore` がまとめて行うこと: トークンとヘッダーの付与、冪等性の対象の RPC の順番待ちと RequestID、UNAUTHENTICATED のときのトークンの発行し直しと再送、エラーの変換とエラーハンドラーの呼び出し、サーバー時刻とゲーム内の日付の保持、共通レスポンス項目の反映、通信中の開始・終了の通知(`IApiActivityHandler`)。詳しくは [ApiCore の共通処理](../client/api-core.md)。
 
 ## 基盤が用意している実装
 

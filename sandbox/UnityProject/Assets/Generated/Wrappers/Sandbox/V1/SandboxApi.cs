@@ -45,14 +45,16 @@ namespace Sandbox.V1
         /// </summary>
         public UniTask<ApiResult<global::Sandbox.V1.PingResponse>> PingAsync(
             global::Sandbox.V1.PingRequest request,
-            IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null)
+            IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null,
+            bool notifyActivity = true)
         {
             return core.InvokeAsync(
                 pingSettings,
                 client,
                 request,
                 handledCodes,
-                static (c, r, options) => c.PingAsync(r, options));
+                static (c, r, options) => c.PingAsync(r, options),
+                notifyActivity);
         }
 
         /// <summary>
@@ -60,14 +62,16 @@ namespace Sandbox.V1
         /// </summary>
         public UniTask<ApiResult<global::Sandbox.V1.FailResponse>> FailAsync(
             global::Sandbox.V1.FailRequest request,
-            IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null)
+            IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null,
+            bool notifyActivity = true)
         {
             return core.InvokeAsync(
                 failSettings,
                 client,
                 request,
                 handledCodes,
-                static (c, r, options) => c.FailAsync(r, options));
+                static (c, r, options) => c.FailAsync(r, options),
+                notifyActivity);
         }
 
         /// <summary>
@@ -76,14 +80,16 @@ namespace Sandbox.V1
         /// </summary>
         public UniTask<ApiResult<global::Sandbox.V1.IncrementResponse>> IncrementAsync(
             global::Sandbox.V1.IncrementRequest request,
-            IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null)
+            IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null,
+            bool notifyActivity = true)
         {
             return core.InvokeAsync(
                 incrementSettings,
                 client,
                 request,
                 handledCodes,
-                static (c, r, options) => c.IncrementAsync(r, options));
+                static (c, r, options) => c.IncrementAsync(r, options),
+                notifyActivity);
         }
     }
 

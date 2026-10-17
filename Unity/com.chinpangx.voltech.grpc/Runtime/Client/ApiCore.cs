@@ -10,10 +10,10 @@ namespace VolTech.Client
 {
     /// <summary>
     /// API の呼び出しの共通処理。トークンとヘッダーの付与、順番待ち、再認証、エラーの変換とハンドラーの呼び出し、
-    /// サーバー時刻の同期とゲーム内の日付の保持、共通レスポンス項目の反映を行う。
+    /// サーバー時刻の同期とゲーム内の日付の保持、共通レスポンス項目の反映、進行中の呼び出しの通知を行う。
     /// </summary>
     /// <remarks>
-    /// 処理の流れ: InvokeAsync(順番待ち) → SendWithRetryAsync(再認証・再送のループ) → SendOnceAsync(1回の送信)。
+    /// 処理の流れ: InvokeAsync(進行中の通知) → SendInQueueAsync(順番待ち) → SendWithRetryAsync(再認証・再送のループ) → SendOnceAsync(1回の送信)。
     /// 成功したら CompleteAsync で共通レスポンス項目を反映し、失敗したら HandleErrorAsync でエラーハンドラーに渡す。
     /// エラーハンドラーがタイトル・ホームに戻ると決めたら、先にセッションを終わらせ(古い通信を止め)、
     /// 順番待ちを解放してから画面を遷移させる。遷移先の画面は、遷移の途中からでも新しいセッションで API を呼べる。
@@ -28,6 +28,7 @@ namespace VolTech.Client
         private readonly IBadgeApplier badgeApplier;
         private readonly INotificationApplier notificationApplier;
         private readonly IErrorNavigator navigator;
+        private readonly IReadOnlyList<IApiActivityHandler> activityHandlers;
 
         // null ならログを出さない。?. で呼ぶので、ログの文字列(リクエスト・レスポンスの整形)も作らない
         private readonly IApiLogger logger;
@@ -38,6 +39,11 @@ namespace VolTech.Client
 
         // エラーハンドラーを1つずつ呼ぶ(ダイアログを同時に出さない)ための順番待ち
         private readonly SemaphoreSlim errorHandlerQueue = new(1, 1);
+
+        // 進行中の呼び出しの数。0 と 1 の間で変わったときにアクティビティのハンドラーを呼ぶ。
+        // 数の更新とハンドラーの呼び出しを同じロックの中で行い、開始と終了が入れ違って届かないようにする
+        private readonly object activityLock = new();
+        private int activeCalls;
 
         // セッションの世代。タイトル・ホームに戻ったり、セッションを破棄したりするたびに増やす。
         // 呼び出しを始めたときの世代と今の世代が違えば、古いセッションの呼び出しなので、送らない・反映しない
@@ -54,6 +60,7 @@ namespace VolTech.Client
         /// <summary>
         /// 共通処理に使う部品を受け取って作る。
         /// </summary>
+        /// <param name="activityHandlers">進行中の呼び出しの開始・終了を受け取るハンドラー。複数を登録でき、null なら通知しない。</param>
         public ApiCore(
             ApiCoreOptions options,
             ITokenProvider tokenProvider,
@@ -64,7 +71,8 @@ namespace VolTech.Client
             ServerClock serverClock = null,
             IErrorNavigator navigator = null,
             IBadgeApplier badgeApplier = null,
-            INotificationApplier notificationApplier = null)
+            INotificationApplier notificationApplier = null,
+            IReadOnlyList<IApiActivityHandler> activityHandlers = null)
         {
             this.options = options;
             this.tokenProvider = tokenProvider;
@@ -76,6 +84,7 @@ namespace VolTech.Client
             this.navigator = navigator;
             this.badgeApplier = badgeApplier;
             this.notificationApplier = notificationApplier;
+            this.activityHandlers = activityHandlers ?? Array.Empty<IApiActivityHandler>();
         }
 
         /// <summary>
@@ -106,7 +115,43 @@ namespace VolTech.Client
         /// <param name="request">リクエスト。</param>
         /// <param name="handledCodes">呼び出し側が自分で処理するエラーコード。ダイアログを出さずに失敗として返る。</param>
         /// <param name="call">RPC を呼ぶ処理。キャプチャしない static ラムダで渡す。</param>
+        /// <param name="notifyActivity">
+        /// 進行中の呼び出しとしてアクティビティのハンドラーに知らせるか。画面を止めずに裏で呼ぶものは false にする。
+        /// </param>
         public async UniTask<ApiResult<TResponse>> InvokeAsync<TClient, TRequest, TResponse>(
+            RpcSettings settings,
+            TClient client,
+            TRequest request,
+            IEnumerable<ErrorCode> handledCodes,
+            Func<TClient, TRequest, CallOptions, AsyncUnaryCall<TResponse>> call,
+            bool notifyActivity = true)
+        {
+            if (notifyActivity)
+            {
+                BeginActivity();
+            }
+
+            (ApiResult<TResponse> Result, ErrorDecision Decision) outcome;
+            try
+            {
+                outcome = await SendInQueueAsync(settings, client, request, handledCodes, call);
+            }
+            finally
+            {
+                // 失敗・捨てた・例外のどれで抜けても終わらせる。終わらせないと、通信中の表示と入力ブロックが残り続ける
+                if (notifyActivity)
+                {
+                    EndActivity();
+                }
+            }
+
+            // 画面の遷移は、順番待ちを解放し、進行中を終わらせてから行う。遷移先の画面がすぐに API を呼んでも待たされない
+            await NavigateAsync(outcome.Decision);
+            return outcome.Result;
+        }
+
+        // 冪等性の対象なら順番を待ってから送る。エラーハンドラーが決めた画面の遷移は、結果と一緒に返す
+        private async UniTask<(ApiResult<TResponse> Result, ErrorDecision Decision)> SendInQueueAsync<TClient, TRequest, TResponse>(
             RpcSettings settings,
             TClient client,
             TRequest request,
@@ -128,20 +173,19 @@ namespace VolTech.Client
                 {
                     // 順番を待っている間にタイトル・ホームに戻ったので、送らずに捨てる
                     logger?.Log($"[Api] {settings.MethodName} discarded");
-                    return ApiResult<TResponse>.Failure(ApiError.Discarded());
+                    return (ApiResult<TResponse>.Failure(ApiError.Discarded()), ErrorDecision.Stay);
                 }
             }
 
-            (ApiResult<TResponse> Result, ErrorDecision Decision) outcome;
             try
             {
                 if (IsStale(epoch))
                 {
                     logger?.Log($"[Api] {settings.MethodName} discarded");
-                    return ApiResult<TResponse>.Failure(ApiError.Discarded());
+                    return (ApiResult<TResponse>.Failure(ApiError.Discarded()), ErrorDecision.Stay);
                 }
 
-                outcome = await SendWithRetryAsync(settings, client, request, handledCodes, call, epoch, cancellationToken);
+                return await SendWithRetryAsync(settings, client, request, handledCodes, call, epoch, cancellationToken);
             }
             finally
             {
@@ -150,10 +194,6 @@ namespace VolTech.Client
                     requestQueue.Release();
                 }
             }
-
-            // 画面の遷移は、順番待ちを解放してから行う。遷移先の画面がすぐに API を呼んでも待たされない
-            await NavigateAsync(outcome.Decision);
-            return outcome.Result;
         }
 
         // 成功するか、諦めるまで送る。送り直すのは次の2つのときだけ。
@@ -450,6 +490,57 @@ namespace VolTech.Client
             var previous = Interlocked.Exchange(ref sessionCancellation, new CancellationTokenSource());
             Interlocked.Increment(ref sessionEpoch);
             return previous;
+        }
+
+        // 進行中の呼び出しを1つ増やし、0 から 1 になったら開始を登録した順に知らせる
+        private void BeginActivity()
+        {
+            lock (activityLock)
+            {
+                activeCalls++;
+                if (activeCalls != 1)
+                {
+                    return;
+                }
+
+                for (var i = 0; i < activityHandlers.Count; i++)
+                {
+                    try
+                    {
+                        activityHandlers[i].OnActivityStarted();
+                    }
+                    catch (Exception exception)
+                    {
+                        logger?.LogException("[Api] activity handler failed on start", exception);
+                    }
+                }
+            }
+        }
+
+        // 進行中の呼び出しを1つ減らし、1 から 0 になったら終了を逆の順に知らせる。
+        // 1つのハンドラーが例外を投げても、残りのハンドラーの終了(入力ブロックの解除など)は必ず呼ぶ
+        private void EndActivity()
+        {
+            lock (activityLock)
+            {
+                activeCalls--;
+                if (activeCalls != 0)
+                {
+                    return;
+                }
+
+                for (var i = activityHandlers.Count - 1; i >= 0; i--)
+                {
+                    try
+                    {
+                        activityHandlers[i].OnActivityEnded();
+                    }
+                    catch (Exception exception)
+                    {
+                        logger?.LogException("[Api] activity handler failed on end", exception);
+                    }
+                }
+            }
         }
 
         // エラーハンドラーが決めた画面の遷移をする。遷移しない動き(Retry・Stay)なら何もしない

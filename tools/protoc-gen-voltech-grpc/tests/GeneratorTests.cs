@@ -50,8 +50,11 @@ public class GeneratorTests
         Assert.Contains("public sealed class PlayerApi", player);
         Assert.Contains("public UniTask<ApiResult<global::App.V1.SignInResponse>> SignInAsync(", player);
         // handledCodes は基盤の ErrorCode(domain と reason の組)で受け取り、そのまま ApiCore に渡す
-        Assert.Contains("IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null)", player);
+        Assert.Contains("IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null,", player);
         Assert.Contains("        handledCodes,", player);
+        // 進行中の通知は既定でオンにし、呼び出しごとに切れるように ApiCore まで渡す
+        Assert.Contains("    bool notifyActivity = true)", player);
+        Assert.Contains("        notifyActivity);", player);
     }
 
     [Fact]

@@ -4,8 +4,8 @@ status: current
 area: guide
 related: [guide/getting-started, guide/add-api, guide/roles, guide/debugging, guide/client-reference, guide/server-reference, server/request-flow, server/status, client/api-core]
 proto: []
-code: [sandbox/server/server/src/lib.rs, sandbox/server/server/src/main.rs, sandbox/server/server/src/config.rs, sandbox/server/server/src/player_lookup.rs, sandbox/server/config/server_status.toml, sandbox/UnityProject/Assets/Scripts/Sample/SampleLifetimeScope.cs, Unity/com.chinpangx.voltech.grpc/Runtime/Unity/ApiChannel.cs]
-updated: 2026-10-16
+code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/Hooks/IApiActivityHandler.cs, sandbox/server/server/src/lib.rs, sandbox/server/server/src/main.rs, sandbox/server/server/src/config.rs, sandbox/server/server/src/player_lookup.rs, sandbox/server/config/server_status.toml, sandbox/UnityProject/Assets/Scripts/Sample/SampleLifetimeScope.cs, Unity/com.chinpangx.voltech.grpc/Runtime/Unity/ApiChannel.cs]
+updated: 2026-10-18
 ---
 
 # クライアントとサーバーをつなぐ
@@ -80,7 +80,8 @@ var core = new ApiCore(
     clock,
     navigator,                                                                 // IErrorNavigator(アプリ)
     new BadgeApplier(badgeStore),                                              // IBadgeApplier(アプリ)
-    new NotificationApplier(notificationQueue));                               // INotificationApplier(アプリ)
+    new NotificationApplier(notificationQueue),                                // INotificationApplier(アプリ)
+    new IApiActivityHandler[] { connectingView });                             // IApiActivityHandler(アプリ。複数を渡せる)
 
 var gachaApi = new GachaApi(core, callInvoker);
 ```
@@ -98,8 +99,10 @@ var gachaApi = new GachaApi(core, callInvoker);
 | `INotificationApplier` | レスポンスの `notifications` を待ち行列に積む(出すのは画面) | `NotificationApplier` |
 | `IErrorDialogView` | エラーダイアログの見た目 | `ErrorDialog` |
 | `IErrorNavigator` | エラーの後の画面遷移(タイトル・ホーム・ストア) | `ScreenNavigator` |
+| `IApiActivityHandler` | 通信中になった・終わったときに、通信中の表示と入力ブロックを出す・消す。複数を登録できる | `DebugLogActivityHandler`(ログに出すだけ) |
 
 - 反映処理(Applier)では、データの更新だけをする。ダイアログや画面遷移は書かない。反映処理で例外が起きたときの扱いは [共通レスポンス項目の反映](../client/response-items.md)
+- `IApiActivityHandler` の開始・終了は、重なった呼び出しをまとめて1回ずつ届く。エラーハンドラーの間も通信中のままなので、エラーダイアログなど入力を受け付ける UI は、通信中の表示より手前に出す([ApiCore の共通処理](../client/api-core.md))
 - 生成コードは、共通レスポンス項目を持つレスポンスに `IHasPlayerDiff`・`IHasBadges`・`IHasNotifications` を付ける。反映処理は、この型で判定して読む
 
 使える型の一覧は [クライアントのリファレンス](client-reference.md)。
