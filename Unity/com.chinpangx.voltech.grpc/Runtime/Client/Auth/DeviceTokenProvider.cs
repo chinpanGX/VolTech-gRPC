@@ -23,9 +23,16 @@ namespace VolTech.Client.Auth
         // デバイス登録もトークンの発行も、同時に走ると device_id が2つ発行されたり、互いのトークンを無効にし合ったりするので1つずつ行う
         private readonly SemaphoreSlim gate = new(1, 1);
 
+        // 下の値を読み書きするときのロック。Reset と Invalidate は gate を待たずに呼ばれるので、値の読み書きはこのロックの中で行う
+        private readonly object stateLock = new();
+
+        // Reset のたびに進める。gate の中の処理は始めたときの世代を覚え、終わるまでに変わっていたら(セッションを破棄されたら)結果を残さない
+        private int generation;
+
         private AccountData account;
 
-        // デバイス登録はできたが保存できなかったアカウント。登録し直すとサーバーに使われないプレイヤーが増えるので、次は保存からやり直す
+        // デバイス登録はできたが保存できなかったアカウント。登録し直すとサーバーに使われないプレイヤーが増えるので、次は保存からやり直す。
+        // Reset では捨てない(タイトルに戻るだけで捨てると登録し直すことになる)。保存先にアカウントが入っていたら(引き継ぎなど)、そちらを使って捨てる
         private AccountData unsavedAccount;
 
         private string accessToken;
@@ -51,34 +58,28 @@ namespace VolTech.Client.Auth
         /// 端末に保存したアカウント情報の状態を返す。通信はしない。タイトル画面で、最初の API を呼ぶ前に呼ぶ。
         /// </summary>
         /// <remarks>
-        /// 保存していなければサインアップ、保存していればサインインに進む。読めなければ例外にせず Corrupted を返す。
+        /// 保存していなければサインアップ、保存していればサインインに進む。ファイルが壊れていれば、例外にせず Corrupted を返す。
         /// </remarks>
+        /// <exception cref="System.IO.IOException">ファイルを読めないとき(ほかのプロセスが開いている、など)。壊れているのではないので、もう一度試せる。</exception>
+        /// <exception cref="UnauthorizedAccessException">ファイルを読む権限が無いとき。</exception>
         public async UniTask<AccountStatus> GetAccountStatusAsync()
         {
             await gate.WaitAsync();
             try
             {
-                if (account != null)
-                {
-                    return AccountStatus.Registered;
-                }
-
-                // 登録したが保存できていないものは、サインアップの続きで保存するので、まだ保存されていないものとして扱う
-                if (unsavedAccount != null)
-                {
-                    return AccountStatus.NotRegistered;
-                }
-
+                var startedGeneration = CurrentGeneration();
+                AccountData loaded;
                 try
                 {
-                    account = await accountStore.LoadAsync();
+                    loaded = await LoadAccountAsync(startedGeneration);
                 }
                 catch (CorruptedAccountDataException)
                 {
                     return AccountStatus.Corrupted;
                 }
 
-                return account == null ? AccountStatus.NotRegistered : AccountStatus.Registered;
+                // 登録したが保存できていないものは、サインアップの続きで保存するので、まだ保存されていないものとして扱う
+                return loaded == null ? AccountStatus.NotRegistered : AccountStatus.Registered;
             }
             finally
             {
@@ -91,43 +92,40 @@ namespace VolTech.Client.Auth
         /// </summary>
         /// <exception cref="CorruptedAccountDataException">保存したアカウント情報が読めないとき。</exception>
         /// <exception cref="AccountSaveFailedException">デバイス登録はできたが、保存できなかったとき。</exception>
+        /// <exception cref="OperationCanceledException">保存する前に Reset されたとき。古いセッションの呼び出しなので、ApiCore が捨てる。</exception>
         public async UniTask<string> GetTokenAsync()
         {
             await gate.WaitAsync();
             try
             {
-                if (accessToken != null && utcNow() < expiresAt - refreshMargin)
+                int startedGeneration;
+                lock (stateLock)
                 {
-                    return accessToken;
-                }
-
-                if (account == null)
-                {
-                    // 登録したのに保存できなかったものがあれば、登録し直さずに保存からやり直す
-                    if (unsavedAccount == null)
+                    if (accessToken != null && utcNow() < expiresAt - refreshMargin)
                     {
-                        account = await accountStore.LoadAsync();
-                        if (account == null)
-                        {
-                            unsavedAccount = await RegisterAsync();
-                        }
+                        return accessToken;
                     }
 
-                    if (unsavedAccount != null)
-                    {
-                        await SaveAsync(unsavedAccount);
-                        account = unsavedAccount;
-                        unsavedAccount = null;
-                    }
+                    startedGeneration = generation;
                 }
+
+                var current = await LoadAccountAsync(startedGeneration) ?? await RegisterAndSaveAsync(startedGeneration);
 
                 var issued = await client.IssueTokenAsync(
-                    new IssueTokenRequest { DeviceId = account.DeviceId, SecretKey = account.SecretKey },
+                    new IssueTokenRequest { DeviceId = current.DeviceId, SecretKey = current.SecretKey },
                     Headers(),
                     Deadline());
-                accessToken = issued.AccessToken;
-                expiresAt = issued.ExpiresAt.ToDateTime();
-                return accessToken;
+                lock (stateLock)
+                {
+                    // 発行している間に Reset されていたら、新しいセッションに前のアカウントのトークンを残さない
+                    if (startedGeneration == generation)
+                    {
+                        accessToken = issued.AccessToken;
+                        expiresAt = issued.ExpiresAt.ToDateTime();
+                    }
+                }
+
+                return issued.AccessToken;
             }
             finally
             {
@@ -140,10 +138,13 @@ namespace VolTech.Client.Auth
         /// </summary>
         public void Invalidate(string rejectedToken)
         {
-            // 別の呼び出しがすでに発行し直していたら、新しいトークンは捨てない
-            if (rejectedToken == null || rejectedToken == accessToken)
+            lock (stateLock)
             {
-                accessToken = null;
+                // 別の呼び出しがすでに発行し直していたら、新しいトークンは捨てない
+                if (rejectedToken == null || rejectedToken == accessToken)
+                {
+                    accessToken = null;
+                }
             }
         }
 
@@ -151,13 +152,98 @@ namespace VolTech.Client.Auth
         /// 覚えているトークンとアカウント情報を捨てる。次の GetTokenAsync で保存先から読み直す。
         /// </summary>
         /// <remarks>
-        /// 保存できていない登録も捨てる。引き継ぎなどでアプリが保存先を入れ替えた後に、古い登録で上書きしないため。
+        /// 保存できていない登録は捨てない。次に保存先を読んで、アカウントが入っていれば(引き継ぎなど)そちらを使い、無ければ保存からやり直す。
         /// </remarks>
         public void Reset()
         {
-            accessToken = null;
-            account = null;
-            unsavedAccount = null;
+            lock (stateLock)
+            {
+                generation++;
+                accessToken = null;
+                account = null;
+            }
+        }
+
+        private int CurrentGeneration()
+        {
+            lock (stateLock)
+            {
+                return generation;
+            }
+        }
+
+        // 覚えているアカウント情報か、保存先のアカウント情報を返す。どちらも無ければ null(登録したが保存できていないものも null)
+        private async UniTask<AccountData> LoadAccountAsync(int startedGeneration)
+        {
+            lock (stateLock)
+            {
+                if (account != null)
+                {
+                    return account;
+                }
+            }
+
+            var loaded = await accountStore.LoadAsync();
+            if (loaded == null)
+            {
+                return null;
+            }
+
+            lock (stateLock)
+            {
+                // 保存先にアカウントがあれば、保存できていない登録より保存先を使う(引き継ぎなどで入れ替えた保存先を上書きしない)
+                unsavedAccount = null;
+                if (startedGeneration == generation)
+                {
+                    account = loaded;
+                }
+            }
+
+            return loaded;
+        }
+
+        // 登録したのに保存できなかったものがあれば登録し直さずに保存からやり直し、無ければデバイス登録してから保存する
+        private async UniTask<AccountData> RegisterAndSaveAsync(int startedGeneration)
+        {
+            AccountData pending;
+            lock (stateLock)
+            {
+                pending = unsavedAccount;
+            }
+
+            if (pending == null)
+            {
+                pending = await RegisterAsync();
+                lock (stateLock)
+                {
+                    unsavedAccount = pending;
+                }
+            }
+
+            lock (stateLock)
+            {
+                // 登録している間に Reset されていたら、保存先が入れ替わっているかもしれないので書かない。次の呼び出しで保存先から読み直す
+                if (startedGeneration != generation)
+                {
+                    throw new OperationCanceledException("The session was reset before saving the registered account.");
+                }
+            }
+
+            await SaveAsync(pending);
+            lock (stateLock)
+            {
+                if (unsavedAccount == pending)
+                {
+                    unsavedAccount = null;
+                }
+
+                if (startedGeneration == generation)
+                {
+                    account = pending;
+                }
+            }
+
+            return pending;
         }
 
         private async UniTask<AccountData> RegisterAsync()

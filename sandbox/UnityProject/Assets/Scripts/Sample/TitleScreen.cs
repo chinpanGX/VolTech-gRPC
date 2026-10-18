@@ -85,6 +85,12 @@ namespace Sample
                     message = TapToStart;
                 }
             }
+            catch (System.Exception exception) when (exception is System.IO.IOException || exception is System.UnauthorizedAccessException)
+            {
+                // 保存したアカウント情報を読めない(ほかのプロセスが開いている、など)。壊れているのではないので、もう一度試してもらう
+                Debug.LogException(exception);
+                message = "Could not read the saved account. Tap to retry";
+            }
             finally
             {
                 // 失敗したら、もう一度押せるようにする
@@ -104,6 +110,12 @@ namespace Sample
                 await accountStore.ClearAsync();
                 core.ResetSession();
                 message = "Data deleted. Tap to start as a new player";
+            }
+            catch (System.Exception exception) when (exception is System.IO.IOException || exception is System.UnauthorizedAccessException)
+            {
+                // ファイルを消せなかった(ほかのプロセスが開いている、など)。消せていないので、覚えているアカウント情報もそのままにする
+                Debug.LogException(exception);
+                message = "Could not delete data. Tap to retry";
             }
             finally
             {

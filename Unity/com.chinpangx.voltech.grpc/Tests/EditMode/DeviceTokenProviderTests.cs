@@ -223,6 +223,119 @@ namespace VolTech.Client.Tests.EditMode
             Assert.That((await store.LoadAsync()).DeviceId, Is.EqualTo("device-1"));
         });
 
+        /// <summary>
+        /// 保存できなかった登録は、Reset(タイトルに戻る)の後も捨てず、次は登録し直さずに保存からやり直す。
+        /// </summary>
+        [UnityTest]
+        [Description("保存できなかった登録は、Reset(タイトルに戻る)の後も捨てず、次は登録し直さずに保存からやり直す")]
+        public IEnumerator ResetKeepsUnsavedRegistration() => UniTask.ToCoroutine(async () =>
+        {
+            var store = new FlakyAccountStore { SaveFailures = 1 };
+            provider = new DeviceTokenProvider(invoker, store, new ApiCoreOptions(), () => currentTime);
+            await ExpectSaveFailureAsync();
+
+            provider.Reset();
+            await provider.GetTokenAsync();
+
+            Assert.That(invoker.Calls.Count(call => call.MethodFullName == RegisterMethod), Is.EqualTo(1), "登録し直した");
+            Assert.That((await store.LoadAsync()).DeviceId, Is.EqualTo("device-1"));
+        });
+
+        /// <summary>
+        /// 保存できなかった登録があっても、保存先にアカウントが入っていれば(引き継ぎなど)、そちらを使い、古い登録で上書きしない。
+        /// </summary>
+        [UnityTest]
+        [Description("保存できなかった登録があっても、保存先にアカウントが入っていれば(引き継ぎなど)、そちらを使い、古い登録で上書きしない")]
+        public IEnumerator ReplacedStoreWinsOverUnsavedRegistration() => UniTask.ToCoroutine(async () =>
+        {
+            var store = new FlakyAccountStore { SaveFailures = 1 };
+            provider = new DeviceTokenProvider(invoker, store, new ApiCoreOptions(), () => currentTime);
+            await ExpectSaveFailureAsync();
+
+            await store.SaveAsync(new AccountData("transferred-device", "transferred-secret-0000", "transferred-player"));
+            provider.Reset();
+            await provider.GetTokenAsync();
+
+            var issued = (IssueTokenRequest)invoker.Calls.Last().Request;
+            Assert.That(issued.DeviceId, Is.EqualTo("transferred-device"));
+            Assert.That((await store.LoadAsync()).DeviceId, Is.EqualTo("transferred-device"));
+            Assert.That(invoker.Calls.Count(call => call.MethodFullName == RegisterMethod), Is.EqualTo(1));
+        });
+
+        /// <summary>
+        /// デバイス登録の間に Reset されたら、保存せずに打ち切る(保存先が入れ替わっているかもしれないため)。次は登録し直さずに保存する。
+        /// </summary>
+        [UnityTest]
+        [Description("デバイス登録の間に Reset されたら、保存せずに打ち切る(保存先が入れ替わっているかもしれないため)。次は登録し直さずに保存する")]
+        public IEnumerator ResetDuringRegistrationSkipsSave() => UniTask.ToCoroutine(async () =>
+        {
+            invoker.Register<RegisterRequest, RegisterResponse>(RegisterMethod, (_, _) =>
+            {
+                provider.Reset();
+                return UniTask.FromResult(new RegisterResponse { DeviceId = "device-1", PlayerId = "player-1" });
+            });
+
+            var canceled = false;
+            try
+            {
+                await provider.GetTokenAsync();
+            }
+            catch (OperationCanceledException)
+            {
+                canceled = true;
+            }
+
+            Assert.That(canceled, Is.True);
+            Assert.That(await accountStore.LoadAsync(), Is.Null);
+            await provider.GetTokenAsync();
+            Assert.That(invoker.Calls.Count(call => call.MethodFullName == RegisterMethod), Is.EqualTo(1), "登録し直した");
+            Assert.That((await accountStore.LoadAsync()).DeviceId, Is.EqualTo("device-1"));
+        });
+
+        /// <summary>
+        /// トークンの発行の間に Reset されたら、そのトークンは覚えず、次は発行し直す(新しいセッションに前のトークンを残さない)。
+        /// </summary>
+        [UnityTest]
+        [Description("トークンの発行の間に Reset されたら、そのトークンは覚えず、次は発行し直す(新しいセッションに前のトークンを残さない)")]
+        public IEnumerator ResetDuringIssueDoesNotKeepToken() => UniTask.ToCoroutine(async () =>
+        {
+            await accountStore.SaveAsync(new AccountData("saved-device", "saved-secret-key-0000", "saved-player"));
+            var issuedCount = 0;
+            invoker.Register<IssueTokenRequest, IssueTokenResponse>(IssueTokenMethod, (_, _) =>
+            {
+                issuedCount++;
+                if (issuedCount == 1)
+                {
+                    provider.Reset();
+                }
+
+                return UniTask.FromResult(new IssueTokenResponse
+                {
+                    AccessToken = $"token-{issuedCount}",
+                    ExpiresAt = Timestamp.FromDateTime(currentTime.AddHours(1)),
+                });
+            });
+
+            await provider.GetTokenAsync();
+            var second = await provider.GetTokenAsync();
+
+            Assert.That(second, Is.EqualTo("token-2"));
+        });
+
+        private async UniTask ExpectSaveFailureAsync()
+        {
+            try
+            {
+                await provider.GetTokenAsync();
+            }
+            catch (AccountSaveFailedException)
+            {
+                return;
+            }
+
+            Assert.Fail("保存に失敗したのに例外にならなかった");
+        }
+
         // 読み込みで例外を投げたり、決めた回数だけ保存に失敗したりする IAccountStore
         private sealed class FlakyAccountStore : IAccountStore
         {
