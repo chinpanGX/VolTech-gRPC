@@ -5,12 +5,12 @@ namespace VolTech.Client
     /// <summary>
     /// サーバーがエラーと一緒に返す google.rpc.ErrorInfo の中身。
     /// </summary>
-    public sealed class RpcErrorInfo
+    internal sealed class RpcErrorInfo
     {
         /// <summary>
         /// ErrorInfo の中身を受け取って作る。
         /// </summary>
-        public RpcErrorInfo(string reason, string domain, IReadOnlyDictionary<string, string> metadata)
+        internal RpcErrorInfo(string reason, string domain, IReadOnlyDictionary<string, string> metadata)
         {
             Reason = reason ?? "";
             Domain = domain ?? "";
@@ -18,12 +18,12 @@ namespace VolTech.Client
         }
 
         /// <summary>ErrorInfo.reason(例: PLAYER_NOT_FOUND)。</summary>
-        public string Reason { get; }
+        internal string Reason { get; }
 
         /// <summary>ErrorInfo.domain(例: voltech)。</summary>
-        public string Domain { get; }
+        internal string Domain { get; }
 
         /// <summary>ErrorInfo.metadata。無ければ空。</summary>
-        public IReadOnlyDictionary<string, string> Metadata { get; }
+        internal IReadOnlyDictionary<string, string> Metadata { get; }
     }
 }

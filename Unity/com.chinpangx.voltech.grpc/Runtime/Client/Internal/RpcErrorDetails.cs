@@ -14,10 +14,10 @@ namespace VolTech.Client
     /// CommonProtos はビルド済みの DLL で、参照する Google.Protobuf の版が決まっている。Unity のエディタは別の版の
     /// Google.Protobuf を同梱していて、版がずれるとエディタの中で ErrorInfo を読めなくなる(業務エラーがすべて CLIENT_ERROR になる)。
     /// </remarks>
-    public static class RpcErrorDetails
+    internal static class RpcErrorDetails
     {
         /// <summary>サーバーがエラーの詳細を入れるトレーラーのキー。</summary>
-        public const string TrailerKey = "grpc-status-details-bin";
+        internal const string TrailerKey = "grpc-status-details-bin";
 
         private const string ErrorInfoTypeName = "google.rpc.ErrorInfo";
         private const string TypeUrlPrefix = "type.googleapis.com/";
@@ -44,7 +44,7 @@ namespace VolTech.Client
         /// トレーラーの google.rpc.Status から ErrorInfo を取り出す。無ければ null を返す。
         /// </summary>
         /// <exception cref="InvalidProtocolBufferException">詳細が壊れていて読めないとき。</exception>
-        public static RpcErrorInfo GetErrorInfo(RpcException exception)
+        internal static RpcErrorInfo GetErrorInfo(RpcException exception)
         {
             // Grpc.StatusProto は Unity NuGet レジストリに無いので、トレーラーを自分でパースする
             var details = exception.Trailers?.GetValueBytes(TrailerKey);

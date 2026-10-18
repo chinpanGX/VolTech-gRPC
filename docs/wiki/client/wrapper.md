@@ -4,7 +4,7 @@ status: confirmed
 area: client
 related: [api/codegen, client/connection]
 proto: []
-code: [sandbox/UnityProject/Assets/Generated/Wrappers]
+code: [sandbox/UnityProject/Assets/Generated/Wrappers, Unity/com.chinpangx.voltech.grpc/Runtime/Client/ApiServiceBase.cs]
 updated: 2026-10-18
 ---
 
@@ -25,14 +25,16 @@ ApiCore(基盤)  共通処理
 
 ```csharp
 // 自動生成されるラッパー(protoc-gen-voltech-grpc。実物は Assets/Scripts/Api/Generated/Wrappers/App/V1/GachaApi.cs)
-public sealed class GachaApi
+public sealed class GachaApi : ApiServiceBase
 {
     private static readonly RpcSettings drawSettings = new(GachaServiceMethods.Draw, isIdempotencyTarget: true, requiresAuth: true);
+
+    public GachaApi(ApiCore core, CallInvoker callInvoker) : base(core) { ... }
 
     public UniTask<ApiResult<DrawResponse>> DrawAsync(
         DrawRequest request, IReadOnlyList<ErrorCode> handledCodes = null, bool notifyActivity = true)
     {
-        return core.InvokeAsync(drawSettings, client, request, handledCodes,
+        return base.InvokeAsync(drawSettings, client, request, handledCodes,
             static (c, r, options) => c.DrawAsync(r, options),   // options: ヘッダーとdeadline
             notifyActivity);
     }
@@ -45,6 +47,8 @@ if (!result.IsSuccess) return;   // 失敗時の共通の処理(ダイアログ�
 ```
 
 - 呼び出し側(アプリ)は、生成されたgRPCクライアント、`Metadata`、`RpcException` に触れない
+- ラッパーは基盤の `ApiServiceBase` を継承し、その `protected` の `InvokeAsync` で `ApiCore` を呼ぶ。ラッパーはアプリのアセンブリに生成されるので、`ApiCore.InvokeAsync` を `internal` にしたまま、派生クラスにだけ見せるため。アプリのコードから `core.InvokeAsync(...)` とは書けない。`ApiServiceBase` を継承すれば使えるが、ラッパーは生成するもので、アプリでは継承しない([構成](structure.md))
+- 生成コードは、基盤の型(`ApiServiceBase`・`ApiCore`)に `global::VolTech.Client.` を付け、基底クラスの呼び出しは `base.InvokeAsync` と書く。アプリの名前空間にある同じ名前の型や、`Invoke` という RPC のメソッドと取り違えないため
 - **gRPCサービスごとに1クラス、RPCごとに1メソッド**。クラス名は gRPCサービス名の末尾の `Service` を `Api` に置き換える(例: `GachaService` → `GachaApi`。[コード生成](../api/codegen.md))
 - メソッド名は、生成クライアントと同じ **`{RPC名}Async`**。`.proto` から呼び出し箇所までを名前で追える
 - ラッパーは、`ApiCore` に「RPCを呼ぶ処理」を **`static` ラムダ**で渡すだけ。キャプチャしないラムダは delegate が使い回されるので、呼び出しごとのアロケーションは起きない。`static` を付けると、うっかりキャプチャしたときにコンパイルエラーになる

@@ -31,12 +31,20 @@ namespace Sandbox.Tests.EditMode.TestDoubles
         }
 
         /// <summary>
-        /// 記録する。
+        /// ホームへの遷移の途中で動かす処理。null なら何もしない。
         /// </summary>
-        public UniTask GoToHomeAsync()
+        public Func<UniTask> OnGoToHome { get; set; }
+
+        /// <summary>
+        /// 記録し、OnGoToHome があれば動かして終わるのを待つ。
+        /// </summary>
+        public async UniTask GoToHomeAsync()
         {
             Navigated.Add("home");
-            return UniTask.CompletedTask;
+            if (OnGoToHome != null)
+            {
+                await OnGoToHome();
+            }
         }
 
         /// <summary>

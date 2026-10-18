@@ -11,7 +11,7 @@ namespace VolTech.Client.Tracing
     /// このアセンブリ(VolTech.Client.Tracing)は、エディタと開発ビルドにだけ入る(asmdef の Define Constraints)。リリースビルドでは
     /// アセンブリごと入らないので、記録の Interceptor も足されない。Api はこのアセンブリを参照せず、こちらから登録する。
     /// </remarks>
-    public static class ApiTracing
+    internal static class ApiTracing
     {
         private static int installed;
 

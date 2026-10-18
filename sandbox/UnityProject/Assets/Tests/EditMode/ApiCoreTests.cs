@@ -10,6 +10,7 @@ using Sandbox.Tests.EditMode.TestDoubles;
 using Sandbox.V1;
 using UnityEngine.TestTools;
 using VolTech.Client;
+using VolTech.Client.Auth;
 
 namespace Sandbox.Tests.EditMode
 {
@@ -19,10 +20,6 @@ namespace Sandbox.Tests.EditMode
     [Description("ApiCore の共通処理(トークン・ヘッダー・再認証・エラーの変換とハンドラー・順番待ち)を、サーバーなしで確かめる")]
     public class ApiCoreTests
     {
-        // 冪等性の対象として扱うかはクライアントの設定で決まるので、Ping を対象として送る設定で確かめる
-        private static readonly RpcSettings idempotencyTargetSettings =
-            new(SandboxServiceMethods.Ping, isIdempotencyTarget: true, requiresAuth: true);
-
         private FakeCallInvoker invoker;
         private CountingTokenProvider tokenProvider;
         private RecordingErrorHandler errorHandler;
@@ -46,14 +43,15 @@ namespace Sandbox.Tests.EditMode
             diffApplier = new RecordingApplier("player_diff", applyOrder);
             badgeApplier = new RecordingApplier("badges", applyOrder);
             notificationApplier = new RecordingApplier("notifications", applyOrder);
-            core = new ApiCore(
-                new ApiCoreOptions(),
-                tokenProvider,
-                new ErrorPolicyProvider(SandboxErrors.All),
-                errorHandler,
-                diffApplier,
-                badgeApplier: badgeApplier,
-                notificationApplier: notificationApplier);
+            core = ApiCore.CreateBuilder(
+                    new ApiCoreOptions(),
+                    tokenProvider,
+                    new ErrorPolicyProvider(SandboxErrors.All),
+                    errorHandler)
+                .WithPlayerDiffApplier(diffApplier)
+                .WithBadgeApplier(badgeApplier)
+                .WithNotificationApplier(notificationApplier)
+                .Build();
             sandboxApi = new SandboxApi(core, invoker);
         }
 
@@ -191,6 +189,25 @@ namespace Sandbox.Tests.EditMode
 
             Assert.That(result.Error.Code, Is.EqualTo(ReservedErrors.ClientError));
             Assert.That(errorHandler.Errors, Has.Count.EqualTo(1));
+            Assert.That(invoker.Calls, Is.Empty);
+        });
+
+        /// <summary>
+        /// 端末のアカウント情報の読み書きの失敗は、専用のコードにし、handledCodes に入れなくても共通エラーハンドラーに回さずに返す(通信のエラーとは扱いを分ける)。
+        /// </summary>
+        [UnityTest]
+        [Description("端末のアカウント情報の読み書きの失敗は、専用のコードにし、handledCodes に入れなくても共通エラーハンドラーに回さずに返す(通信のエラーとは扱いを分ける)")]
+        public IEnumerator AccountStorageErrorsAreReturnedWithoutErrorHandler() => UniTask.ToCoroutine(async () =>
+        {
+            tokenProvider.ThrowOnGet = new CorruptedAccountDataException("account.bin", null);
+            var corrupted = await sandboxApi.PingAsync(new PingRequest());
+
+            tokenProvider.ThrowOnGet = new AccountSaveFailedException(new System.IO.IOException("disk full"));
+            var saveFailed = await sandboxApi.PingAsync(new PingRequest());
+
+            Assert.That(corrupted.Error.Code, Is.EqualTo(ReservedErrors.AccountDataCorrupted));
+            Assert.That(saveFailed.Error.Code, Is.EqualTo(ReservedErrors.AccountSaveFailed));
+            Assert.That(errorHandler.Errors, Is.Empty);
             Assert.That(invoker.Calls, Is.Empty);
         });
 
@@ -369,13 +386,14 @@ namespace Sandbox.Tests.EditMode
         public IEnumerator ApiCalledDuringNavigationUsesNewSession() => UniTask.ToCoroutine(async () =>
         {
             var navigator = new RecordingNavigator();
-            core = new ApiCore(
-                new ApiCoreOptions(),
-                tokenProvider,
-                new ErrorPolicyProvider(SandboxErrors.All),
-                errorHandler,
-                diffApplier,
-                navigator: navigator);
+            core = ApiCore.CreateBuilder(
+                    new ApiCoreOptions(),
+                    tokenProvider,
+                    new ErrorPolicyProvider(SandboxErrors.All),
+                    errorHandler)
+                .WithPlayerDiffApplier(diffApplier)
+                .WithErrorNavigator(navigator)
+                .Build();
             sandboxApi = new SandboxApi(core, invoker);
             invoker.Register<PingRequest, PingResponse>(SandboxServiceMethods.Ping, (_, _) =>
                 invoker.Calls.Count == 1 ? throw FakeRpcErrors.Status(StatusCode.Internal) : UniTask.FromResult(Pinged("player-1")));
@@ -428,7 +446,7 @@ namespace Sandbox.Tests.EditMode
         public IEnumerator BrokenErrorDetailsBecomeUnknownError() => UniTask.ToCoroutine(async () =>
         {
             // 長さ5の項目と言いながら中身が無い、読めない google.rpc.Status
-            var brokenDetails = new Metadata { { RpcErrorDetails.TrailerKey, new byte[] { 0x0A, 0x05 } } };
+            var brokenDetails = new Metadata { { "grpc-status-details-bin", new byte[] { 0x0A, 0x05 } } };
             invoker.Register<PingRequest, PingResponse>(SandboxServiceMethods.Ping, (_, _) =>
                 throw new RpcException(new Status(StatusCode.FailedPrecondition, "broken details"), brokenDetails));
 
@@ -441,17 +459,31 @@ namespace Sandbox.Tests.EditMode
 
         private UniTask<ApiResult<PingResponse>> InvokeIdempotencyTargetAsync()
         {
-            return core.InvokeAsync(
-                idempotencyTargetSettings,
-                new SandboxService.SandboxServiceClient(invoker),
-                new PingRequest(),
-                null,
-                static (c, r, options) => c.PingAsync(r, options));
+            return new IdempotentPingApi(core, invoker).PingAsync();
         }
 
         private static PingResponse Pinged(string playerId)
         {
             return new PingResponse { PlayerId = playerId };
+        }
+
+        // 冪等性の対象として扱うかはクライアントの設定で決まるので、Ping を対象として送るラッパーで確かめる
+        private sealed class IdempotentPingApi : ApiServiceBase
+        {
+            private static readonly RpcSettings settings =
+                new(SandboxServiceMethods.Ping, isIdempotencyTarget: true, requiresAuth: true);
+
+            private readonly SandboxService.SandboxServiceClient client;
+
+            public IdempotentPingApi(ApiCore core, CallInvoker callInvoker) : base(core)
+            {
+                client = new SandboxService.SandboxServiceClient(callInvoker);
+            }
+
+            public UniTask<ApiResult<PingResponse>> PingAsync()
+            {
+                return InvokeAsync(settings, client, new PingRequest(), null, static (c, r, options) => c.PingAsync(r, options));
+            }
         }
     }
 }

@@ -60,6 +60,18 @@ namespace VolTech.Client
         public static readonly global::VolTech.Client.ErrorCode ClientError = new(Domain, "CLIENT_ERROR");
 
         /// <summary>
+        /// 端末に保存したアカウント情報が読めない(壊れている・書き換えられている)。通信のエラーではないので、共通エラーハンドラーに回さずに呼び出し側に返す(action は使わない)。
+        /// クライアントだけが使う(サーバーは返さない)。
+        /// </summary>
+        public static readonly global::VolTech.Client.ErrorCode AccountDataCorrupted = new(Domain, "ACCOUNT_DATA_CORRUPTED");
+
+        /// <summary>
+        /// デバイス登録はできたが、アカウント情報を端末に保存できなかった。通信のエラーではないので、共通エラーハンドラーに回さずに呼び出し側に返す(action は使わない)。
+        /// クライアントだけが使う(サーバーは返さない)。
+        /// </summary>
+        public static readonly global::VolTech.Client.ErrorCode AccountSaveFailed = new(Domain, "ACCOUNT_SAVE_FAILED");
+
+        /// <summary>
         /// この domain のエラーと既定の action の一覧。ErrorPolicyProvider に渡す。
         /// </summary>
         public static readonly IReadOnlyList<global::VolTech.Client.ErrorDefinition> All = new global::VolTech.Client.ErrorDefinition[]
@@ -72,6 +84,8 @@ namespace VolTech.Client
             new global::VolTech.Client.ErrorDefinition(AccountSuspended, global::VolTech.Client.ErrorAction.Title),
             new global::VolTech.Client.ErrorDefinition(DateChanged, global::VolTech.Client.ErrorAction.Title),
             new global::VolTech.Client.ErrorDefinition(ClientError, global::VolTech.Client.ErrorAction.Title),
+            new global::VolTech.Client.ErrorDefinition(AccountDataCorrupted, global::VolTech.Client.ErrorAction.Stay),
+            new global::VolTech.Client.ErrorDefinition(AccountSaveFailed, global::VolTech.Client.ErrorAction.Stay),
         };
     }
 }

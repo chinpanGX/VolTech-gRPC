@@ -5,7 +5,7 @@ area: guide
 related: [guide/connect, guide/add-api, guide/upgrade, guide/roles, repo/operations, api/errors]
 proto: []
 code: [mk, local.mk.example, scripts/proto-tools.sh, tools/protoc-gen-voltech-grpc/src, sandbox/server/Cargo.toml, sandbox/server/proto/build.rs, sandbox/UnityProject/Packages/manifest.json, sandbox/errors.toml, buf.gen.sandbox.yaml, sandbox/server/server/src/lib.rs, sandbox/UnityProject/Assets/Scripts/Sample/SampleLifetimeScope.cs, .env.example]
-updated: 2026-10-17
+updated: 2026-10-18
 ---
 
 # 始め方
@@ -33,7 +33,7 @@ updated: 2026-10-17
 アプリを作る前に、このリポジトリの sandbox で、基盤が動くところを見られる。Docker・Rust・Unity・GNU Make が要る(Windows では Git for Windows も)。
 
 1. このリポジトリを clone し、`.env.example` を `.env` にコピーして、`make sandbox-server` でサーバーを起動する(MySQL を Docker で起動し、`localhost:50051` で待ち受ける)
-2. Unity で `sandbox/UnityProject` を開き、`Assets/Scenes/Sample.unity` を Play する。Start を押すと、デバイス登録 → サインイン(初回はサインアップ)→ ガチャの画面に進む
+2. Unity で `sandbox/UnityProject` を開き、`Assets/Scenes/Sample.unity` を Play する。Start を押すと、保存したアカウント情報が無ければサインアップ(最初の API でデバイス登録)、あればサインインして、ガチャの画面に進む。2回目からは前回のプレイヤーでサインインする。新しいプレイヤーで始めるときは、タイトル画面の Delete data を押す
 3. `Window > VolTech gRPC > gRPC Monitor` で、通信ごとのヘッダーと Body を見られる([通信を見る・調べる](debugging.md))
 
 サーバーの状態(メンテナンス・強制アップデート・日付が変わる時刻)は `sandbox/server/config/server_status.toml` で決める。サーバーが 5 秒ごとに読み直すので、書き換えれば再起動しなくても効く([サーバーの状態](../server/status.md))。

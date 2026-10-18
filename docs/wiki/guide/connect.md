@@ -4,7 +4,7 @@ status: current
 area: guide
 related: [guide/getting-started, guide/add-api, guide/roles, guide/debugging, guide/client-reference, guide/server-reference, server/request-flow, server/status, client/api-core]
 proto: []
-code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/Hooks/IApiActivityHandler.cs, sandbox/server/server/src/lib.rs, sandbox/server/server/src/main.rs, sandbox/server/server/src/config.rs, sandbox/server/server/src/player_lookup.rs, sandbox/server/config/server_status.toml, sandbox/UnityProject/Assets/Scripts/Sample/SampleLifetimeScope.cs, Unity/com.chinpangx.voltech.grpc/Runtime/Unity/ApiChannel.cs]
+code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/ApiCoreBuilder.cs, Unity/com.chinpangx.voltech.grpc/Runtime/Client/Hooks/IApiActivityHandler.cs, sandbox/server/server/src/lib.rs, sandbox/server/server/src/main.rs, sandbox/server/server/src/config.rs, sandbox/server/server/src/player_lookup.rs, sandbox/server/config/server_status.toml, sandbox/UnityProject/Assets/Scripts/Sample/SampleLifetimeScope.cs, Unity/com.chinpangx.voltech.grpc/Runtime/Unity/ApiChannel.cs]
 updated: 2026-10-18
 ---
 
@@ -62,32 +62,37 @@ Server::builder()
 
 ## 2. クライアントを組み立てる
 
-必要なものを作って `ApiCore` に渡し、ラッパーに `ApiCore` と `CallInvoker` を渡す。
+アプリの asmdef の Assembly Definition References に、`VolTech.Client`・`VolTech.Client.Unity` を足す(アプリの `.proto` から生成したコードを置く asmdef には、`VolTech.Client`・`VolTech.V1` を足す)。どれも Auto Referenced を切ってあるので、足さないと見えない。
+
+`ApiCore.CreateBuilder` に必須の部品を渡し、任意の部品を `With`・`Add` で足して `Build` で `ApiCore` を作る。ラッパーには `ApiCore` と `CallInvoker` を渡す。
 
 ```csharp
 var options = new ApiCoreOptions(UnityAppVersion.Create(appVersion));
-var channel = ApiChannel.Create("http://localhost:50051");     // チャンネルは1つを使い回す
+var serverAddress = "http://localhost:50051";
+var channel = ApiChannel.Create(serverAddress);                 // チャンネルは1つを使い回す
 var callInvoker = ApiChannel.CreateCallInvoker(channel);        // エディタと開発ビルドでは gRPC Monitor に記録される
 var clock = new ServerClock();
 
-var core = new ApiCore(
-    options,
-    new DeviceTokenProvider(callInvoker, new InMemoryAccountStore(), options), // ITokenProvider
-    new ErrorPolicyProvider(AppErrors.All),                                    // IErrorPolicyProvider(アプリの errors.toml から生成した一覧)
-    new DefaultCommonErrorHandler(errorDialog),                                // ICommonErrorHandler
-    new PlayerDiffApplier(playerRepository),                                   // IPlayerDiffApplier(アプリ)
-    new UnityApiLogger(),                                                      // IApiLogger(リリースでは null)
-    clock,
-    navigator,                                                                 // IErrorNavigator(アプリ)
-    new BadgeApplier(badgeStore),                                              // IBadgeApplier(アプリ)
-    new NotificationApplier(notificationQueue),                                // INotificationApplier(アプリ)
-    new IApiActivityHandler[] { connectingView });                             // IApiActivityHandler(アプリ。複数を渡せる)
+var core = ApiCore.CreateBuilder(
+        options,
+        new DeviceTokenProvider(callInvoker, UnityAccountStore.Create(serverAddress), options), // ITokenProvider(アカウント情報は暗号化したファイルに保存)
+        new ErrorPolicyProvider(AppErrors.All),                                    // IErrorPolicyProvider(アプリの errors.toml から生成した一覧)
+        new DefaultCommonErrorHandler(errorDialog))                                // ICommonErrorHandler
+    .WithPlayerDiffApplier(new PlayerDiffApplier(playerRepository))                // IPlayerDiffApplier(アプリ)
+    .WithBadgeApplier(new BadgeApplier(badgeStore))                                // IBadgeApplier(アプリ)
+    .WithNotificationApplier(new NotificationApplier(notificationQueue))           // INotificationApplier(アプリ)
+    .WithErrorNavigator(navigator)                                                 // IErrorNavigator(アプリ)
+    .WithLogger(new UnityApiLogger())                                              // IApiLogger(リリースでは null。null は渡さないのと同じ)
+    .WithServerClock(clock)
+    .AddActivityHandler(connectingView)                                            // IApiActivityHandler(アプリ。何度でも足せる)
+    .Build();
 
 var gachaApi = new GachaApi(core, callInvoker);
 ```
 
 - 前面に戻ったときにサーバー時刻を合わせ直すため、`ServerClockResetter.Create(clock)` も作る
 - `ApiCore`・ラッパー・`CallInvoker` はアプリで1つずつにする(順番待ちとセッションを `ApiCore` が持つため)
+- アカウント情報は、`UnityAccountStore.Create(serverAddress)` で接続先ごとの暗号化したファイルに保存する。新しいプレイヤーで始め直すときは、`ClearAsync()` のあとに `ResetSession()` を呼ぶ(sandbox のタイトル画面のデータ削除のボタンが見本)。`InMemoryAccountStore` はテスト用で、アプリでは使わない
 - デバイス登録とトークンの発行は、最初の通信で `ApiCore` が自動で行う。アプリが呼ぶことはない([認証とアカウント情報](../client/auth-account.md))
 
 アプリが実装する interface:
@@ -102,7 +107,7 @@ var gachaApi = new GachaApi(core, callInvoker);
 | `IApiActivityHandler` | 通信中になった・終わったときに、通信中の表示と入力ブロックを出す・消す。複数を登録できる | `DebugLogActivityHandler`(ログに出すだけ) |
 
 - 反映処理(Applier)では、データの更新だけをする。ダイアログや画面遷移は書かない。反映処理で例外が起きたときの扱いは [共通レスポンス項目の反映](../client/response-items.md)
-- `IApiActivityHandler` の開始・終了は、重なった呼び出しをまとめて1回ずつ届く。エラーハンドラーの間も通信中のままなので、エラーダイアログなど入力を受け付ける UI は、通信中の表示より手前に出す([ApiCore の共通処理](../client/api-core.md))
+- `IApiActivityHandler` の開始・終了は、重なった呼び出しをまとめて1回ずつ届く。エラーハンドラーを呼ぶ間は、その呼び出しの分を通信中から外す。ほかに進行中の呼び出し(冪等性の順番待ちを含む)があれば通信中のままなので、エラーダイアログは入力ブロックと通信中の表示より手前に出す。奥に出すと、ダイアログを閉じられなくなる([ApiCore の共通処理](../client/api-core.md))
 - 生成コードは、共通レスポンス項目を持つレスポンスに `IHasPlayerDiff`・`IHasBadges`・`IHasNotifications` を付ける。反映処理は、この型で判定して読む
 
 使える型の一覧は [クライアントのリファレンス](client-reference.md)。

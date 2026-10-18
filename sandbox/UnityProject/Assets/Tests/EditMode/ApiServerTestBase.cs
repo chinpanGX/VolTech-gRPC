@@ -93,16 +93,17 @@ namespace Sandbox.Tests.EditMode
             Badges = new BadgeStore();
             Notifications = new NotificationQueue();
             TokenProvider = new DeviceTokenProvider(CallInvoker, AccountStore, options);
-            Core = new ApiCore(
-                options,
-                TokenProvider,
-                new ErrorPolicyProvider(SandboxErrors.All),
-                ErrorHandler,
-                new PlayerDiffApplier(Repository),
+            Core = ApiCore.CreateBuilder(
+                    options,
+                    TokenProvider,
+                    new ErrorPolicyProvider(SandboxErrors.All),
+                    ErrorHandler)
+                .WithPlayerDiffApplier(new PlayerDiffApplier(Repository))
+                .WithBadgeApplier(new BadgeApplier(Badges))
+                .WithNotificationApplier(new NotificationApplier(Notifications))
                 // 何をやり取りしたかを Console で見られるようにする
-                new UnityApiLogger(),
-                badgeApplier: new BadgeApplier(Badges),
-                notificationApplier: new NotificationApplier(Notifications));
+                .WithLogger(new UnityApiLogger())
+                .Build();
         }
 
         /// <summary>

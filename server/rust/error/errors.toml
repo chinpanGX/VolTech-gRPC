@@ -50,3 +50,15 @@ reason = "CLIENT_ERROR"
 action = "title"
 client_only = true
 description = "クライアントのバグ(共通レスポンス項目の反映処理での例外など)。"
+
+[[errors]]
+reason = "ACCOUNT_DATA_CORRUPTED"
+action = "stay"
+client_only = true
+description = "端末に保存したアカウント情報が読めない(壊れている・書き換えられている)。通信のエラーではないので、共通エラーハンドラーに回さずに呼び出し側に返す(action は使わない)。"
+
+[[errors]]
+reason = "ACCOUNT_SAVE_FAILED"
+action = "stay"
+client_only = true
+description = "デバイス登録はできたが、アカウント情報を端末に保存できなかった。通信のエラーではないので、共通エラーハンドラーに回さずに呼び出し側に返す(action は使わない)。"

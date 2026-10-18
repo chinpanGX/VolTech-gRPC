@@ -37,12 +37,13 @@ namespace Sandbox.Tests.EditMode
                 UniTask.FromResult(new PingResponse { PlayerId = "player-1" }));
             errorHandler = new RecordingErrorHandler();
             elapsed = TimeSpan.Zero;
-            core = new ApiCore(
-                new ApiCoreOptions(new AppVersion(AppVersion.Windows, 120)),
-                new CountingTokenProvider(),
-                new ErrorPolicyProvider(SandboxErrors.All),
-                errorHandler,
-                serverClock: new ServerClock(() => elapsed));
+            core = ApiCore.CreateBuilder(
+                    new ApiCoreOptions(new AppVersion(AppVersion.Windows, 120)),
+                    new CountingTokenProvider(),
+                    new ErrorPolicyProvider(SandboxErrors.All),
+                    errorHandler)
+                .WithServerClock(new ServerClock(() => elapsed))
+                .Build();
             sandboxApi = new SandboxApi(core, invoker);
         }
 
@@ -56,8 +57,8 @@ namespace Sandbox.Tests.EditMode
             await sandboxApi.PingAsync(new PingRequest());
 
             var call = invoker.Calls.Single();
-            Assert.That(call.GetHeader(ApiHeaders.AppPlatform), Is.EqualTo("windows"));
-            Assert.That(call.GetHeader(ApiHeaders.AppVersion), Is.EqualTo("120"));
+            Assert.That(call.GetHeader("x-app-platform"), Is.EqualTo("windows"));
+            Assert.That(call.GetHeader("x-app-version"), Is.EqualTo("120"));
         });
 
         /// <summary>
@@ -67,15 +68,15 @@ namespace Sandbox.Tests.EditMode
         [Description("セッションの最初のリクエストには日付を付けず、最初に受け取った日付を以降のリクエストに付け続ける(後から届いた日付には変えない)")]
         public IEnumerator KeepsFirstGameDateOfSession() => UniTask.ToCoroutine(async () =>
         {
-            invoker.ResponseHeaders.Add(ApiHeaders.GameDate, "2026-10-06");
+            invoker.ResponseHeaders.Add("x-game-date", "2026-10-06");
             await sandboxApi.PingAsync(new PingRequest());
 
             invoker.ResponseHeaders.Clear();
-            invoker.ResponseHeaders.Add(ApiHeaders.GameDate, "2026-10-07");
+            invoker.ResponseHeaders.Add("x-game-date", "2026-10-07");
             await sandboxApi.PingAsync(new PingRequest());
             await sandboxApi.PingAsync(new PingRequest());
 
-            Assert.That(invoker.Calls.Select(call => call.GetHeader(ApiHeaders.GameDate)),
+            Assert.That(invoker.Calls.Select(call => call.GetHeader("x-game-date")),
                 Is.EqualTo(new[] { null, "2026-10-06", "2026-10-06" }));
         });
 
@@ -86,13 +87,13 @@ namespace Sandbox.Tests.EditMode
         [Description("セッションを破棄すると覚えていた日付も捨て、次のリクエストには日付を付けない")]
         public IEnumerator ResetSessionForgetsGameDate() => UniTask.ToCoroutine(async () =>
         {
-            invoker.ResponseHeaders.Add(ApiHeaders.GameDate, "2026-10-06");
+            invoker.ResponseHeaders.Add("x-game-date", "2026-10-06");
             await sandboxApi.PingAsync(new PingRequest());
 
             core.ResetSession();
             await sandboxApi.PingAsync(new PingRequest());
 
-            Assert.That(invoker.Calls.Last().GetHeader(ApiHeaders.GameDate), Is.Null);
+            Assert.That(invoker.Calls.Last().GetHeader("x-game-date"), Is.Null);
         });
 
         /// <summary>
@@ -102,7 +103,7 @@ namespace Sandbox.Tests.EditMode
         [Description("DATE_CHANGED でタイトルに戻ると、覚えていた日付を捨てる(サインインし直しで新しい日付を受け取れる)")]
         public IEnumerator DateChangedReturnToTitleForgetsGameDate() => UniTask.ToCoroutine(async () =>
         {
-            invoker.ResponseHeaders.Add(ApiHeaders.GameDate, "2026-10-06");
+            invoker.ResponseHeaders.Add("x-game-date", "2026-10-06");
             await sandboxApi.PingAsync(new PingRequest());
 
             invoker.Register<PingRequest, PingResponse>(SandboxServiceMethods.Ping, (_, _) =>
@@ -113,7 +114,7 @@ namespace Sandbox.Tests.EditMode
             Assert.That(changed.Error.Action, Is.EqualTo(ErrorAction.Title));
 
             await sandboxApi.PingAsync(new PingRequest());
-            Assert.That(invoker.Calls.Last().GetHeader(ApiHeaders.GameDate), Is.Null);
+            Assert.That(invoker.Calls.Last().GetHeader("x-game-date"), Is.Null);
         });
 
         /// <summary>
@@ -125,7 +126,7 @@ namespace Sandbox.Tests.EditMode
         {
             Assert.That(core.ServerClock.IsSynchronized, Is.False);
 
-            invoker.ResponseHeaders.Add(ApiHeaders.ServerTime, serverTime.ToUnixTimeMilliseconds().ToString());
+            invoker.ResponseHeaders.Add("x-server-time", serverTime.ToUnixTimeMilliseconds().ToString());
             await sandboxApi.PingAsync(new PingRequest());
             elapsed = TimeSpan.FromSeconds(5);
 

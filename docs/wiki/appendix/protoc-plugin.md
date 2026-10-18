@@ -5,7 +5,7 @@ area: appendix
 related: [api/codegen, guide/add-api, appendix/code-map]
 proto: []
 code: [tools/protoc-gen-voltech-grpc]
-updated: 2026-10-11
+updated: 2026-10-18
 ---
 
 # protoc プラグインの中身
@@ -14,7 +14,7 @@ updated: 2026-10-11
 
 - .NET 10 のコンソールアプリ。`dotnet publish` で `.tools/voltech-grpc` に入れ、`buf.gen.yaml` の `local: protoc-gen-voltech-grpc` から呼ぶ(`make proto-plugin`)
 - 依存は `Google.Protobuf` だけ(入出力の型 `CodeGeneratorRequest`・`CodeGeneratorResponse` を含む)。版は Unity のパッケージと同じにする(`make deps-check` が確かめる)
-- 生成するコードは、クライアントの基盤(`VolTech.Client` の `ApiCore`・`RpcSettings`・`ApiResult`)の API に合わせる。基盤の API を変えたら、プラグインも同時に直す
+- 生成するコードは、クライアントの基盤(`VolTech.Client` の `ApiServiceBase`・`RpcSettings`・`ApiCore`・`ApiResult`。ラッパーは `ApiServiceBase` を継承する)の API に合わせる。基盤の API を変えたら、プラグインも同時に直す
 
 ## ファイル
 

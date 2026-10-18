@@ -20,7 +20,7 @@ namespace VolTech.Client.Editor
     /// UI Toolkit で、USS・UXML は使わずに C# だけで組み立てる。見るだけで、送り直しはしない(アプリの操作で送る)。
     /// 「Editor」はエディタで動かした通信(ApiTraceStore.Shared)、「Player」は USB などでつないだ実機の通信(GrpcMonitorReceiver.Store)。
     /// </remarks>
-    public sealed class GrpcMonitorWindow : EditorWindow
+    internal sealed class GrpcMonitorWindow : EditorWindow
     {
         private const float HeaderKeyWidth = 180;
         private const long RefreshIntervalMs = 200;

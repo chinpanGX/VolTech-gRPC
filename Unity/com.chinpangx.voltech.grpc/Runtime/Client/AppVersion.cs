@@ -40,7 +40,7 @@ namespace VolTech.Client
         /// <summary>
         /// プラットフォームとバージョンをリクエストのヘッダーに付ける。
         /// </summary>
-        public void AddHeadersTo(Metadata headers)
+        internal void AddHeadersTo(Metadata headers)
         {
             headers.Add(ApiHeaders.AppPlatform, Platform);
             headers.Add(ApiHeaders.AppVersion, Version.ToString());

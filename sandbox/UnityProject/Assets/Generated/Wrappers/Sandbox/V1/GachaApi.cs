@@ -20,19 +20,17 @@ namespace Sandbox.V1
     /// GachaService を ApiCore を通して呼ぶ。
     /// ガチャ。基盤の共通処理(業務エラー・冪等性・共通レスポンス項目・トランザクション)を1つの機能で使う例。
     /// </summary>
-    public sealed class GachaApi
+    public sealed class GachaApi : global::VolTech.Client.ApiServiceBase
     {
         private static readonly RpcSettings drawSettings = new(GachaServiceMethods.Draw, isIdempotencyTarget: true, requiresAuth: true);
 
-        private readonly ApiCore core;
         private readonly GachaService.GachaServiceClient client;
 
         /// <summary>
         /// ApiCore と、通信に使う CallInvoker を受け取って作る。
         /// </summary>
-        public GachaApi(ApiCore core, CallInvoker callInvoker)
+        public GachaApi(global::VolTech.Client.ApiCore core, CallInvoker callInvoker) : base(core)
         {
-            this.core = core;
             client = new GachaService.GachaServiceClient(callInvoker);
         }
 
@@ -48,7 +46,7 @@ namespace Sandbox.V1
             IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null,
             bool notifyActivity = true)
         {
-            return core.InvokeAsync(
+            return base.InvokeAsync(
                 drawSettings,
                 client,
                 request,

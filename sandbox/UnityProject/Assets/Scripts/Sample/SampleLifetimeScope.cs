@@ -59,21 +59,25 @@ namespace Sample
             builder.Register<PlayerRepository>(Lifetime.Singleton);
             builder.Register<BadgeStore>(Lifetime.Singleton);
             builder.Register<NotificationQueue>(Lifetime.Singleton);
-            builder.Register(resolver => new ApiCore(
-                    options,
-                    // アカウント情報の保存先は、サンプルではメモリに置く(起動するたびに新しい端末になる)
-                    new DeviceTokenProvider(callInvoker, new InMemoryAccountStore(), options),
-                    // 業務エラーの既定の action は、errors.toml から生成した一覧から引く
-                    new ErrorPolicyProvider(SandboxErrors.All),
-                    new DefaultCommonErrorHandler(errorDialog),
-                    new PlayerDiffApplier(resolver.Resolve<PlayerRepository>()),
-                    new UnityApiLogger(),
-                    clock,
-                    navigator,
-                    new BadgeApplier(resolver.Resolve<BadgeStore>()),
-                    new NotificationApplier(resolver.Resolve<NotificationQueue>()),
+            // アカウント情報は、接続先ごとの暗号化したファイルに保存する。新しいプレイヤーで始めるときは、タイトル画面のデータ削除で消す
+            builder.RegisterInstance(UnityAccountStore.Create(serverAddress)).As<IAccountStore>();
+            // タイトル画面がアカウント情報の状態を確かめるのに使うので、ApiCore に渡すものと同じインスタンスを登録する
+            builder.Register(resolver => new DeviceTokenProvider(callInvoker, resolver.Resolve<IAccountStore>(), options), Lifetime.Singleton);
+            builder.Register(resolver => ApiCore.CreateBuilder(
+                        options,
+                        resolver.Resolve<DeviceTokenProvider>(),
+                        // 業務エラーの既定の action は、errors.toml から生成した一覧から引く
+                        new ErrorPolicyProvider(SandboxErrors.All),
+                        new DefaultCommonErrorHandler(errorDialog))
+                    .WithPlayerDiffApplier(new PlayerDiffApplier(resolver.Resolve<PlayerRepository>()))
+                    .WithBadgeApplier(new BadgeApplier(resolver.Resolve<BadgeStore>()))
+                    .WithNotificationApplier(new NotificationApplier(resolver.Resolve<NotificationQueue>()))
+                    .WithErrorNavigator(navigator)
+                    .WithLogger(new UnityApiLogger())
+                    .WithServerClock(clock)
                     // 通信中の表示の代わりに、通知が届いたことをログに出す
-                    new IApiActivityHandler[] { new DebugLogActivityHandler() }),
+                    .AddActivityHandler(new DebugLogActivityHandler())
+                    .Build(),
                 Lifetime.Singleton);
             builder.Register(resolver => new PlayerApi(resolver.Resolve<ApiCore>(), callInvoker), Lifetime.Singleton);
             builder.Register(resolver => new GachaApi(resolver.Resolve<ApiCore>(), callInvoker), Lifetime.Singleton);

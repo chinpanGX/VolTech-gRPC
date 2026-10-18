@@ -5,7 +5,7 @@ area: api
 related: [api/auth, server/auth, server/status, client/error-handling, client/response-items, appendix/testing]
 proto: []
 code: [server/rust/error, server/rust/error-build, server/rust/error/errors.toml, sandbox/errors.toml, tools/protoc-gen-voltech-grpc/src/Errors, Unity/com.chinpangx.voltech.grpc/Runtime/Client/Errors]
-updated: 2026-10-16
+updated: 2026-10-18
 ---
 
 # エラー
@@ -94,6 +94,8 @@ description = "ジェムが足りず、ガチャを引けない。"
 | `ACCOUNT_SUSPENDED` | サーバー([認証(サーバー)](../server/auth.md)) | BAN・アカウント停止 |
 | `DATE_CHANGED` | サーバー([サーバーの状態](../server/status.md)) | サインインし直し、所持データを全件取り直す |
 | `CLIENT_ERROR` | クライアント | 共通レスポンス項目の反映処理での例外など([共通レスポンス項目の反映](../client/response-items.md))。通信エラーとは違う文言にする |
+| `ACCOUNT_DATA_CORRUPTED` | クライアント([認証とアカウント情報](../client/auth-account.md)) | 端末に保存したアカウント情報が読めない。通信のエラーではないので、共通エラーハンドラーに回さずに呼び出し側に返す(action は使わない) |
+| `ACCOUNT_SAVE_FAILED` | クライアント([認証とアカウント情報](../client/auth-account.md)) | デバイス登録はできたが、アカウント情報を保存できなかった。`ACCOUNT_DATA_CORRUPTED` と同じく、呼び出し側に返す |
 
 ## メンテナンス中の表示
 

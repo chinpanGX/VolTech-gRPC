@@ -47,7 +47,12 @@ public class GeneratorTests
         // ApiCore などクライアントの基盤の型を使うので、その名前空間を読み込む
         Assert.Contains("using VolTech.Client;", player);
         Assert.Contains("public const string SignIn = \"/app.v1.PlayerService/SignIn\";", player);
-        Assert.Contains("public sealed class PlayerApi", player);
+        // ApiCore.InvokeAsync は internal なので、基底クラスの protected な InvokeAsync を通して呼ぶ。
+        // アプリの名前空間の型と取り違えないように global:: を付け、Invoke という RPC のメソッドとも取り違えないように base. で呼ぶ
+        Assert.Contains("public sealed class PlayerApi : global::VolTech.Client.ApiServiceBase", player);
+        Assert.Contains("public PlayerApi(global::VolTech.Client.ApiCore core, CallInvoker callInvoker) : base(core)", player);
+        Assert.Contains("    return base.InvokeAsync(", player);
+        Assert.DoesNotContain("core.InvokeAsync", player);
         Assert.Contains("public UniTask<ApiResult<global::App.V1.SignInResponse>> SignInAsync(", player);
         // handledCodes は基盤の ErrorCode(domain と reason の組)で受け取り、そのまま ApiCore に渡す
         Assert.Contains("IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null,", player);

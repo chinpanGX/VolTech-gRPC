@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.IO;
 using System.Linq;
 using VolTech.Client.Auth;
 using Cysharp.Threading.Tasks;
@@ -160,5 +161,210 @@ namespace VolTech.Client.Tests.EditMode
             Assert.That(second, Is.EqualTo("token-2"));
             Assert.That(await provider.GetTokenAsync(), Is.EqualTo(second));
         });
+
+        /// <summary>
+        /// 保存したアカウント情報が無ければ NotRegistered、あれば Registered を返す。どちらも通信しない。
+        /// </summary>
+        [UnityTest]
+        [Description("保存したアカウント情報が無ければ NotRegistered、あれば Registered を返す。どちらも通信しない")]
+        public IEnumerator StatusTellsWhetherAccountIsSaved() => UniTask.ToCoroutine(async () =>
+        {
+            Assert.That(await provider.GetAccountStatusAsync(), Is.EqualTo(AccountStatus.NotRegistered));
+
+            await accountStore.SaveAsync(new AccountData("saved-device", "saved-secret-key-0000", "saved-player"));
+
+            Assert.That(await provider.GetAccountStatusAsync(), Is.EqualTo(AccountStatus.Registered));
+            Assert.That(invoker.Calls, Is.Empty);
+        });
+
+        /// <summary>
+        /// 保存したアカウント情報が読めなければ、例外にせず Corrupted を返す。
+        /// </summary>
+        [UnityTest]
+        [Description("保存したアカウント情報が読めなければ、例外にせず Corrupted を返す")]
+        public IEnumerator StatusIsCorruptedWhenUnreadable() => UniTask.ToCoroutine(async () =>
+        {
+            var store = new FlakyAccountStore { ThrowOnLoad = new CorruptedAccountDataException("account.bin", null) };
+            provider = new DeviceTokenProvider(invoker, store, new ApiCoreOptions(), () => currentTime);
+
+            Assert.That(await provider.GetAccountStatusAsync(), Is.EqualTo(AccountStatus.Corrupted));
+        });
+
+        /// <summary>
+        /// デバイス登録の後に保存できなければ AccountSaveFailedException にし、トークンは発行しない。
+        /// 次に呼ばれたときは登録し直さず、登録した結果の保存からやり直す。
+        /// </summary>
+        [UnityTest]
+        [Description("デバイス登録の後に保存できなければ AccountSaveFailedException にし、トークンは発行しない。次に呼ばれたときは登録し直さず、登録した結果の保存からやり直す")]
+        public IEnumerator SaveFailureRetriesSaveWithoutRegisteringAgain() => UniTask.ToCoroutine(async () =>
+        {
+            var store = new FlakyAccountStore { SaveFailures = 1 };
+            provider = new DeviceTokenProvider(invoker, store, new ApiCoreOptions(), () => currentTime);
+
+            AccountSaveFailedException thrown = null;
+            try
+            {
+                await provider.GetTokenAsync();
+            }
+            catch (AccountSaveFailedException exception)
+            {
+                thrown = exception;
+            }
+
+            Assert.That(thrown, Is.Not.Null);
+            Assert.That(thrown.InnerException, Is.InstanceOf<IOException>());
+            Assert.That(invoker.Calls.Select(call => call.MethodFullName), Is.EqualTo(new[] { RegisterMethod }));
+            Assert.That(await provider.GetAccountStatusAsync(), Is.EqualTo(AccountStatus.NotRegistered));
+
+            var token = await provider.GetTokenAsync();
+
+            Assert.That(token, Is.EqualTo("token-1"));
+            Assert.That(invoker.Calls.Count(call => call.MethodFullName == RegisterMethod), Is.EqualTo(1), "登録し直した");
+            Assert.That((await store.LoadAsync()).DeviceId, Is.EqualTo("device-1"));
+        });
+
+        /// <summary>
+        /// 保存できなかった登録は、Reset(タイトルに戻る)の後も捨てず、次は登録し直さずに保存からやり直す。
+        /// </summary>
+        [UnityTest]
+        [Description("保存できなかった登録は、Reset(タイトルに戻る)の後も捨てず、次は登録し直さずに保存からやり直す")]
+        public IEnumerator ResetKeepsUnsavedRegistration() => UniTask.ToCoroutine(async () =>
+        {
+            var store = new FlakyAccountStore { SaveFailures = 1 };
+            provider = new DeviceTokenProvider(invoker, store, new ApiCoreOptions(), () => currentTime);
+            await ExpectSaveFailureAsync();
+
+            provider.Reset();
+            await provider.GetTokenAsync();
+
+            Assert.That(invoker.Calls.Count(call => call.MethodFullName == RegisterMethod), Is.EqualTo(1), "登録し直した");
+            Assert.That((await store.LoadAsync()).DeviceId, Is.EqualTo("device-1"));
+        });
+
+        /// <summary>
+        /// 保存できなかった登録があっても、保存先にアカウントが入っていれば(引き継ぎなど)、そちらを使い、古い登録で上書きしない。
+        /// </summary>
+        [UnityTest]
+        [Description("保存できなかった登録があっても、保存先にアカウントが入っていれば(引き継ぎなど)、そちらを使い、古い登録で上書きしない")]
+        public IEnumerator ReplacedStoreWinsOverUnsavedRegistration() => UniTask.ToCoroutine(async () =>
+        {
+            var store = new FlakyAccountStore { SaveFailures = 1 };
+            provider = new DeviceTokenProvider(invoker, store, new ApiCoreOptions(), () => currentTime);
+            await ExpectSaveFailureAsync();
+
+            await store.SaveAsync(new AccountData("transferred-device", "transferred-secret-0000", "transferred-player"));
+            provider.Reset();
+            await provider.GetTokenAsync();
+
+            var issued = (IssueTokenRequest)invoker.Calls.Last().Request;
+            Assert.That(issued.DeviceId, Is.EqualTo("transferred-device"));
+            Assert.That((await store.LoadAsync()).DeviceId, Is.EqualTo("transferred-device"));
+            Assert.That(invoker.Calls.Count(call => call.MethodFullName == RegisterMethod), Is.EqualTo(1));
+        });
+
+        /// <summary>
+        /// デバイス登録の間に Reset されたら、保存せずに打ち切る(保存先が入れ替わっているかもしれないため)。次は登録し直さずに保存する。
+        /// </summary>
+        [UnityTest]
+        [Description("デバイス登録の間に Reset されたら、保存せずに打ち切る(保存先が入れ替わっているかもしれないため)。次は登録し直さずに保存する")]
+        public IEnumerator ResetDuringRegistrationSkipsSave() => UniTask.ToCoroutine(async () =>
+        {
+            invoker.Register<RegisterRequest, RegisterResponse>(RegisterMethod, (_, _) =>
+            {
+                provider.Reset();
+                return UniTask.FromResult(new RegisterResponse { DeviceId = "device-1", PlayerId = "player-1" });
+            });
+
+            var canceled = false;
+            try
+            {
+                await provider.GetTokenAsync();
+            }
+            catch (OperationCanceledException)
+            {
+                canceled = true;
+            }
+
+            Assert.That(canceled, Is.True);
+            Assert.That(await accountStore.LoadAsync(), Is.Null);
+            await provider.GetTokenAsync();
+            Assert.That(invoker.Calls.Count(call => call.MethodFullName == RegisterMethod), Is.EqualTo(1), "登録し直した");
+            Assert.That((await accountStore.LoadAsync()).DeviceId, Is.EqualTo("device-1"));
+        });
+
+        /// <summary>
+        /// トークンの発行の間に Reset されたら、そのトークンは覚えず、次は発行し直す(新しいセッションに前のトークンを残さない)。
+        /// </summary>
+        [UnityTest]
+        [Description("トークンの発行の間に Reset されたら、そのトークンは覚えず、次は発行し直す(新しいセッションに前のトークンを残さない)")]
+        public IEnumerator ResetDuringIssueDoesNotKeepToken() => UniTask.ToCoroutine(async () =>
+        {
+            await accountStore.SaveAsync(new AccountData("saved-device", "saved-secret-key-0000", "saved-player"));
+            var issuedCount = 0;
+            invoker.Register<IssueTokenRequest, IssueTokenResponse>(IssueTokenMethod, (_, _) =>
+            {
+                issuedCount++;
+                if (issuedCount == 1)
+                {
+                    provider.Reset();
+                }
+
+                return UniTask.FromResult(new IssueTokenResponse
+                {
+                    AccessToken = $"token-{issuedCount}",
+                    ExpiresAt = Timestamp.FromDateTime(currentTime.AddHours(1)),
+                });
+            });
+
+            await provider.GetTokenAsync();
+            var second = await provider.GetTokenAsync();
+
+            Assert.That(second, Is.EqualTo("token-2"));
+        });
+
+        private async UniTask ExpectSaveFailureAsync()
+        {
+            try
+            {
+                await provider.GetTokenAsync();
+            }
+            catch (AccountSaveFailedException)
+            {
+                return;
+            }
+
+            Assert.Fail("保存に失敗したのに例外にならなかった");
+        }
+
+        // 読み込みで例外を投げたり、決めた回数だけ保存に失敗したりする IAccountStore
+        private sealed class FlakyAccountStore : IAccountStore
+        {
+            private readonly InMemoryAccountStore inner = new();
+
+            public Exception ThrowOnLoad { get; set; }
+
+            public int SaveFailures { get; set; }
+
+            public UniTask<AccountData> LoadAsync()
+            {
+                return ThrowOnLoad != null ? throw ThrowOnLoad : inner.LoadAsync();
+            }
+
+            public UniTask SaveAsync(AccountData data)
+            {
+                if (SaveFailures > 0)
+                {
+                    SaveFailures--;
+                    throw new IOException("disk full");
+                }
+
+                return inner.SaveAsync(data);
+            }
+
+            public UniTask ClearAsync()
+            {
+                return inner.ClearAsync();
+            }
+        }
     }
 }
