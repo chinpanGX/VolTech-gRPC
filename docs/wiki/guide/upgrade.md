@@ -16,8 +16,8 @@ updated: 2026-10-11
 
 1. 基盤の `CHANGELOG.md` で、上げる版までの変更を読む。アプリ側で直すことがあれば、そこに書いてある
 2. 次の3か所のタグを、同じ値にそろえて変える
-   - `client/Packages/manifest.json` の `com.chinpangx.voltech.grpc` の URL(`#v0.5.0` の部分)
-   - `server/Cargo.toml` の `voltech-grpc-*`(`tag = "v0.5.0"`)
+   - `client/Packages/manifest.json` の `com.chinpangx.voltech.grpc` の URL(`#v0.6.0` の部分)
+   - `server/Cargo.toml` の `voltech-grpc-*`(`tag = "v0.6.0"`)
    - `Makefile` の `VOLTECH_TAG`
 3. `make proto-gen errors-gen` で C# を生成し直す(新しいタグの基盤は、このときに取ってくる)。プラグインが生成するラッパーは、同じタグの `ApiCore` に合わせて作られているので、タグを上げたら必ず生成し直す
 4. サーバーをビルドし、Unity でコンパイルして、テストを流す

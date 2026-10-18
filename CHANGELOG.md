@@ -2,22 +2,24 @@
 
 ## [Unreleased]
 
-- アカウント情報を端末に保存する `EncryptedFileAccountStore` を足す。基盤の `.proto` の `StoredAccount`(`voltech/v1/account_store.proto`)の Protobuf のバイナリを AES で暗号化し、HMAC-SHA256 で改ざんと破損を検知する。書き込みは一時ファイルに書いてから置き換える。ファイルがあるのに読めないときは `CorruptedAccountDataException` を投げ、新しいアカウントは作らない
+## [0.6.0] - 2026-10-18
+
+- アカウント情報を端末に保存する `EncryptedFileAccountStore` を足す(#11)。基盤の `.proto` の `StoredAccount`(`voltech/v1/account_store.proto`)の Protobuf のバイナリを AES で暗号化し、HMAC-SHA256 で改ざんと破損を検知する。書き込みは一時ファイルに書いてから置き換える。ファイルがあるのに読めないときは `CorruptedAccountDataException` を投げ、新しいアカウントは作らない
   - `DeviceTokenProvider.GetAccountStatusAsync()` を足す。保存したアカウント情報の状態(`NotRegistered`・`Registered`・`Corrupted`)を、通信せずに返す
   - デバイス登録の後に保存できなければ `AccountSaveFailedException` にし、トークンを発行しない。次に呼ばれたときは登録し直さず、保存からやり直す
   - API の呼び出しの中で読み書きに失敗したときは、予約エラー `ACCOUNT_DATA_CORRUPTED`・`ACCOUNT_SAVE_FAILED`(クライアントだけが使う)にし、共通エラーハンドラーに回さずに呼び出し側に返す(通信のエラーとは扱いを分ける)
   - アプリ: タイトル画面で `GetAccountStatusAsync()` を呼び、`NotRegistered` ならサインアップ、`Registered` ならサインイン、`Corrupted` なら専用の画面に進む。サインアップ・サインインの結果が上の2つのコードなら、専用の画面に進む
   - アプリ: Unity では `UnityAccountStore.Create(serverAddress)` で作り、`DeviceTokenProvider` に渡す(`Application.persistentDataPath/VolTechGrpc/` に、接続先ごとのファイルで保存する。鍵の元はバンドルID)。`InMemoryAccountStore` を使っていた場合は置き換える
   - `InMemoryAccountStore` はテスト用にし、`Runtime/Client/Testing/` に移す(名前空間はそのまま)。アプリでは使わない
-- アセンブリ `VolTech.Client.Auth` を `VolTech.Client` にまとめる。ファイルは `Runtime/Client/Auth/` に移し、名前空間 `VolTech.Client.Auth` はそのまま。`VolTech.Client` が `VolTech.V1` を参照するようになる
+- アセンブリ `VolTech.Client.Auth` を `VolTech.Client` にまとめる(#11)。ファイルは `Runtime/Client/Auth/` に移し、名前空間 `VolTech.Client.Auth` はそのまま。`VolTech.Client` が `VolTech.V1` を参照するようになる
   - アプリ: asmdef の参照から `VolTech.Client.Auth` を外す(`VolTech.Client` を参照していれば、`DeviceTokenProvider` などはそのまま使える)。アプリが参照するのは `VolTech.Client`・`VolTech.Client.Unity`・`VolTech.V1`
-- アプリから使わない型・メンバーを `internal` にする。`ApiHeaders`・`RpcErrorDetails`・`RpcErrorInfo`、`VolTech.Client.Tracing`・`VolTech.Client.Editor` の型、`ApiResult.Success`・`Failure`、`ApiError` のコンストラクタと `Discarded`、`ServerClock.Synchronize`・`Reset`、`AppVersion.AddHeadersTo`、`ErrorCode.IsReserved`、`ApiChannel.AddInterceptor`。パッケージの中のアセンブリとテストには `InternalsVisibleTo` で見せる
+- アプリから使わない型・メンバーを `internal` にする(#11)。`ApiHeaders`・`RpcErrorDetails`・`RpcErrorInfo`、`VolTech.Client.Tracing`・`VolTech.Client.Editor` の型、`ApiResult.Success`・`Failure`、`ApiError` のコンストラクタと `Discarded`、`ServerClock.Synchronize`・`Reset`、`AppVersion.AddHeadersTo`、`ErrorCode.IsReserved`、`ApiChannel.AddInterceptor`。パッケージの中のアセンブリとテストには `InternalsVisibleTo` で見せる
   - 生成したラッパーは基盤の `ApiServiceBase` を継承し、その `protected` の `InvokeAsync` で呼ぶ。`ApiCore.InvokeAsync` は `internal` に、`RpcSettings` は `ApiServiceBase` の中の `protected internal` な型にする
   - アプリ: プラグインを上げたら C# を生成し直す(古いラッパーは `ApiCore.InvokeAsync` を呼ぶので、コンパイルできなくなる)
   - アプリ: 上の型・メンバーを使っていたら、ヘッダー名は値(`"x-game-date"` など)で書く。前面に戻ったときのサーバー時刻の合わせ直しは `ServerClockResetter` を使う
-- `ApiCore` をビルダーで作るようにする。`ApiCore.CreateBuilder(options, tokenProvider, errorPolicy, errorHandler)` で `ApiCoreBuilder` を作り、任意の部品を `WithPlayerDiffApplier`・`WithBadgeApplier`・`WithNotificationApplier`・`WithErrorNavigator`・`WithLogger`・`WithServerClock`・`AddActivityHandler` で渡して `Build()` を呼ぶ。`ApiCore` の公開コンストラクタは無くす。必須の引数に null を渡すと `ArgumentNullException` を投げる。`With`・`Add` に null を渡すと、呼ばなかったのと同じになる
+- `ApiCore` をビルダーで作るようにする(#11)。`ApiCore.CreateBuilder(options, tokenProvider, errorPolicy, errorHandler)` で `ApiCoreBuilder` を作り、任意の部品を `WithPlayerDiffApplier`・`WithBadgeApplier`・`WithNotificationApplier`・`WithErrorNavigator`・`WithLogger`・`WithServerClock`・`AddActivityHandler` で渡して `Build()` を呼ぶ。`ApiCore` の公開コンストラクタは無くす。必須の引数に null を渡すと `ArgumentNullException` を投げる。`With`・`Add` に null を渡すと、呼ばなかったのと同じになる
   - アプリ: `new ApiCore(...)` を `ApiCore.CreateBuilder(...)....Build()` に書き換える。null を渡していた部品は、メソッドを呼ばないか null を渡す。`activityHandlers` の配列は、ハンドラーごとに `AddActivityHandler` を呼ぶ(呼んだ順に開始を知らせる)
-- `IApiActivityHandler` で知らせる進行中の範囲から、エラーハンドラーを呼んでいる間を外す。送信や共通レスポンス項目の反映に失敗してエラーハンドラーを呼ぶ前に、その呼び出しの分の進行中を終わらせ、エラーハンドラーが `Retry` を返したら送り直す前にもう一度進行中にする。ほかの動きを返したら進行中に戻さずに抜ける(タイトル・ホームへの遷移は今どおり進行中が終わった後)。エラーハンドラーの順番待ち(ほかのダイアログが閉じるのを待つ間)も数えない。UNAUTHENTICATED のときのトークンの取り直しと送り直し、冪等性の順番待ちは今どおり進行中に数える。エラーハンドラーの間にセッションを破棄していたら、`Retry` が返っても進行中に戻さずに捨てる
+- `IApiActivityHandler` で知らせる進行中の範囲から、エラーハンドラーを呼んでいる間を外す(#11)。送信や共通レスポンス項目の反映に失敗してエラーハンドラーを呼ぶ前に、その呼び出しの分の進行中を終わらせ、エラーハンドラーが `Retry` を返したら送り直す前にもう一度進行中にする。ほかの動きを返したら進行中に戻さずに抜ける(タイトル・ホームへの遷移は今どおり進行中が終わった後)。エラーハンドラーの順番待ち(ほかのダイアログが閉じるのを待つ間)も数えない。UNAUTHENTICATED のときのトークンの取り直しと送り直し、冪等性の順番待ちは今どおり進行中に数える。エラーハンドラーの間にセッションを破棄していたら、`Retry` が返っても進行中に戻さずに捨てる
   - アプリ: 0.5.0 の「エラーハンドラーの間も通信中のままなので、エラーダイアログなど入力を受け付ける UI は、通信中の表示より手前に出す」は、エラーハンドラーを呼んでいる呼び出しについては要らなくなる。ただし、ほかに進行中の呼び出し(冪等性の順番待ちをしているものを含む)があれば、その分で通信中の表示が残るので、ダイアログを手前に出しておくとよい
   - アプリ: エラーハンドラーが `Retry` を返して送り直すと、開始 → 終了(エラーハンドラーの前)→ 開始(送り直す前)→ 終了の順に届く
 
