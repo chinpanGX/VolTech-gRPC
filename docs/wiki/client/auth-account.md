@@ -3,8 +3,8 @@ title: "認証とアカウント情報"
 status: confirmed
 area: client
 related: [client/structure]
-proto: []
-code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/Auth]
+proto: [server/rust/auth/proto/voltech/v1/account_store.proto]
+code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/Auth, Unity/com.chinpangx.voltech.grpc/Runtime/Client/Internal/AesHmacCipher.cs, Unity/com.chinpangx.voltech.grpc/Runtime/Client/Internal/SafeFile.cs, Unity/com.chinpangx.voltech.grpc/Runtime/Unity/UnityAccountStore.cs]
 updated: 2026-10-18
 ---
 
@@ -27,9 +27,9 @@ updated: 2026-10-18
 ```csharp
 public interface IAccountStore
 {
-    UniTask<AccountData?> LoadAsync(CancellationToken ct);    // 未登録ならnull
-    UniTask SaveAsync(AccountData data, CancellationToken ct);
-    UniTask ClearAsync(CancellationToken ct);
+    UniTask<AccountData> LoadAsync();    // 未登録なら null
+    UniTask SaveAsync(AccountData data);
+    UniTask ClearAsync();
 }
 ```
 
@@ -52,24 +52,32 @@ public interface IAccountStore
 
 ## 既定の実装(`EncryptedFileAccountStore`)
 
-自作パッケージ Supplement の暗号化ファイル保存を、**パッケージとしては依存せず、コードをコピーして**作り変える。パッケージ(Unity に依存しない)に置くので、壊れたファイルの扱いも含めて EditMode テストでテストできる。
+自作パッケージ Supplement の暗号化ファイル保存(`AesHmacCryptoAlgorithm`・`SafeFile`)を、**パッケージとしては依存せず、コードをコピーして**作り変えた(`Internal/AesHmacCipher.cs`・`Internal/SafeFile.cs`)。本体(Unity に依存しない)に置くので、壊れたファイルの扱いも含めて EditMode テストでテストできる(`EncryptedFileAccountStoreTests`)。
 
 ```
-[識別子 | バージョン | salt | 暗号文 | HMAC]
-                              └ AES で暗号化した AccountData(Protobuf のバイナリ)
+[識別子 "VTA1" | バージョン | salt の長さ | salt | 暗号文 | HMAC-SHA256]
+                                                  └ AES で暗号化した StoredAccount(Protobuf のバイナリ)
+```
+
+Unity では `UnityAccountStore.Create(serverAddress)` で作る。`DeviceTokenProvider` に渡す。
+
+```csharp
+var accountStore = UnityAccountStore.Create(serverAddress);   // ApiChannel.Create に渡すものと同じ URL
+var tokenProvider = new DeviceTokenProvider(callInvoker, accountStore, options);
 ```
 
 | 部分 | 基盤での実装 |
 |---|---|
-| データの形 | `AccountData` をパッケージの `.proto` で定義し、**Protobuf のバイナリ**にする。項目を後から足しても、古いファイルを読める |
+| データの形 | 基盤の `.proto` の `StoredAccount`(`voltech/v1/account_store.proto`。通信には使わない)の **Protobuf のバイナリ**にする。項目を後から足しても、古いファイルを読める |
 | 暗号化 | AES(CBC)。保存のたびにランダムなsaltを作り、PBKDF2で鍵とIVを作る(Supplementのまま) |
 | 改ざん・破損の検出 | **HMAC**を付け(Supplementのフォーマットからバージョンを上げる)、復号する前に確かめる。CBCでは途中が壊れても復号が成功することがあり、`secret_key` だけが黙って壊れ得るため |
-| 鍵の元 | パッケージの中で、バンドルID(Unity用の層が渡す)から作る。アプリは渡さない(コンストラクタで上書きはできる)。鍵の元はファイルに含めない |
+| 鍵の元 | パッケージで決めた値とバンドルID(`Application.identifier`。空ならプロダクト名)から作る。アプリは渡さない(`EncryptedFileAccountStore` のコンストラクタで上書きはできる)。鍵の元はファイルに含めない |
 | 書き込み | 一時ファイルに書いてから置き換える(Supplementの `SafeFile` のまま) |
-| 保存先 | パッケージ用に固定する(アプリのセーブデータと共有しない)。パスは Unity用の層が渡す |
+| 保存先 | `Application.persistentDataPath/VolTechGrpc/account-<接続先の URL の SHA-256 の先頭 16 文字>.bin`。パッケージ用のフォルダにし、アプリのセーブデータと共有しない。URL の末尾の `/` の有無は同じ接続先として扱う |
 | 公開範囲 | 名前空間をパッケージのものに変え、`internal` にする(アプリがSupplementも使っていても名前が衝突しないように) |
 
-- **読み込みのルール**: ファイルが無ければ未登録(`null`)。ファイルがあるのに読めない(HMACが合わない、復号できない、値が空)場合は専用の例外にし、**新しいアカウントを勝手に作らない**(元のデータに戻れなくなるため)。問い合わせや引き継ぎに誘導する
+- **読み込みのルール**: ファイルが無ければ未登録(`null`)。ファイルがあるのに読めない(HMACが合わない、復号できない、値が空)場合は `CorruptedAccountDataException` にし、**新しいアカウントを勝手に作らない・ファイルも消さない**(元のデータに戻れなくなるため)。問い合わせや引き継ぎに誘導する
+  - `DeviceTokenProvider` は読み込みの例外をそのまま投げるので、API の呼び出しの中で起きると `CLIENT_ERROR` になり、アプリは理由を区別できない。区別したいアプリは、最初の API を呼ぶ前(タイトル画面)に `LoadAsync` を呼んで、この例外を受け取る
 - 鍵の元がアプリの中にある以上、暗号化は難読化の位置づけ(他のアプリからはOSのサンドボックスで守られる)。本当に守りたいアプリは、iOSのKeychainやAndroidのKeystoreを使う実装に差し替える
 - PBKDF2は本来は要らないが、コストは無視できるので、動作確認済みのコードを変える量を減らすために残す
 - 注意(v1ではドキュメントに書くだけ): 保存したファイルはOSのバックアップに含まれることがある。別の端末に戻すと、2台が同じ `device_id` を持ち、認証のたびに互いのトークンを無効にし合う。バックアップから外すかはアプリに任せる

@@ -38,7 +38,7 @@ Unity のクライアントで使う、基盤の型の一覧。各型の細か�
 | 型 | 役割 |
 |---|---|
 | `DeviceTokenProvider`(`ITokenProvider`) | デバイス登録・トークンの発行・期限の管理を自動で行う。アカウント情報は `IAccountStore` に保存する([認証とアカウント情報](../client/auth-account.md)) |
-| `IAccountStore` / `InMemoryAccountStore` | アカウント情報(`AccountData`: `DeviceId`・`SecretKey`・`PlayerId`)の保存先。`InMemoryAccountStore` はメモリだけ(起動するたびに新しい端末になる)。端末に保存する実装は、まだ無い |
+| `IAccountStore` / `EncryptedFileAccountStore` / `InMemoryAccountStore` | アカウント情報(`AccountData`: `DeviceId`・`SecretKey`・`PlayerId`)の保存先。`EncryptedFileAccountStore` は暗号化したファイルに保存する(Unity では `UnityAccountStore.Create(serverAddress)` で作る)。ファイルがあるのに読めないと `CorruptedAccountDataException` を投げる。`InMemoryAccountStore` はメモリだけ(起動するたびに新しい端末になる。テストや試すとき用) |
 | `DefaultCommonErrorHandler`(`ICommonErrorHandler`) | action ごとに決まったボタンのダイアログを出し、押されたボタンから動き(`ErrorDecision`)を決める([エラー処理](../client/error-handling.md)) |
 | `ErrorPolicyProvider`(`IErrorPolicyProvider`) | エラーコードから既定の action を引く。アプリの `errors.toml` から生成した一覧(例: `AppErrors.All`)を渡して作る。予約エラーは自動で入る([エラー](../api/errors.md)) |
 | `ServerClock`(`IServerClock`) | サーバー時刻。成功したレスポンスのヘッダーで合わせる。`IsSynchronized` が false の間は `Now` を読めない |

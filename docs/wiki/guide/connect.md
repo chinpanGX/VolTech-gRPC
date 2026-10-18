@@ -68,13 +68,14 @@ Server::builder()
 
 ```csharp
 var options = new ApiCoreOptions(UnityAppVersion.Create(appVersion));
-var channel = ApiChannel.Create("http://localhost:50051");     // チャンネルは1つを使い回す
+var serverAddress = "http://localhost:50051";
+var channel = ApiChannel.Create(serverAddress);                 // チャンネルは1つを使い回す
 var callInvoker = ApiChannel.CreateCallInvoker(channel);        // エディタと開発ビルドでは gRPC Monitor に記録される
 var clock = new ServerClock();
 
 var core = ApiCore.CreateBuilder(
         options,
-        new DeviceTokenProvider(callInvoker, new InMemoryAccountStore(), options), // ITokenProvider
+        new DeviceTokenProvider(callInvoker, UnityAccountStore.Create(serverAddress), options), // ITokenProvider(アカウント情報は暗号化したファイルに保存)
         new ErrorPolicyProvider(AppErrors.All),                                    // IErrorPolicyProvider(アプリの errors.toml から生成した一覧)
         new DefaultCommonErrorHandler(errorDialog))                                // ICommonErrorHandler
     .WithPlayerDiffApplier(new PlayerDiffApplier(playerRepository))                // IPlayerDiffApplier(アプリ)
@@ -91,6 +92,7 @@ var gachaApi = new GachaApi(core, callInvoker);
 
 - 前面に戻ったときにサーバー時刻を合わせ直すため、`ServerClockResetter.Create(clock)` も作る
 - `ApiCore`・ラッパー・`CallInvoker` はアプリで1つずつにする(順番待ちとセッションを `ApiCore` が持つため)
+- アカウント情報は、`UnityAccountStore.Create(serverAddress)` で接続先ごとの暗号化したファイルに保存する。sandbox のサンプルは、起動するたびに新しい端末として試せるように `InMemoryAccountStore` を使っている
 - デバイス登録とトークンの発行は、最初の通信で `ApiCore` が自動で行う。アプリが呼ぶことはない([認証とアカウント情報](../client/auth-account.md))
 
 アプリが実装する interface:

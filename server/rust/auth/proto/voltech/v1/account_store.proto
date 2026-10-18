@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package voltech.v1;
+
+option csharp_namespace = "VolTech.V1";
+
+// クライアントが端末に保存するアカウント情報。通信には使わない。
+// Unity のパッケージの EncryptedFileAccountStore が、このバイナリを暗号化してファイルに書く。
+// 項目を足しても古いファイルを読めるように、フィールド番号は変えない・使い回さない。
+message StoredAccount {
+  // Register で受け取った device_id。
+  string device_id = 1;
+  // Register で送った secret_key。
+  string secret_key = 2;
+  // Register で受け取った player_id。
+  string player_id = 3;
+}

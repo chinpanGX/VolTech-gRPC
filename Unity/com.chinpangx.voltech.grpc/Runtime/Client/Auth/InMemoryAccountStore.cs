@@ -3,7 +3,7 @@
 namespace VolTech.Client.Auth
 {
     /// <summary>
-    /// メモリに持つだけの IAccountStore。テストと、保存の仕組みができるまでの仮の実装。
+    /// メモリに持つだけの IAccountStore。テストや、起動するたびに新しい端末として試すときに使う。端末に保存するときは EncryptedFileAccountStore を使う。
     /// </summary>
     public sealed class InMemoryAccountStore : IAccountStore
     {
