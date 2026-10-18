@@ -149,6 +149,30 @@ namespace Sandbox.Tests.EditMode
         });
 
         /// <summary>
+        /// エラーハンドラーの間にセッションを破棄していたら、Retry が返っても送り直さず、開始も届かない。
+        /// </summary>
+        [UnityTest]
+        [Description("エラーハンドラーの間にセッションを破棄していたら、Retry が返っても送り直さず、開始も届かない")]
+        public IEnumerator RetryAfterResetSessionDoesNotStartAgain() => UniTask.ToCoroutine(async () =>
+        {
+            invoker.Register<PingRequest, PingResponse>(SandboxServiceMethods.Ping, (_, _) =>
+                throw FakeRpcErrors.Status(StatusCode.Unavailable));
+            // ダイアログが出ている間に、アカウントの引き継ぎなどでセッションを破棄する
+            errorHandler.OnHandle = () =>
+            {
+                core.ResetSession();
+                return UniTask.CompletedTask;
+            };
+            errorHandler.ThenReturn(ErrorDecision.Retry);
+
+            var result = await sandboxApi.PingAsync(new PingRequest());
+
+            Assert.That(result.Error.IsDiscarded, Is.True);
+            Assert.That(invoker.Calls, Has.Count.EqualTo(1), "破棄したセッションで送り直した");
+            Assert.That(events, Is.EqualTo(Ended));
+        });
+
+        /// <summary>
         /// UNAUTHENTICATED のときのトークンの取り直しと送り直しの間は、進行中のままで、終了・開始は届かない。
         /// </summary>
         [UnityTest]
@@ -348,14 +372,16 @@ namespace Sandbox.Tests.EditMode
         // 反映処理を渡したいテストのために、ApiCore を作り直せるようにする
         private void CreateCore(IPlayerDiffApplier playerDiffApplier)
         {
-            core = new ApiCore(
-                new ApiCoreOptions(),
-                new CountingTokenProvider(),
-                new ErrorPolicyProvider(SandboxErrors.All),
-                errorHandler,
-                playerDiffApplier,
-                navigator: navigator,
-                activityHandlers: new[] { first, second });
+            core = ApiCore.CreateBuilder(
+                    new ApiCoreOptions(),
+                    new CountingTokenProvider(),
+                    new ErrorPolicyProvider(SandboxErrors.All),
+                    errorHandler)
+                .WithPlayerDiffApplier(playerDiffApplier)
+                .WithErrorNavigator(navigator)
+                .AddActivityHandler(first)
+                .AddActivityHandler(second)
+                .Build();
             sandboxApi = new SandboxApi(core, invoker);
         }
 

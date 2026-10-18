@@ -58,34 +58,39 @@ namespace VolTech.Client
         // 受け取るたびに更新すると日付の変化に気づけないので、セッションを破棄するまで最初の値を使う
         private string gameDate;
 
+        // ApiCoreBuilder.Build から作る
+        internal ApiCore(ApiCoreBuilder builder)
+        {
+            options = builder.Options;
+            tokenProvider = builder.TokenProvider;
+            errorPolicy = builder.ErrorPolicy;
+            errorHandler = builder.ErrorHandler;
+            playerDiffApplier = builder.PlayerDiffApplier;
+            logger = builder.Logger;
+            serverClock = builder.ServerClock ?? new ServerClock();
+            navigator = builder.Navigator;
+            badgeApplier = builder.BadgeApplier;
+            notificationApplier = builder.NotificationApplier;
+            // ビルダーを使い回して足されても変わらないように写す
+            activityHandlers = builder.ActivityHandlers.ToArray();
+        }
+
         /// <summary>
-        /// 共通処理に使う部品を受け取って作る。
+        /// ApiCore を組み立てるビルダーを作る。任意の部品を With・Add で渡し、Build で ApiCore を作る。
         /// </summary>
-        /// <param name="activityHandlers">進行中の呼び出しの開始・終了を受け取るハンドラー。複数を登録でき、null なら通知しない。</param>
-        public ApiCore(
+        /// <param name="options">締め切りやアプリのバージョンなど、すべての呼び出しに使う設定。</param>
+        /// <param name="tokenProvider">リクエストに付けるアクセストークンを渡す。UNAUTHENTICATED で弾かれたら、捨てて発行し直させる。</param>
+        /// <param name="errorPolicy">業務エラーのコードを知っているかと、その既定の action を引く。知らないコードは UNKNOWN_ERROR として扱う。</param>
+        /// <param name="errorHandler">handledCodes で受け取らなかったエラーを処理する。ダイアログを出し、その後の動き(送り直す・タイトルに戻るなど)を返す。</param>
+        /// <returns>ApiCore のビルダー。</returns>
+        /// <exception cref="ArgumentNullException">どれかの引数が null のとき。</exception>
+        public static ApiCoreBuilder CreateBuilder(
             ApiCoreOptions options,
             ITokenProvider tokenProvider,
             IErrorPolicyProvider errorPolicy,
-            ICommonErrorHandler errorHandler,
-            IPlayerDiffApplier playerDiffApplier = null,
-            IApiLogger logger = null,
-            ServerClock serverClock = null,
-            IErrorNavigator navigator = null,
-            IBadgeApplier badgeApplier = null,
-            INotificationApplier notificationApplier = null,
-            IReadOnlyList<IApiActivityHandler> activityHandlers = null)
+            ICommonErrorHandler errorHandler)
         {
-            this.options = options;
-            this.tokenProvider = tokenProvider;
-            this.errorPolicy = errorPolicy;
-            this.errorHandler = errorHandler;
-            this.playerDiffApplier = playerDiffApplier;
-            this.logger = logger;
-            this.serverClock = serverClock ?? new ServerClock();
-            this.navigator = navigator;
-            this.badgeApplier = badgeApplier;
-            this.notificationApplier = notificationApplier;
-            this.activityHandlers = activityHandlers ?? Array.Empty<IApiActivityHandler>();
+            return new ApiCoreBuilder(options, tokenProvider, errorPolicy, errorHandler);
         }
 
         /// <summary>
@@ -248,6 +253,13 @@ namespace VolTech.Client
                 var decision = await HandleErrorAsync(error, epoch, activity);
                 if (decision == ErrorDecision.Retry)
                 {
+                    // エラーハンドラーの間にセッションを破棄していたら、送っても捨てるだけなので、進行中に戻さずに捨てる
+                    if (IsStale(epoch))
+                    {
+                        logger?.Log($"[Api] {settings.MethodName} discarded");
+                        return (ApiResult<TResponse>.Failure(ApiError.Discarded()), ErrorDecision.Stay);
+                    }
+
                     activity?.Resume();
                     reauthenticated = false;
                     continue;

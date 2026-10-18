@@ -46,14 +46,15 @@ namespace Sandbox.Tests.EditMode
             diffApplier = new RecordingApplier("player_diff", applyOrder);
             badgeApplier = new RecordingApplier("badges", applyOrder);
             notificationApplier = new RecordingApplier("notifications", applyOrder);
-            core = new ApiCore(
-                new ApiCoreOptions(),
-                tokenProvider,
-                new ErrorPolicyProvider(SandboxErrors.All),
-                errorHandler,
-                diffApplier,
-                badgeApplier: badgeApplier,
-                notificationApplier: notificationApplier);
+            core = ApiCore.CreateBuilder(
+                    new ApiCoreOptions(),
+                    tokenProvider,
+                    new ErrorPolicyProvider(SandboxErrors.All),
+                    errorHandler)
+                .WithPlayerDiffApplier(diffApplier)
+                .WithBadgeApplier(badgeApplier)
+                .WithNotificationApplier(notificationApplier)
+                .Build();
             sandboxApi = new SandboxApi(core, invoker);
         }
 
@@ -369,13 +370,14 @@ namespace Sandbox.Tests.EditMode
         public IEnumerator ApiCalledDuringNavigationUsesNewSession() => UniTask.ToCoroutine(async () =>
         {
             var navigator = new RecordingNavigator();
-            core = new ApiCore(
-                new ApiCoreOptions(),
-                tokenProvider,
-                new ErrorPolicyProvider(SandboxErrors.All),
-                errorHandler,
-                diffApplier,
-                navigator: navigator);
+            core = ApiCore.CreateBuilder(
+                    new ApiCoreOptions(),
+                    tokenProvider,
+                    new ErrorPolicyProvider(SandboxErrors.All),
+                    errorHandler)
+                .WithPlayerDiffApplier(diffApplier)
+                .WithErrorNavigator(navigator)
+                .Build();
             sandboxApi = new SandboxApi(core, invoker);
             invoker.Register<PingRequest, PingResponse>(SandboxServiceMethods.Ping, (_, _) =>
                 invoker.Calls.Count == 1 ? throw FakeRpcErrors.Status(StatusCode.Internal) : UniTask.FromResult(Pinged("player-1")));

@@ -37,12 +37,13 @@ namespace Sandbox.Tests.EditMode
                 UniTask.FromResult(new PingResponse { PlayerId = "player-1" }));
             errorHandler = new RecordingErrorHandler();
             elapsed = TimeSpan.Zero;
-            core = new ApiCore(
-                new ApiCoreOptions(new AppVersion(AppVersion.Windows, 120)),
-                new CountingTokenProvider(),
-                new ErrorPolicyProvider(SandboxErrors.All),
-                errorHandler,
-                serverClock: new ServerClock(() => elapsed));
+            core = ApiCore.CreateBuilder(
+                    new ApiCoreOptions(new AppVersion(AppVersion.Windows, 120)),
+                    new CountingTokenProvider(),
+                    new ErrorPolicyProvider(SandboxErrors.All),
+                    errorHandler)
+                .WithServerClock(new ServerClock(() => elapsed))
+                .Build();
             sandboxApi = new SandboxApi(core, invoker);
         }
 

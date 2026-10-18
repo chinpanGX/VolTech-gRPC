@@ -5,7 +5,7 @@ area: client
 related: [api/codegen, api/common-response, client/fake-testing]
 proto: []
 code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/Hooks]
-updated: 2026-10-10
+updated: 2026-10-18
 ---
 
 # 共通レスポンス項目の反映
@@ -29,7 +29,7 @@ public interface INotificationApplier { UniTask ApplyAsync(IMessage response); }
 
 当面の実装:
 
-- 反映処理は `IPlayerDiffApplier`・`IBadgeApplier`・`INotificationApplier` で、`ApiCore` のコンストラクタで受け取る(どれも省略できる)。player_diff → バッジ → 通知の順に呼び、途中で例外が起きたら残りは呼ばない
+- 反映処理は `IPlayerDiffApplier`・`IBadgeApplier`・`INotificationApplier` で、`ApiCoreBuilder` の `WithPlayerDiffApplier`・`WithBadgeApplier`・`WithNotificationApplier` で渡す(どれも省略できる)。player_diff → バッジ → 通知の順に呼び、途中で例外が起きたら残りは呼ばない
 - 「使っているのに登録を忘れたら起動時にエラー」は、まだ入れていない(プラグインが一覧を生成するときに足す)
 - アプリの `BadgeApplier` は、`IHasBadges` のレスポンスの `badges` を `BadgeStore` に種類ごとに上書きする。知らない種類(古いアプリにとって、サーバーが後から足した種類)は無視する
 - アプリの `NotificationApplier` は、`IHasNotifications` のレスポンスの `notifications` を `NotificationQueue` に届いた順に積む。`oneof` が空のもの(知らない種類)は積まない。通知を取り出して出すのは画面
