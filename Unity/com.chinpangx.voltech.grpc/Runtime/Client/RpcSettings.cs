@@ -1,8 +1,15 @@
-﻿namespace VolTech.Client
+﻿using System.ComponentModel;
+
+namespace VolTech.Client
 {
     /// <summary>
     /// RPC ごとの設定。ラッパーが .proto に合わせて持つ。
     /// </summary>
+    /// <remarks>
+    /// 生成したラッパーが ApiCore.InvokeAsync に渡す。アプリは作らない。
+    /// ラッパーはアプリのアセンブリに生成されるので public にしている。
+    /// </remarks>
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public sealed class RpcSettings
     {
         /// <summary>

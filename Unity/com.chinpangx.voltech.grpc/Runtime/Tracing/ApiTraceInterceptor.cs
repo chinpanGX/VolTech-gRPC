@@ -18,7 +18,7 @@ namespace VolTech.Client.Tracing
     /// Body を JSON にするのは、記録が読まれたとき(ウィンドウに出す・実機から送る)まで遅らせる。通信の流れの中では、
     /// メッセージを複製するだけにして、送るのと結果を返すのを遅らせない。
     /// </remarks>
-    public sealed class ApiTraceInterceptor : Interceptor
+    internal sealed class ApiTraceInterceptor : Interceptor
     {
         // 既定値のフィールドも出して、送った・受け取ったことが分かるようにする。grpcurl・Postman にそのまま貼れる形。
         // 字下げはしない(実機から送る量を減らす)。読みやすくするのは、表示するエディタの側で行う

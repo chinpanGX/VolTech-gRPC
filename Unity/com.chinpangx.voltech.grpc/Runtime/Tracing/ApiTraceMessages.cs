@@ -7,7 +7,7 @@ namespace VolTech.Client.Tracing
     /// <summary>
     /// 実機からエディタへ、PlayerConnection で通信の記録を送るときの決まり(メッセージの ID と、送る形)。
     /// </summary>
-    public static class ApiTraceMessages
+    internal static class ApiTraceMessages
     {
         /// <summary>通信の記録1件のメッセージの ID。実機とエディタで同じ値を使う。</summary>
         public static readonly Guid Trace = new("6c1f3c0e-2b4d-4a8f-9e57-3d2a8b1c7f40");

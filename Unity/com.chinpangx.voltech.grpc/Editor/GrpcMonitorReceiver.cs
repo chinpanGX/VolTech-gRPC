@@ -13,7 +13,7 @@ namespace VolTech.Client.Editor
     /// 「does not derive from UnityEngine.Object」になる)ので、エディタの中だけで生きる ScriptableSingleton にする。
     /// 接続先は、Console・Profiler と同じ Unity の接続先の選択で決まる。
     /// </remarks>
-    public sealed class GrpcMonitorReceiver : ScriptableSingleton<GrpcMonitorReceiver>
+    internal sealed class GrpcMonitorReceiver : ScriptableSingleton<GrpcMonitorReceiver>
     {
         private const string ClearOnPlayKey = "VolTech.Client.Tracing.ClearOnPlay";
 

@@ -11,7 +11,7 @@ namespace VolTech.Client.Tracing
     /// Interceptor の続きはメインスレッドで動くとは限らないので、追加・置き換えは lock で守る。
     /// 読む側(ウィンドウ)は Version を見て、変わっていたら Snapshot を取り直す。
     /// </remarks>
-    public sealed class ApiTraceStore
+    internal sealed class ApiTraceStore
     {
         /// <summary>持つ件数の上限。超えたら古いものから捨てる。</summary>
         public const int Capacity = 500;

@@ -58,7 +58,7 @@ namespace VolTech.Client.Unity
         /// <remarks>
         /// Api は開発用のツールのアセンブリを参照しない(リリースビルドで消えるため)。ツールの側がここに自分を登録する。
         /// </remarks>
-        public static void AddInterceptor(Interceptor interceptor)
+        internal static void AddInterceptor(Interceptor interceptor)
         {
             lock (gate)
             {

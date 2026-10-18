@@ -28,7 +28,7 @@ namespace VolTech.Client
         /// <summary>
         /// 基盤の予約エラーかを返す。予約エラーは handledCodes に渡しても、必ず共通エラーハンドラーが処理する。
         /// </summary>
-        public bool IsReserved => Domain == ReservedErrors.Domain;
+        internal bool IsReserved => Domain == ReservedErrors.Domain;
 
         public static bool operator ==(ErrorCode left, ErrorCode right)
         {

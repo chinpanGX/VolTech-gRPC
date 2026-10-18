@@ -430,7 +430,7 @@ namespace Sandbox.Tests.EditMode
         public IEnumerator BrokenErrorDetailsBecomeUnknownError() => UniTask.ToCoroutine(async () =>
         {
             // 長さ5の項目と言いながら中身が無い、読めない google.rpc.Status
-            var brokenDetails = new Metadata { { RpcErrorDetails.TrailerKey, new byte[] { 0x0A, 0x05 } } };
+            var brokenDetails = new Metadata { { "grpc-status-details-bin", new byte[] { 0x0A, 0x05 } } };
             invoker.Register<PingRequest, PingResponse>(SandboxServiceMethods.Ping, (_, _) =>
                 throw new RpcException(new Status(StatusCode.FailedPrecondition, "broken details"), brokenDetails));
 

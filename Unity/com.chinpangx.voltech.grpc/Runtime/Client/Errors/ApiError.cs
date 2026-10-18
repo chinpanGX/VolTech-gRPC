@@ -13,7 +13,7 @@ namespace VolTech.Client
         /// <summary>
         /// エラーの内容を受け取って作る。
         /// </summary>
-        public ApiError(
+        internal ApiError(
             ErrorCode code,
             ErrorAction action,
             StatusCode statusCode,
@@ -52,7 +52,7 @@ namespace VolTech.Client
         /// <summary>
         /// 送らずに捨てたリクエストの失敗を作る。
         /// </summary>
-        public static ApiError Discarded()
+        internal static ApiError Discarded()
         {
             return new ApiError(
                 new ErrorCode(ReservedErrors.Domain, "DISCARDED"),

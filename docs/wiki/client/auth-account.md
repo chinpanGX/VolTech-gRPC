@@ -4,13 +4,13 @@ status: confirmed
 area: client
 related: [client/structure]
 proto: []
-code: [Unity/com.chinpangx.voltech.grpc/Runtime/Auth]
-updated: 2026-10-10
+code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/Auth]
+updated: 2026-10-18
 ---
 
 # 認証とアカウント情報
 
-パッケージの Auth(Unity に依存しない .NET のコード。名前は [構成](structure.md) の注記のとおり、作るときに決める)が持つ。`ApiCore` とは、トークンを渡す interface(例: `ITokenProvider`)でつなぐ。保存先のパスとバンドルIDは、Unity 用の層が渡す。
+`VolTech.Client` アセンブリの `Auth/`(名前空間 `VolTech.Client.Auth`。Unity に依存しない .NET のコード)が持つ。`ApiCore` とは、トークンを渡す interface(例: `ITokenProvider`)でつなぐ。保存先のパスとバンドルIDは、Unity 用の層が渡す。
 
 ## デバイス登録とトークン
 

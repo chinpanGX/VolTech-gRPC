@@ -6,13 +6,13 @@ using Cysharp.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 using NUnit.Framework;
-using Sandbox.V1;
 using UnityEngine;
 using UnityEngine.TestTools;
 using VolTech.Client;
 using VolTech.Client.Tracing;
+using VolTech.V1;
 
-namespace Sandbox.Tests.EditMode
+namespace VolTech.Client.Tests.EditMode
 {
     /// <summary>
     /// gRPC Monitor のための記録(ApiTraceInterceptor・ApiTraceStore・実機から送る形)を、サーバーなしで確かめる。
@@ -20,9 +20,11 @@ namespace Sandbox.Tests.EditMode
     [Description("gRPC Monitor のための記録(ApiTraceInterceptor・ApiTraceStore・実機から送る形)を、サーバーなしで確かめる")]
     public class ApiTraceTests
     {
+        private const string RegisterMethod = "/voltech.v1.DeviceService/Register";
+
         private ApiTraceStore store;
         private FakeCallInvoker invoker;
-        private SandboxService.SandboxServiceClient client;
+        private DeviceService.DeviceServiceClient client;
 
         /// <summary>
         /// テストごとに、空の記録の置き場所と、それに記録する偽のサーバーを作る。
@@ -32,7 +34,7 @@ namespace Sandbox.Tests.EditMode
         {
             store = new ApiTraceStore();
             invoker = new FakeCallInvoker();
-            client = new SandboxService.SandboxServiceClient(invoker.Intercept(new ApiTraceInterceptor(store)));
+            client = new DeviceService.DeviceServiceClient(invoker.Intercept(new ApiTraceInterceptor(store)));
         }
 
         /// <summary>
@@ -43,25 +45,25 @@ namespace Sandbox.Tests.EditMode
         public IEnumerator SuccessIsRecorded() => UniTask.ToCoroutine(async () =>
         {
             invoker.ResponseHeaders.Add("x-game-date", "2026-10-07");
-            invoker.Register<IncrementRequest, IncrementResponse>(SandboxServiceMethods.Increment, (_, _) =>
-                UniTask.FromResult(new IncrementResponse { Counter = 3 }));
+            invoker.Register<RegisterRequest, RegisterResponse>(RegisterMethod, (_, _) =>
+                UniTask.FromResult(new RegisterResponse { DeviceId = "device-1" }));
 
-            var response = await client.IncrementAsync(
-                new IncrementRequest(),
+            var response = await client.RegisterAsync(
+                new RegisterRequest(),
                 new Metadata { { "authorization", "Bearer token-1" } });
 
-            Assert.That(response.Counter, Is.EqualTo(3));
+            Assert.That(response.DeviceId, Is.EqualTo("device-1"));
             var trace = store.Snapshot().Single();
-            Assert.That(trace.Method, Is.EqualTo(SandboxServiceMethods.Increment));
-            Assert.That(trace.ShortMethod, Is.EqualTo("Increment"));
+            Assert.That(trace.Method, Is.EqualTo(RegisterMethod));
+            Assert.That(trace.ShortMethod, Is.EqualTo("Register"));
             Assert.That(trace.State, Is.EqualTo(ApiTraceState.Succeeded));
             Assert.That(trace.StatusCode, Is.EqualTo("OK"));
             Assert.That(trace.DurationMs, Is.GreaterThanOrEqualTo(0));
             Assert.That(Header(trace.RequestHeaders, "authorization"), Is.EqualTo("Bearer token-1"));
-            // 既定値(amount = 0)も出すので、送ったことが分かる。int64 は JSON では文字列になる
-            Assert.That(trace.RequestBody, Does.Contain("\"amount\": \"0\""));
+            // 既定値(secret_key = "")も出すので、送ったことが分かる
+            Assert.That(trace.RequestBody, Does.Contain("\"secretKey\": \"\""));
             Assert.That(Header(trace.ResponseHeaders, "x-game-date"), Is.EqualTo("2026-10-07"));
-            Assert.That(trace.ResponseBody, Does.Contain("\"counter\": \"3\""));
+            Assert.That(trace.ResponseBody, Does.Contain("\"deviceId\": \"device-1\""));
         });
 
         /// <summary>
@@ -71,7 +73,7 @@ namespace Sandbox.Tests.EditMode
         [Description("業務エラーは、ステータスと ErrorInfo(reason・metadata)が記録され、例外は包まずにそのまま呼び出し側に届く")]
         public IEnumerator BusinessErrorIsRecordedWithErrorInfo() => UniTask.ToCoroutine(async () =>
         {
-            invoker.Register<IncrementRequest, IncrementResponse>(SandboxServiceMethods.Increment, (_, _) =>
+            invoker.Register<RegisterRequest, RegisterResponse>(RegisterMethod, (_, _) =>
                 throw FakeRpcErrors.FailedPrecondition(
                     ReservedErrors.Maintenance,
                     "under maintenance",
@@ -80,7 +82,7 @@ namespace Sandbox.Tests.EditMode
             RpcException thrown = null;
             try
             {
-                await client.IncrementAsync(new IncrementRequest());
+                await client.RegisterAsync(new RegisterRequest());
             }
             catch (RpcException exception)
             {
@@ -107,10 +109,10 @@ namespace Sandbox.Tests.EditMode
         [Description("記録を止めている間は、通信は通るが記録されない")]
         public IEnumerator NotRecordedWhilePaused() => UniTask.ToCoroutine(async () =>
         {
-            invoker.Register<IncrementRequest, IncrementResponse>(SandboxServiceMethods.Increment, (_, _) => UniTask.FromResult(new IncrementResponse()));
+            invoker.Register<RegisterRequest, RegisterResponse>(RegisterMethod, (_, _) => UniTask.FromResult(new RegisterResponse()));
             store.Recording = false;
 
-            await client.IncrementAsync(new IncrementRequest());
+            await client.RegisterAsync(new RegisterRequest());
 
             Assert.That(store.Snapshot(), Is.Empty);
         });
@@ -122,14 +124,14 @@ namespace Sandbox.Tests.EditMode
         [Description("記録の処理で例外が起きても(記録の置き場所の購読者が投げるなど)、通信は失敗せず、レスポンスがそのまま返る")]
         public IEnumerator RecordingErrorDoesNotFailCall() => UniTask.ToCoroutine(async () =>
         {
-            invoker.Register<IncrementRequest, IncrementResponse>(SandboxServiceMethods.Increment, (_, _) =>
-                UniTask.FromResult(new IncrementResponse { Counter = 3 }));
+            invoker.Register<RegisterRequest, RegisterResponse>(RegisterMethod, (_, _) =>
+                UniTask.FromResult(new RegisterResponse { DeviceId = "device-1" }));
             store.Changed += _ => throw new System.InvalidOperationException("subscriber failed");
             LogAssert.Expect(LogType.Warning, new Regex(@"\[ApiTrace\].*subscriber failed"));
 
-            var response = await client.IncrementAsync(new IncrementRequest());
+            var response = await client.RegisterAsync(new RegisterRequest());
 
-            Assert.That(response.Counter, Is.EqualTo(3));
+            Assert.That(response.DeviceId, Is.EqualTo("device-1"));
         });
 
         /// <summary>
@@ -188,7 +190,7 @@ namespace Sandbox.Tests.EditMode
             var trace = new ApiTrace
             {
                 Id = 7,
-                Method = SandboxServiceMethods.Increment,
+                Method = RegisterMethod,
                 State = ApiTraceState.Failed,
                 RequestHeaders = { new ApiTraceHeader("x-request-id", "abc") },
                 RequestBody = "{ \"amount\": \"1\" }",
@@ -199,7 +201,7 @@ namespace Sandbox.Tests.EditMode
             var decoded = ApiTraceMessages.Decode(ApiTraceMessages.Encode(trace));
 
             Assert.That(decoded.Id, Is.EqualTo(7));
-            Assert.That(decoded.Method, Is.EqualTo(SandboxServiceMethods.Increment));
+            Assert.That(decoded.Method, Is.EqualTo(RegisterMethod));
             Assert.That(decoded.State, Is.EqualTo(ApiTraceState.Failed));
             Assert.That(Header(decoded.RequestHeaders, "x-request-id"), Is.EqualTo("abc"));
             Assert.That(decoded.RequestBody, Is.EqualTo(trace.RequestBody));
@@ -228,17 +230,17 @@ namespace Sandbox.Tests.EditMode
         [Description("Body は読まれたときに JSON にするが、その前に呼び出し側がメッセージを書き換えても、記録は通信の時点の中身のまま")]
         public IEnumerator BodyKeepsContentAtCallTime() => UniTask.ToCoroutine(async () =>
         {
-            invoker.Register<IncrementRequest, IncrementResponse>(SandboxServiceMethods.Increment, (_, _) =>
-                UniTask.FromResult(new IncrementResponse { Counter = 3 }));
-            var request = new IncrementRequest { Amount = 1 };
+            invoker.Register<RegisterRequest, RegisterResponse>(RegisterMethod, (_, _) =>
+                UniTask.FromResult(new RegisterResponse { DeviceId = "device-1" }));
+            var request = new RegisterRequest { SecretKey = "secret-1" };
 
-            var response = await client.IncrementAsync(request);
-            request.Amount = 99;
-            response.Counter = 99;
+            var response = await client.RegisterAsync(request);
+            request.SecretKey = "changed";
+            response.DeviceId = "changed";
 
             var trace = store.Snapshot().Single();
-            Assert.That(trace.RequestBody, Does.Contain("\"amount\": \"1\""));
-            Assert.That(trace.ResponseBody, Does.Contain("\"counter\": \"3\""));
+            Assert.That(trace.RequestBody, Does.Contain("\"secretKey\": \"secret-1\""));
+            Assert.That(trace.ResponseBody, Does.Contain("\"deviceId\": \"device-1\""));
         });
 
         /// <summary>

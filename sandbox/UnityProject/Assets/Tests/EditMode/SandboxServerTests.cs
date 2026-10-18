@@ -102,8 +102,8 @@ namespace Sandbox.Tests.EditMode
             var requestId = Guid.NewGuid().ToString("N");
             var headers = new Metadata
             {
-                { ApiHeaders.Authorization, $"Bearer {token}" },
-                { ApiHeaders.RequestId, requestId },
+                { "authorization", $"Bearer {token}" },
+                { "x-request-id", requestId },
             };
 
             var first = await client.IncrementAsync(new IncrementRequest { Amount = 5 }, headers);

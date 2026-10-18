@@ -4,7 +4,7 @@ status: current
 area: repo
 related: [repo/operations, appendix/code-map, guide/upgrade]
 proto: []
-updated: 2026-10-11
+updated: 2026-10-18
 ---
 
 # リポジトリ名と命名
@@ -19,7 +19,7 @@ updated: 2026-10-11
 | サーバーのフォルダ(基盤のリポジトリの中) | `server/rust/`(Go 版を足したら `server/go/`) |
 | Rust のクレート | `voltech-grpc-auth`・`voltech-grpc-error`・`voltech-grpc-status`・`voltech-grpc-transaction`(機能ごと)。エラーの定数を生成する `voltech-grpc-error-build`(build.rs から使う) |
 | UPM パッケージ | `com.chinpangx.voltech.grpc`(表示名: VolTech gRPC)。`chinpangx` は `name` だけに使い、表示名・asmdef・名前空間には入れない |
-| C# の名前空間(クライアントの基盤) | `VolTech.Client`。認証は `VolTech.Client.Auth`、Unity 用の層は `VolTech.Client.Unity`、開発用のツールは `VolTech.Client.Tracing`・`VolTech.Client.Editor`。asmdef の名前も同じ |
+| C# の名前空間(クライアントの基盤) | `VolTech.Client`。認証は `VolTech.Client.Auth`、Unity 用の層は `VolTech.Client.Unity`、開発用のツールは `VolTech.Client.Tracing`・`VolTech.Client.Editor`。asmdef の名前も同じ(認証の `VolTech.Client.Auth` は本体の asmdef `VolTech.Client` に入れ、asmdef を分けない) |
 | C# の名前空間(基盤の `.proto` から生成したコード) | `VolTech.V1`(`option csharp_namespace` で指定する) |
 | protoc プラグイン | `protoc-gen-voltech-grpc` |
 | `.proto` のパッケージ名(基盤の `device.proto` など) | `voltech.v1`(技術の名前は入れない) |

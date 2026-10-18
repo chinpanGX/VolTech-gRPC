@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- アセンブリ `VolTech.Client.Auth` を `VolTech.Client` にまとめる。ファイルは `Runtime/Client/Auth/` に移し、名前空間 `VolTech.Client.Auth` はそのまま。`VolTech.Client` が `VolTech.V1` を参照するようになる
+  - アプリ: asmdef の参照から `VolTech.Client.Auth` を外す(`VolTech.Client` を参照していれば、`DeviceTokenProvider` などはそのまま使える)。アプリが参照するのは `VolTech.Client`・`VolTech.Client.Unity`・`VolTech.V1`
+- アプリから使わない型・メンバーを `internal` にする。`ApiHeaders`・`RpcErrorDetails`・`RpcErrorInfo`、`VolTech.Client.Tracing`・`VolTech.Client.Editor` の型、`ApiResult.Success`・`Failure`、`ApiError` のコンストラクタと `Discarded`、`ServerClock.Synchronize`・`Reset`、`AppVersion.AddHeadersTo`、`ErrorCode.IsReserved`、`ApiChannel.AddInterceptor`。パッケージの中のアセンブリとテストには `InternalsVisibleTo` で見せる
+  - 生成したラッパーが使う `ApiCore.InvokeAsync` と `RpcSettings` は public のまま、`[EditorBrowsable(Never)]` を付ける
+  - アプリ: 上の型・メンバーを使っていたら、ヘッダー名は値(`"x-game-date"` など)で書く。前面に戻ったときのサーバー時刻の合わせ直しは `ServerClockResetter` を使う
 - `ApiCore` をビルダーで作るようにする。`ApiCore.CreateBuilder(options, tokenProvider, errorPolicy, errorHandler)` で `ApiCoreBuilder` を作り、任意の部品を `WithPlayerDiffApplier`・`WithBadgeApplier`・`WithNotificationApplier`・`WithErrorNavigator`・`WithLogger`・`WithServerClock`・`AddActivityHandler` で渡して `Build()` を呼ぶ。`ApiCore` の公開コンストラクタは無くす。必須の引数に null を渡すと `ArgumentNullException` を投げる。`With`・`Add` に null を渡すと、呼ばなかったのと同じになる
   - アプリ: `new ApiCore(...)` を `ApiCore.CreateBuilder(...)....Build()` に書き換える。null を渡していた部品は、メソッドを呼ばないか null を渡す。`activityHandlers` の配列は、ハンドラーごとに `AddActivityHandler` を呼ぶ(呼んだ順に開始を知らせる)
 - `IApiActivityHandler` で知らせる進行中の範囲から、エラーハンドラーを呼んでいる間を外す。送信や共通レスポンス項目の反映に失敗してエラーハンドラーを呼ぶ前に、その呼び出しの分の進行中を終わらせ、エラーハンドラーが `Retry` を返したら送り直す前にもう一度進行中にする。ほかの動きを返したら進行中に戻さずに抜ける(タイトル・ホームへの遷移は今どおり進行中が終わった後)。エラーハンドラーの順番待ち(ほかのダイアログが閉じるのを待つ間)も数えない。UNAUTHENTICATED のときのトークンの取り直しと送り直し、冪等性の順番待ちは今どおり進行中に数える。エラーハンドラーの間にセッションを破棄していたら、`Retry` が返っても進行中に戻さずに捨てる

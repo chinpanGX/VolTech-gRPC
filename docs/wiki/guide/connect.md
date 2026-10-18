@@ -62,6 +62,8 @@ Server::builder()
 
 ## 2. クライアントを組み立てる
 
+アプリの asmdef の Assembly Definition References に、`VolTech.Client`・`VolTech.Client.Unity` を足す(アプリの `.proto` から生成したコードを置く asmdef には、`VolTech.Client`・`VolTech.V1` を足す)。どれも Auto Referenced を切ってあるので、足さないと見えない。
+
 `ApiCore.CreateBuilder` に必須の部品を渡し、任意の部品を `With`・`Add` で足して `Build` で `ApiCore` を作る。ラッパーには `ApiCore` と `CallInvoker` を渡す。
 
 ```csharp

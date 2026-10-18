@@ -5,7 +5,7 @@ area: appendix
 related: [repo/operations, appendix/workflow, guide/client-reference, guide/server-reference]
 proto: []
 code: [server/rust/Cargo.toml, server/rust, sandbox/server, Unity/com.chinpangx.voltech.grpc, tools/protoc-gen-voltech-grpc, sandbox/proto, scripts, mk, buf.yaml, buf.gen.yaml]
-updated: 2026-10-17
+updated: 2026-10-18
 ---
 
 # コードの地図
@@ -22,11 +22,10 @@ updated: 2026-10-17
 | `server/rust/log/` | `voltech-grpc-log` | `config.rs`(`LogConfig`)、`subscriber.rs`(`init`・`layer`、フィルター)、`json.rs`(JSON の1行の書き出し、ゲームログの名前付きの値の展開)、`rpc.rs`(`RpcLogLayer`・アクセスログ)、`method.rs`(`RpcMethod`)、`lib.rs`(span の項目名、`x-request-id` の形の確認) | `tests/` |
 | `server/rust/status/` | `voltech-grpc-status` | `config.rs`(`server_status.toml` の読み込みと検証)、`status.rs`(`ServerStatus`・時計)、`source.rs`(読み込み元)、`layer.rs`(`ServerStatusLayer`・`DateChangeLayer`) | `tests/` |
 | `server/rust/transaction/` | `voltech-grpc-transaction` | `lib.rs`(`Transactions::run`)、`context.rs`(`TxContext`)、`game_log.rs`(`GameLog`・`GameLogs`・`GameLogSink`、出力先への書き込み)、`idempotency.rs`(`idempotency_level` の表)、`method.rs`(`RpcMethodLayer`)、`migrations/`(`last_responses`・`game_logs`) | `tests/`(MySQL を使う) |
-| `Unity/com.chinpangx.voltech.grpc/Runtime/Client/` | `VolTech.Client` | `ApiCore.cs`(共通処理)、`Errors/`(エラーの変換、`ErrorCode`、`ErrorPolicyProvider`、生成した予約エラー `ReservedErrors`)、`ErrorHandling/`(エラーハンドラー)、`Hooks/`(アプリが実装する interface)、`Clock/`(サーバー時刻)、`Testing/`(`FakeCallInvoker`) | `Tests/EditMode/`、sandbox の `ApiCoreTests` など |
-| `Unity/com.chinpangx.voltech.grpc/Runtime/Auth/` | `VolTech.Client.Auth` | 認証(`DeviceTokenProvider`)とアカウントの保存先 | `Tests/EditMode/DeviceTokenProviderTests.cs` |
+| `Unity/com.chinpangx.voltech.grpc/Runtime/Client/` | `VolTech.Client` | `ApiCore.cs`(共通処理)、`Auth/`(名前空間 `VolTech.Client.Auth`。認証の `DeviceTokenProvider` とアカウントの保存先)、`Internal/`(アプリに見せない型。ヘッダー名、エラーの変換、トレーラーの `ErrorInfo` の読み書き)、`Errors/`(`ErrorCode`、`ErrorPolicyProvider`、生成した予約エラー `ReservedErrors`)、`ErrorHandling/`(エラーハンドラー)、`Hooks/`(アプリが実装する interface)、`Clock/`(サーバー時刻)、`Testing/`(`FakeCallInvoker`) | `Tests/EditMode/`、sandbox の `ApiCoreTests` など |
 | `Unity/com.chinpangx.voltech.grpc/Runtime/Unity/` | `VolTech.Client.Unity` | Unity 用の層(`ApiChannel`・`UnityApiLogger` など) | sandbox の結合テスト |
 | `Unity/com.chinpangx.voltech.grpc/Runtime/Generated/` | `VolTech.V1` | 基盤の `.proto`(`voltech.v1`)から生成した C#(コミットする) | — |
-| `Unity/com.chinpangx.voltech.grpc/Runtime/Tracing/` | `VolTech.Client.Tracing` | 通信の記録(Interceptor・記録の置き場所・実機からの送信)。エディタと開発ビルドだけ | sandbox の `ApiTraceTests.cs` |
+| `Unity/com.chinpangx.voltech.grpc/Runtime/Tracing/` | `VolTech.Client.Tracing` | 通信の記録(Interceptor・記録の置き場所・実機からの送信)。エディタと開発ビルドだけ | `Tests/EditMode/ApiTraceTests.cs` |
 | `Unity/com.chinpangx.voltech.grpc/Editor/` | `VolTech.Client.Editor` | gRPC Monitor のウィンドウと、実機の記録の受け取り。エディタだけ | 目で確かめる |
 | `tools/protoc-gen-voltech-grpc/` | `protoc-gen-voltech-grpc` | ラッパーを生成する protoc プラグイン([protoc プラグインの中身](protoc-plugin.md)) | `tests/` |
 
@@ -51,7 +50,7 @@ updated: 2026-10-17
 ## 依存の向き
 
 - サーバー: `server/rust/` のクレートは sandbox やアプリに依存しない。`voltech-grpc-auth`・`-status`・`-transaction` は `voltech-grpc-error` に依存する。sandbox は別のワークスペースから `path` で基盤を参照する(アプリは `git` とタグで参照する。それ以外は同じ形)
-- クライアント: `VolTech.Client` は Unity に依存しない(asmdef の No Engine References)。`VolTech.V1` を `VolTech.Client.Auth` が参照し(`VolTech.Client` は参照しない)、`VolTech.Client.Auth` を `VolTech.Client.Unity` が参照する。`VolTech.Client.Unity` は `VolTech.Client.Tracing` を参照しない(`Tracing` の側が起動時に `ApiChannel.AddInterceptor` で登録する。リリースビルドで消えるアセンブリを参照しないため)
+- クライアント: `VolTech.Client` は Unity に依存しない(asmdef の No Engine References)。`VolTech.Client` が `VolTech.V1` を参照し(認証がデバイス登録の生成コードを使う)、`VolTech.Client.Unity` が `VolTech.Client` を参照する。アプリに見せないものは `internal` にし、各アセンブリの `AssemblyInfo.cs` の `InternalsVisibleTo` でパッケージの中のアセンブリとテストにだけ見せる([構成](../client/structure.md))。`VolTech.Client.Unity` は `VolTech.Client.Tracing` を参照しない(`Tracing` の側が起動時に `ApiChannel.AddInterceptor` で登録する。リリースビルドで消えるアセンブリを参照しないため)
 - asmdef の参照は GUID で書く([構成](../client/structure.md))
 
 ## 設定と道具

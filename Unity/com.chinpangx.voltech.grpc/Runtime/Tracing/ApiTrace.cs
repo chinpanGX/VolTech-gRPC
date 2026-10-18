@@ -14,7 +14,7 @@ namespace VolTech.Client.Tracing
     /// 別のスレッドが同時に読んでも、同じ文字列ができるだけなので壊れない。
     /// </remarks>
     [Serializable]
-    public sealed class ApiTrace
+    internal sealed class ApiTrace
     {
         /// <summary>記録の連番。送信中の記録と、それを埋めた記録は同じ Id。</summary>
         public int Id;
@@ -141,7 +141,7 @@ namespace VolTech.Client.Tracing
     /// <summary>
     /// 通信の状態。
     /// </summary>
-    public enum ApiTraceState
+    internal enum ApiTraceState
     {
         /// <summary>応答を待っている。</summary>
         Pending,
@@ -157,7 +157,7 @@ namespace VolTech.Client.Tracing
     /// ヘッダー・トレーラー・ErrorInfo.metadata の1項目。
     /// </summary>
     [Serializable]
-    public sealed class ApiTraceHeader
+    internal sealed class ApiTraceHeader
     {
         /// <summary>名前。</summary>
         public string Key;

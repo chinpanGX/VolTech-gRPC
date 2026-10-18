@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -116,6 +117,10 @@ namespace VolTech.Client
         /// <summary>
         /// RPC を呼ぶ。失敗したときはエラーハンドラーの処理を済ませてから、失敗の結果を返す。
         /// </summary>
+        /// <remarks>
+        /// 生成したラッパーから呼ぶ。アプリは直接呼ばずに、ラッパーの XxxAsync を使う。
+        /// ラッパーはアプリのアセンブリに生成されるので public にしている。
+        /// </remarks>
         /// <param name="settings">RPC ごとの設定。</param>
         /// <param name="client">生成された gRPC クライアント。</param>
         /// <param name="request">リクエスト。</param>
@@ -124,6 +129,7 @@ namespace VolTech.Client
         /// <param name="notifyActivity">
         /// 進行中の呼び出しとしてアクティビティのハンドラーに知らせるか。画面を止めずに裏で呼ぶものは false にする。
         /// </param>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public async UniTask<ApiResult<TResponse>> InvokeAsync<TClient, TRequest, TResponse>(
             RpcSettings settings,
             TClient client,

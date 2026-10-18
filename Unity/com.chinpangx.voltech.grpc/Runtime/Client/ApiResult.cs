@@ -40,7 +40,7 @@ namespace VolTech.Client
         /// <summary>
         /// 成功の結果を作る。
         /// </summary>
-        public static ApiResult<T> Success(T value)
+        internal static ApiResult<T> Success(T value)
         {
             return new ApiResult<T>(value, null);
         }
@@ -48,7 +48,7 @@ namespace VolTech.Client
         /// <summary>
         /// 失敗の結果を作る。
         /// </summary>
-        public static ApiResult<T> Failure(ApiError error)
+        internal static ApiResult<T> Failure(ApiError error)
         {
             return new ApiResult<T>(default, error ?? throw new ArgumentNullException(nameof(error)));
         }
