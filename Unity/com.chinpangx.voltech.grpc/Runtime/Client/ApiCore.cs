@@ -15,6 +15,7 @@ namespace VolTech.Client
     /// <remarks>
     /// 処理の流れ: InvokeAsync(進行中の通知) → SendInQueueAsync(順番待ち) → SendWithRetryAsync(再認証・再送のループ) → SendOnceAsync(1回の送信)。
     /// 成功したら CompleteAsync で共通レスポンス項目を反映し、失敗したら HandleErrorAsync でエラーハンドラーに渡す。
+    /// エラーハンドラーを呼ぶ間(エラーハンドラーの順番待ちを含む)は、その呼び出しの分を進行中から外し、Retry で送り直すときに戻す。
     /// エラーハンドラーがタイトル・ホームに戻ると決めたら、先にセッションを終わらせ(古い通信を止め)、
     /// 順番待ちを解放してから画面を遷移させる。遷移先の画面は、遷移の途中からでも新しいセッションで API を呼べる。
     /// </remarks>
@@ -126,23 +127,20 @@ namespace VolTech.Client
             Func<TClient, TRequest, CallOptions, AsyncUnaryCall<TResponse>> call,
             bool notifyActivity = true)
         {
-            if (notifyActivity)
-            {
-                BeginActivity();
-            }
+            // null なら知らせない。?. で呼ぶ
+            var activity = notifyActivity ? new CallActivity(this) : null;
+            activity?.Resume();
 
             (ApiResult<TResponse> Result, ErrorDecision Decision) outcome;
             try
             {
-                outcome = await SendInQueueAsync(settings, client, request, handledCodes, call);
+                outcome = await SendInQueueAsync(settings, client, request, handledCodes, call, activity);
             }
             finally
             {
-                // 失敗・捨てた・例外のどれで抜けても終わらせる。終わらせないと、通信中の表示と入力ブロックが残り続ける
-                if (notifyActivity)
-                {
-                    EndActivity();
-                }
+                // 失敗・捨てた・例外のどれで抜けても終わらせる。終わらせないと、通信中の表示と入力ブロックが残り続ける。
+                // エラーハンドラーの前に外したままなら、もう終わっているので何もしない
+                activity?.Suspend();
             }
 
             // 画面の遷移は、順番待ちを解放し、進行中を終わらせてから行う。遷移先の画面がすぐに API を呼んでも待たされない
@@ -156,7 +154,8 @@ namespace VolTech.Client
             TClient client,
             TRequest request,
             IEnumerable<ErrorCode> handledCodes,
-            Func<TClient, TRequest, CallOptions, AsyncUnaryCall<TResponse>> call)
+            Func<TClient, TRequest, CallOptions, AsyncUnaryCall<TResponse>> call,
+            CallActivity activity)
         {
             // 世代を先に読む。BeginNewSession はキャンセルを入れ替えてから世代を進めるので、
             // 新しい世代を読んだなら、キャンセルも必ず新しいものになる
@@ -185,7 +184,7 @@ namespace VolTech.Client
                     return (ApiResult<TResponse>.Failure(ApiError.Discarded()), ErrorDecision.Stay);
                 }
 
-                return await SendWithRetryAsync(settings, client, request, handledCodes, call, epoch, cancellationToken);
+                return await SendWithRetryAsync(settings, client, request, handledCodes, call, epoch, cancellationToken, activity);
             }
             finally
             {
@@ -198,7 +197,7 @@ namespace VolTech.Client
 
         // 成功するか、諦めるまで送る。送り直すのは次の2つのときだけ。
         // - UNAUTHENTICATED: トークンを取り直して1回だけ自動で送り直す
-        // - エラーハンドラーが Retry を返した: 同じ RequestID で送り直す
+        // - エラーハンドラーが Retry を返した: 同じ RequestID で送り直す。エラーハンドラーの前に外した進行中を戻してから送る
         // エラーハンドラーが決めた画面の遷移は、結果と一緒に返し、順番待ちを解放してから InvokeAsync が行う
         private async UniTask<(ApiResult<TResponse> Result, ErrorDecision Decision)> SendWithRetryAsync<TClient, TRequest, TResponse>(
             RpcSettings settings,
@@ -207,7 +206,8 @@ namespace VolTech.Client
             IEnumerable<ErrorCode> handledCodes,
             Func<TClient, TRequest, CallOptions, AsyncUnaryCall<TResponse>> call,
             int epoch,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            CallActivity activity)
         {
             // 再送では同じ RequestID を使うので、ループの外で採番する
             var requestId = settings.IsIdempotencyTarget ? Guid.NewGuid().ToString("N") : null;
@@ -234,7 +234,7 @@ namespace VolTech.Client
 
                 if (attempt.Outcome == SendOutcome.Success)
                 {
-                    return await CompleteAsync(settings, attempt.Response, attempt.ResponseHeaders, epoch);
+                    return await CompleteAsync(settings, attempt.Response, attempt.ResponseHeaders, epoch, activity);
                 }
 
                 var error = attempt.Error;
@@ -245,9 +245,10 @@ namespace VolTech.Client
                     return (ApiResult<TResponse>.Failure(error), ErrorDecision.Stay);
                 }
 
-                var decision = await HandleErrorAsync(error, epoch);
+                var decision = await HandleErrorAsync(error, epoch, activity);
                 if (decision == ErrorDecision.Retry)
                 {
+                    activity?.Resume();
                     reauthenticated = false;
                     continue;
                 }
@@ -323,7 +324,8 @@ namespace VolTech.Client
             RpcSettings settings,
             TResponse response,
             Metadata responseHeaders,
-            int epoch)
+            int epoch,
+            CallActivity activity)
         {
             // 通信中にタイトル・ホームに戻ったりセッションを捨てたりしていたら、古いセッションのレスポンスなので
             // 反映しない。反映すると、その後にサインインで置き換えた新しいデータを上書きしてしまう
@@ -336,7 +338,7 @@ namespace VolTech.Client
             ApplyResponseHeaders(responseHeaders);
 
             // 反映処理の例外は、通信のエラーと違って送り直さないので、送信とは別に扱う
-            var (applyError, decision) = await ApplyCommonFieldsAsync(settings, response, epoch);
+            var (applyError, decision) = await ApplyCommonFieldsAsync(settings, response, epoch, activity);
             return applyError == null
                 ? (ApiResult<TResponse>.Success(response), ErrorDecision.Stay)
                 : (ApiResult<TResponse>.Failure(applyError), decision);
@@ -348,7 +350,8 @@ namespace VolTech.Client
         private async UniTask<(ApiError Error, ErrorDecision Decision)> ApplyCommonFieldsAsync<TResponse>(
             RpcSettings settings,
             TResponse response,
-            int epoch)
+            int epoch,
+            CallActivity activity)
         {
             if (!(response is IMessage message))
             {
@@ -383,7 +386,7 @@ namespace VolTech.Client
                 // タイトルに戻ってサインインで全件を取り直し、サーバーとの食い違いを解消してもらう
                 logger?.LogException($"[Api] {settings.MethodName} failed to apply {applying}\n{response}", exception);
                 var error = ErrorConverter.FromClientException(exception, errorPolicy);
-                var decision = await HandleErrorAsync(error, epoch);
+                var decision = await HandleErrorAsync(error, epoch, activity);
                 return (error, decision);
             }
         }
@@ -435,8 +438,12 @@ namespace VolTech.Client
             }
         }
 
-        private async UniTask<ErrorDecision> HandleErrorAsync(ApiError error, int epoch)
+        // エラーハンドラーを呼ぶ前に、この呼び出しの分を進行中から外す。通信はもう終わっていて、ダイアログなどでユーザーの
+        // 操作を待つだけなので、通信中の表示をダイアログの後ろに残さない。ほかのダイアログを待つ順番待ちの間も外したままにする。
+        // Retry で送り直すときは、呼び出し側(SendWithRetryAsync)が戻す
+        private async UniTask<ErrorDecision> HandleErrorAsync(ApiError error, int epoch, CallActivity activity)
         {
+            activity?.Suspend();
             await errorHandlerQueue.WaitAsync();
             try
             {
@@ -569,6 +576,43 @@ namespace VolTech.Client
             catch (Exception exception)
             {
                 logger?.LogException($"[Api] navigation to {decision} failed", exception);
+            }
+        }
+
+        // 1回の呼び出しの分の進行中。外す・戻すを何度呼んでも、ApiCore の進行中の数を1より多く増やしたり、
+        // 増やしていないのに減らしたりしない。1回の呼び出しの処理は順に進むので、ロックは要らない
+        private sealed class CallActivity
+        {
+            private readonly ApiCore core;
+            private bool active;
+
+            public CallActivity(ApiCore core)
+            {
+                this.core = core;
+            }
+
+            // 進行中に数える。もう数えていれば何もしない
+            public void Resume()
+            {
+                if (active)
+                {
+                    return;
+                }
+
+                active = true;
+                core.BeginActivity();
+            }
+
+            // 進行中から外す。もう外していれば何もしない
+            public void Suspend()
+            {
+                if (!active)
+                {
+                    return;
+                }
+
+                active = false;
+                core.EndActivity();
             }
         }
 

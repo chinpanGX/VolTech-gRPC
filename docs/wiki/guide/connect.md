@@ -102,7 +102,7 @@ var gachaApi = new GachaApi(core, callInvoker);
 | `IApiActivityHandler` | 通信中になった・終わったときに、通信中の表示と入力ブロックを出す・消す。複数を登録できる | `DebugLogActivityHandler`(ログに出すだけ) |
 
 - 反映処理(Applier)では、データの更新だけをする。ダイアログや画面遷移は書かない。反映処理で例外が起きたときの扱いは [共通レスポンス項目の反映](../client/response-items.md)
-- `IApiActivityHandler` の開始・終了は、重なった呼び出しをまとめて1回ずつ届く。エラーハンドラーの間も通信中のままなので、エラーダイアログなど入力を受け付ける UI は、通信中の表示より手前に出す([ApiCore の共通処理](../client/api-core.md))
+- `IApiActivityHandler` の開始・終了は、重なった呼び出しをまとめて1回ずつ届く。エラーハンドラーを呼ぶ間は、その呼び出しの分を通信中から外す。ほかに進行中の呼び出しがあれば通信中のままなので、エラーダイアログは通信中の表示より手前に出すとよい([ApiCore の共通処理](../client/api-core.md))
 - 生成コードは、共通レスポンス項目を持つレスポンスに `IHasPlayerDiff`・`IHasBadges`・`IHasNotifications` を付ける。反映処理は、この型で判定して読む
 
 使える型の一覧は [クライアントのリファレンス](client-reference.md)。
