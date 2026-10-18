@@ -5,7 +5,7 @@ area: api
 related: [appendix/code-map, api/errors, api/idempotency, api/auth, server/transaction, server/auth, client/wrapper, client/response-items, client/fake-testing]
 proto: []
 code: [tools/protoc-gen-voltech-grpc, buf.gen.yaml]
-updated: 2026-10-11
+updated: 2026-10-18
 ---
 
 # コード生成
@@ -45,7 +45,7 @@ updated: 2026-10-11
 - 名前空間は分けない(どれも `App.V1`)。ラッパーのファイルはメッセージ型の `partial class` に目印のインターフェースを付けるので、同じ名前空間でないとコンパイルできない。また、呼ぶ側はラッパーとメッセージ型を必ず両方使うので、`using` が1つで済む
 - 1つのファイルに生成するもの
   - `<サービス名>Methods`: RPC のパスの定数(`PlayerServiceMethods.SignIn` = `/app.v1.PlayerService/SignIn`)。`RpcSettings` の名前と、テストの `FakeCallInvoker` への登録に使う
-  - ラッパー: クラス名はサービス名の末尾の `Service` を `Api` に置き換える(`PlayerService` → `PlayerApi`)。`.proto` のサービスと RPC のコメントを doc コメントにする。名前空間はメッセージ型と同じ(`App.V1`)
+  - ラッパー: クラス名はサービス名の末尾の `Service` を `Api` に置き換える(`PlayerService` → `PlayerApi`)。基盤の `ApiServiceBase` を継承し、その `protected` の `InvokeAsync` で `ApiCore` を呼ぶ(基盤の型には `global::VolTech.Client.` を付け、呼び出しは `base.InvokeAsync` と書く。[ラッパー](../client/wrapper.md))。`.proto` のサービスと RPC のコメントを doc コメントにする。名前空間はメッセージ型と同じ(`App.V1`)
   - 目印のインターフェース(`IHasPlayerDiff` など): フィールドの型を定義したファイルに出す。プロパティの型はそのフィールドの型
   - 共通レスポンス項目を持つメッセージの `partial class` に、目印のインターフェースを付ける
 - オプション(`buf.gen.yaml` の `opt`)
