@@ -50,3 +50,9 @@ reason = "CLIENT_ERROR"
 action = "title"
 client_only = true
 description = "クライアントのバグ(共通レスポンス項目の反映処理での例外など)。"
+
+[[errors]]
+reason = "ACCOUNT_DATA_CORRUPTED"
+action = "stay"
+client_only = true
+description = "端末に保存したアカウント情報が読めない(壊れている・書き換えられている)。送り直しやタイトルに戻っても直らないので留まり、アプリが問い合わせや引き継ぎに誘導する。"

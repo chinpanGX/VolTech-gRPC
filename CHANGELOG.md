@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - アカウント情報を端末に保存する `EncryptedFileAccountStore` を足す。基盤の `.proto` の `StoredAccount`(`voltech/v1/account_store.proto`)の Protobuf のバイナリを AES で暗号化し、HMAC-SHA256 で改ざんと破損を検知する。書き込みは一時ファイルに書いてから置き換える。ファイルがあるのに読めないときは `CorruptedAccountDataException` を投げ、新しいアカウントは作らない
+  - API の呼び出しの中で読めなかったときは、予約エラー `ACCOUNT_DATA_CORRUPTED`(クライアントだけが使う。既定の action は `stay`)にする。アプリはタイトル画面の最初の API の `handledCodes` に入れて受け取り、問い合わせや引き継ぎに誘導する
   - アプリ: Unity では `UnityAccountStore.Create(serverAddress)` で作り、`DeviceTokenProvider` に渡す(`Application.persistentDataPath/VolTechGrpc/` に、接続先ごとのファイルで保存する。鍵の元はバンドルID)。`InMemoryAccountStore` を使っていた場合は置き換える
 - アセンブリ `VolTech.Client.Auth` を `VolTech.Client` にまとめる。ファイルは `Runtime/Client/Auth/` に移し、名前空間 `VolTech.Client.Auth` はそのまま。`VolTech.Client` が `VolTech.V1` を参照するようになる
   - アプリ: asmdef の参照から `VolTech.Client.Auth` を外す(`VolTech.Client` を参照していれば、`DeviceTokenProvider` などはそのまま使える)。アプリが参照するのは `VolTech.Client`・`VolTech.Client.Unity`・`VolTech.V1`

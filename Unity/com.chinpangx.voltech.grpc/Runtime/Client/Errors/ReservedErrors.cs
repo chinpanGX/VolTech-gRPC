@@ -60,6 +60,12 @@ namespace VolTech.Client
         public static readonly global::VolTech.Client.ErrorCode ClientError = new(Domain, "CLIENT_ERROR");
 
         /// <summary>
+        /// 端末に保存したアカウント情報が読めない(壊れている・書き換えられている)。送り直しやタイトルに戻っても直らないので留まり、アプリが問い合わせや引き継ぎに誘導する。
+        /// クライアントだけが使う(サーバーは返さない)。
+        /// </summary>
+        public static readonly global::VolTech.Client.ErrorCode AccountDataCorrupted = new(Domain, "ACCOUNT_DATA_CORRUPTED");
+
+        /// <summary>
         /// この domain のエラーと既定の action の一覧。ErrorPolicyProvider に渡す。
         /// </summary>
         public static readonly IReadOnlyList<global::VolTech.Client.ErrorDefinition> All = new global::VolTech.Client.ErrorDefinition[]
@@ -72,6 +78,7 @@ namespace VolTech.Client
             new global::VolTech.Client.ErrorDefinition(AccountSuspended, global::VolTech.Client.ErrorAction.Title),
             new global::VolTech.Client.ErrorDefinition(DateChanged, global::VolTech.Client.ErrorAction.Title),
             new global::VolTech.Client.ErrorDefinition(ClientError, global::VolTech.Client.ErrorAction.Title),
+            new global::VolTech.Client.ErrorDefinition(AccountDataCorrupted, global::VolTech.Client.ErrorAction.Stay),
         };
     }
 }

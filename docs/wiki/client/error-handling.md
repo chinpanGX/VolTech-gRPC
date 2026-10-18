@@ -5,7 +5,7 @@ area: client
 related: [api/errors, client/auth-account, client/response-items]
 proto: []
 code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/Errors, Unity/com.chinpangx.voltech.grpc/Runtime/Client/ErrorHandling]
-updated: 2026-10-11
+updated: 2026-10-18
 ---
 
 # エラー処理
@@ -21,6 +21,7 @@ updated: 2026-10-11
 | `UNAVAILABLE` / `DEADLINE_EXCEEDED` | `NETWORK_ERROR` |
 | `UNAUTHENTICATED` | 再認証して1回だけ送り直す。それでも失敗したらエラー([認証とアカウント情報](auth-account.md)) |
 | クライアント内部の例外(共通レスポンス項目の反映処理など) | `CLIENT_ERROR`([共通レスポンス項目の反映](response-items.md)) |
+| 保存したアカウント情報が読めない(`CorruptedAccountDataException`) | `ACCOUNT_DATA_CORRUPTED`([認証とアカウント情報](auth-account.md)) |
 | 上記以外(`ErrorInfo` の無い `FAILED_PRECONDITION`、`UNIMPLEMENTED` 等) | `UNKNOWN_ERROR` |
 
 - 存在しないメソッドを呼ぶと `UNIMPLEMENTED` になるので、業務上の「見つからない」と混ざらない

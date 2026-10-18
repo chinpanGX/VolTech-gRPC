@@ -10,6 +10,7 @@ using Sandbox.Tests.EditMode.TestDoubles;
 using Sandbox.V1;
 using UnityEngine.TestTools;
 using VolTech.Client;
+using VolTech.Client.Auth;
 
 namespace Sandbox.Tests.EditMode
 {
@@ -187,6 +188,23 @@ namespace Sandbox.Tests.EditMode
             var result = await sandboxApi.PingAsync(new PingRequest());
 
             Assert.That(result.Error.Code, Is.EqualTo(ReservedErrors.ClientError));
+            Assert.That(errorHandler.Errors, Has.Count.EqualTo(1));
+            Assert.That(invoker.Calls, Is.Empty);
+        });
+
+        /// <summary>
+        /// 保存したアカウント情報が読めないと、CLIENT_ERROR ではなく ACCOUNT_DATA_CORRUPTED(既定の action は留まる)としてエラーハンドラーに渡す。
+        /// </summary>
+        [UnityTest]
+        [Description("保存したアカウント情報が読めないと、CLIENT_ERROR ではなく ACCOUNT_DATA_CORRUPTED(既定の action は留まる)としてエラーハンドラーに渡す")]
+        public IEnumerator CorruptedAccountDataIsAccountDataCorrupted() => UniTask.ToCoroutine(async () =>
+        {
+            tokenProvider.ThrowOnGet = new CorruptedAccountDataException("account.bin", null);
+
+            var result = await sandboxApi.PingAsync(new PingRequest());
+
+            Assert.That(result.Error.Code, Is.EqualTo(ReservedErrors.AccountDataCorrupted));
+            Assert.That(result.Error.Action, Is.EqualTo(ErrorAction.Stay));
             Assert.That(errorHandler.Errors, Has.Count.EqualTo(1));
             Assert.That(invoker.Calls, Is.Empty);
         });
