@@ -4,7 +4,7 @@ status: confirmed
 area: client
 related: [repo/operations, client/auth-account, client/connection, appendix/testing]
 proto: []
-code: [Unity/com.chinpangx.voltech.grpc/package.json, Unity/com.chinpangx.voltech.grpc/Runtime/Client/Internal/RpcErrorDetails.cs, Unity/com.chinpangx.voltech.grpc/Runtime/Client/AssemblyInfo.cs]
+code: [Unity/com.chinpangx.voltech.grpc/package.json, Unity/com.chinpangx.voltech.grpc/Runtime/Client/Internal/RpcErrorDetails.cs, Unity/com.chinpangx.voltech.grpc/Runtime/Client/AssemblyInfo.cs, Unity/com.chinpangx.voltech.grpc/Runtime/Client/ApiServiceBase.cs]
 updated: 2026-10-18
 ---
 
@@ -44,8 +44,8 @@ voltech-grpc/unity/
 - ビルドの種類で入れるかどうかを分けたいもの(開発用のツールなど)は、`#if` で囲まずにアセンブリに分け、asmdef の Define Constraints で決める([gRPC Monitor](grpc-monitor.md))
 - 本体は Unity の外(csproj)ではビルドしない。Unity 以外で使う予定が無いので、asmdef だけで持つ。本体のテストも Unity の EditMode テストで回す([テスト](../appendix/testing.md))。Unity のライセンスが要るので、v1 では CI では回らない
 - 認証(デバイス登録・トークンの発行・アカウント情報の保存)は、本体のアセンブリの `Auth/` にある([認証とアカウント情報](auth-account.md))。本体と同じ決まりを守り、アプリはいつも本体と一緒に使うので、アセンブリを分けない。名前空間は `VolTech.Client.Auth` に分ける
-- **アプリから使わないものは `internal` にする**。アプリの asmdef が参照するのは `VolTech.Client`・`VolTech.Client.Unity`・`VolTech.V1` で、見えるものを、アプリが呼ぶもの・実装するもの・生成コードが使うものに絞る。型ごと `internal` にするものは各アセンブリの `Internal/` に置く。パッケージの中のアセンブリどうしとパッケージのテストには、各アセンブリの `AssemblyInfo.cs` の `InternalsVisibleTo` で見せる(アプリや sandbox の名前は書かない)
-  - 生成したラッパーはアプリのアセンブリに入るので、ラッパーが使うもの(`ApiCore.InvokeAsync`・`RpcSettings`)は public のままにし、`[EditorBrowsable(Never)]` と XML ドキュメントで「アプリは使わない」と示す
+- **アプリから使わないものは `internal` にする**。アプリの asmdef が参照するのは `VolTech.Client`・`VolTech.Client.Unity`・`VolTech.V1` で、見えるものを、アプリが呼ぶもの・実装するもの・生成コードが使うものに絞る。public の型と同じアセンブリにある `internal` の型は、そのアセンブリの `Internal/` に置く(`Tracing`・`Editor` のようにアセンブリごと `internal` のものは分けない)。パッケージの中のアセンブリどうしとパッケージのテストには、各アセンブリの `AssemblyInfo.cs` の `InternalsVisibleTo` で見せる(アプリや sandbox の名前は書かない)
+  - 生成したラッパーはアプリのアセンブリに入るので、`InternalsVisibleTo` では見せられない。ラッパーは基盤の `ApiServiceBase` を継承し、`protected` の `InvokeAsync` と `protected internal` の `RpcSettings` を使う。`ApiCore.InvokeAsync` は `internal` にでき、アプリのコードから `core.InvokeAsync(...)` とは書けない(`protected` は C# の決まりなので、asmdef の分け方に頼らない)。`ApiServiceBase` を継承すれば使えるが、それはラッパーと同じクラスを意図して書いたときだけで、うっかり呼ぶことは防げる。継承まで止めるにはアナライザーが要るが、v1 では入れない
   - sandbox はアプリと同じ立場なので、sandbox のテストは public のものだけで書く。ヘッダー名のようなサーバーとの約束は、基盤の定数を使わずに値で書いて確かめる
 - 生成したラッパーと C# のメッセージ型は、アプリの Unity プロジェクトの中に出力する(sandbox は `sandbox/UnityProject/Assets/Generated/`。`errors.toml` から生成したエラーコードも同じ場所の `Errors/`)。基盤の `.proto`(`voltech.v1`)の C# だけはパッケージの `Runtime/Generated/` にある
 - **本体の決まり**

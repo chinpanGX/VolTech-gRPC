@@ -5,7 +5,8 @@
 - アセンブリ `VolTech.Client.Auth` を `VolTech.Client` にまとめる。ファイルは `Runtime/Client/Auth/` に移し、名前空間 `VolTech.Client.Auth` はそのまま。`VolTech.Client` が `VolTech.V1` を参照するようになる
   - アプリ: asmdef の参照から `VolTech.Client.Auth` を外す(`VolTech.Client` を参照していれば、`DeviceTokenProvider` などはそのまま使える)。アプリが参照するのは `VolTech.Client`・`VolTech.Client.Unity`・`VolTech.V1`
 - アプリから使わない型・メンバーを `internal` にする。`ApiHeaders`・`RpcErrorDetails`・`RpcErrorInfo`、`VolTech.Client.Tracing`・`VolTech.Client.Editor` の型、`ApiResult.Success`・`Failure`、`ApiError` のコンストラクタと `Discarded`、`ServerClock.Synchronize`・`Reset`、`AppVersion.AddHeadersTo`、`ErrorCode.IsReserved`、`ApiChannel.AddInterceptor`。パッケージの中のアセンブリとテストには `InternalsVisibleTo` で見せる
-  - 生成したラッパーが使う `ApiCore.InvokeAsync` と `RpcSettings` は public のまま、`[EditorBrowsable(Never)]` を付ける
+  - 生成したラッパーは基盤の `ApiServiceBase` を継承し、その `protected` の `InvokeAsync` で呼ぶ。`ApiCore.InvokeAsync` は `internal` に、`RpcSettings` は `ApiServiceBase` の中の `protected internal` な型にする
+  - アプリ: プラグインを上げたら C# を生成し直す(古いラッパーは `ApiCore.InvokeAsync` を呼ぶので、コンパイルできなくなる)
   - アプリ: 上の型・メンバーを使っていたら、ヘッダー名は値(`"x-game-date"` など)で書く。前面に戻ったときのサーバー時刻の合わせ直しは `ServerClockResetter` を使う
 - `ApiCore` をビルダーで作るようにする。`ApiCore.CreateBuilder(options, tokenProvider, errorPolicy, errorHandler)` で `ApiCoreBuilder` を作り、任意の部品を `WithPlayerDiffApplier`・`WithBadgeApplier`・`WithNotificationApplier`・`WithErrorNavigator`・`WithLogger`・`WithServerClock`・`AddActivityHandler` で渡して `Build()` を呼ぶ。`ApiCore` の公開コンストラクタは無くす。必須の引数に null を渡すと `ArgumentNullException` を投げる。`With`・`Add` に null を渡すと、呼ばなかったのと同じになる
   - アプリ: `new ApiCore(...)` を `ApiCore.CreateBuilder(...)....Build()` に書き換える。null を渡していた部品は、メソッドを呼ばないか null を渡す。`activityHandlers` の配列は、ハンドラーごとに `AddActivityHandler` を呼ぶ(呼んだ順に開始を知らせる)

@@ -19,10 +19,6 @@ namespace Sandbox.Tests.EditMode
     [Description("ApiCore の共通処理(トークン・ヘッダー・再認証・エラーの変換とハンドラー・順番待ち)を、サーバーなしで確かめる")]
     public class ApiCoreTests
     {
-        // 冪等性の対象として扱うかはクライアントの設定で決まるので、Ping を対象として送る設定で確かめる
-        private static readonly RpcSettings idempotencyTargetSettings =
-            new(SandboxServiceMethods.Ping, isIdempotencyTarget: true, requiresAuth: true);
-
         private FakeCallInvoker invoker;
         private CountingTokenProvider tokenProvider;
         private RecordingErrorHandler errorHandler;
@@ -443,17 +439,31 @@ namespace Sandbox.Tests.EditMode
 
         private UniTask<ApiResult<PingResponse>> InvokeIdempotencyTargetAsync()
         {
-            return core.InvokeAsync(
-                idempotencyTargetSettings,
-                new SandboxService.SandboxServiceClient(invoker),
-                new PingRequest(),
-                null,
-                static (c, r, options) => c.PingAsync(r, options));
+            return new IdempotentPingApi(core, invoker).PingAsync();
         }
 
         private static PingResponse Pinged(string playerId)
         {
             return new PingResponse { PlayerId = playerId };
+        }
+
+        // 冪等性の対象として扱うかはクライアントの設定で決まるので、Ping を対象として送るラッパーで確かめる
+        private sealed class IdempotentPingApi : ApiServiceBase
+        {
+            private static readonly RpcSettings settings =
+                new(SandboxServiceMethods.Ping, isIdempotencyTarget: true, requiresAuth: true);
+
+            private readonly SandboxService.SandboxServiceClient client;
+
+            public IdempotentPingApi(ApiCore core, CallInvoker callInvoker) : base(core)
+            {
+                client = new SandboxService.SandboxServiceClient(callInvoker);
+            }
+
+            public UniTask<ApiResult<PingResponse>> PingAsync()
+            {
+                return InvokeAsync(settings, client, new PingRequest(), null, static (c, r, options) => c.PingAsync(r, options));
+            }
         }
     }
 }

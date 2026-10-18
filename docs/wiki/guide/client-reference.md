@@ -29,7 +29,7 @@ Unity のクライアントで使う、基盤の型の一覧。各型の細か�
 | `XxxServiceMethods`(生成) | RPC のパスの定数(`"/app.v1.GachaService/Draw"`)。`FakeCallInvoker` への登録に使う |
 | `ApiResult<T>` | 結果。`IsSuccess`・`Value`(成功のとき)・`Error`(失敗のとき)。失敗のときに `Value` を読むと例外になる |
 | `ApiError` | 失敗の内容。`Code`(エラーコード)・`Action`(取る行動)・`StatusCode`(gRPC のステータス)・`Metadata`(表示用の値。例: メンテナンスの `end_at`)・`IsDiscarded`(タイトル・ホームに戻ったので送らずに捨てた) |
-| `ApiCore` | 共通処理。`ApiCore.CreateBuilder(...)` で作った `ApiCoreBuilder` に任意の部品を渡し、`Build()` で作る。ラッパーが呼ぶので、アプリが直接呼ぶのは `ResetSession()`(アカウントを入れ替えた後)と `ServerClock` くらい。`InvokeAsync` と `RpcSettings` は生成したラッパー用で、アプリは使わない |
+| `ApiCore` | 共通処理。`ApiCore.CreateBuilder(...)` で作った `ApiCoreBuilder` に任意の部品を渡し、`Build()` で作る。ラッパーが呼ぶので、アプリが直接呼ぶのは `ResetSession()`(アカウントを入れ替えた後)と `ServerClock` くらい。RPC を呼ぶ処理は、生成したラッパーが基底クラス `ApiServiceBase` を通して使う(アプリは継承しない) |
 
 `ApiCore` がまとめて行うこと: トークンとヘッダーの付与、冪等性の対象の RPC の順番待ちと RequestID、UNAUTHENTICATED のときのトークンの発行し直しと再送、エラーの変換とエラーハンドラーの呼び出し、サーバー時刻とゲーム内の日付の保持、共通レスポンス項目の反映、通信中の開始・終了の通知(`IApiActivityHandler`)。詳しくは [ApiCore の共通処理](../client/api-core.md)。
 

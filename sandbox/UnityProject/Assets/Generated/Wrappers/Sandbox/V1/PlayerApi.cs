@@ -21,20 +21,18 @@ namespace Sandbox.V1
     /// PlayerService を ApiCore を通して呼ぶ。
     /// プレイヤーの作成(サインアップ)と、所持データの全件の取得(サインイン)。
     /// </summary>
-    public sealed class PlayerApi
+    public sealed class PlayerApi : global::VolTech.Client.ApiServiceBase
     {
         private static readonly RpcSettings signUpSettings = new(PlayerServiceMethods.SignUp, isIdempotencyTarget: false, requiresAuth: true);
         private static readonly RpcSettings signInSettings = new(PlayerServiceMethods.SignIn, isIdempotencyTarget: false, requiresAuth: true);
 
-        private readonly ApiCore core;
         private readonly PlayerService.PlayerServiceClient client;
 
         /// <summary>
         /// ApiCore と、通信に使う CallInvoker を受け取って作る。
         /// </summary>
-        public PlayerApi(ApiCore core, CallInvoker callInvoker)
+        public PlayerApi(global::VolTech.Client.ApiCore core, CallInvoker callInvoker) : base(core)
         {
-            this.core = core;
             client = new PlayerService.PlayerServiceClient(callInvoker);
         }
 
@@ -47,7 +45,7 @@ namespace Sandbox.V1
             IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null,
             bool notifyActivity = true)
         {
-            return core.InvokeAsync(
+            return base.InvokeAsync(
                 signUpSettings,
                 client,
                 request,
@@ -65,7 +63,7 @@ namespace Sandbox.V1
             IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null,
             bool notifyActivity = true)
         {
-            return core.InvokeAsync(
+            return base.InvokeAsync(
                 signInSettings,
                 client,
                 request,

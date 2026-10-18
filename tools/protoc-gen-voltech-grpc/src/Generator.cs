@@ -1,4 +1,4 @@
-using Google.Protobuf.Compiler;
+﻿using Google.Protobuf.Compiler;
 using Google.Protobuf.Reflection;
 
 namespace ProtocGenVoltechGrpc;
@@ -143,7 +143,7 @@ internal static class Generator
         var client = $"{service.Name}.{service.Name}Client";
 
         writer.Summary([$"{service.Name} を ApiCore を通して呼ぶ。", .. comments.ForService(serviceIndex)]);
-        using (writer.Block($"public sealed class {WrapperName(service)}"))
+        using (writer.Block($"public sealed class {WrapperName(service)} : global::VolTech.Client.ApiServiceBase"))
         {
             foreach (var method in service.Method)
             {
@@ -153,14 +153,12 @@ internal static class Generator
             }
 
             writer.Line()
-                .Line("private readonly ApiCore core;")
                 .Line($"private readonly {client} client;")
                 .Line()
                 .Summary(["ApiCore と、通信に使う CallInvoker を受け取って作る。"]);
-            using (writer.Block($"public {WrapperName(service)}(ApiCore core, CallInvoker callInvoker)"))
+            using (writer.Block($"public {WrapperName(service)}(global::VolTech.Client.ApiCore core, CallInvoker callInvoker) : base(core)"))
             {
-                writer.Line("this.core = core;")
-                    .Line($"client = new {client}(callInvoker);");
+                writer.Line($"client = new {client}(callInvoker);");
             }
 
             for (var i = 0; i < service.Method.Count; i++)
@@ -181,7 +179,7 @@ internal static class Generator
                     .Line("    IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null,")
                     .Line("    bool notifyActivity = true)")
                     .Line("{");
-                writer.Line($"    return core.InvokeAsync(")
+                writer.Line("    return base.InvokeAsync(")
                     .Line($"        {SettingsField(method)},")
                     .Line("        client,")
                     .Line("        request,")

@@ -21,21 +21,19 @@ namespace Sandbox.V1
     /// <summary>
     /// SandboxService を ApiCore を通して呼ぶ。
     /// </summary>
-    public sealed class SandboxApi
+    public sealed class SandboxApi : global::VolTech.Client.ApiServiceBase
     {
         private static readonly RpcSettings pingSettings = new(SandboxServiceMethods.Ping, isIdempotencyTarget: false, requiresAuth: true);
         private static readonly RpcSettings failSettings = new(SandboxServiceMethods.Fail, isIdempotencyTarget: false, requiresAuth: true);
         private static readonly RpcSettings incrementSettings = new(SandboxServiceMethods.Increment, isIdempotencyTarget: true, requiresAuth: true);
 
-        private readonly ApiCore core;
         private readonly SandboxService.SandboxServiceClient client;
 
         /// <summary>
         /// ApiCore と、通信に使う CallInvoker を受け取って作る。
         /// </summary>
-        public SandboxApi(ApiCore core, CallInvoker callInvoker)
+        public SandboxApi(global::VolTech.Client.ApiCore core, CallInvoker callInvoker) : base(core)
         {
-            this.core = core;
             client = new SandboxService.SandboxServiceClient(callInvoker);
         }
 
@@ -48,7 +46,7 @@ namespace Sandbox.V1
             IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null,
             bool notifyActivity = true)
         {
-            return core.InvokeAsync(
+            return base.InvokeAsync(
                 pingSettings,
                 client,
                 request,
@@ -65,7 +63,7 @@ namespace Sandbox.V1
             IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null,
             bool notifyActivity = true)
         {
-            return core.InvokeAsync(
+            return base.InvokeAsync(
                 failSettings,
                 client,
                 request,
@@ -83,7 +81,7 @@ namespace Sandbox.V1
             IReadOnlyList<global::VolTech.Client.ErrorCode> handledCodes = null,
             bool notifyActivity = true)
         {
-            return core.InvokeAsync(
+            return base.InvokeAsync(
                 incrementSettings,
                 client,
                 request,
