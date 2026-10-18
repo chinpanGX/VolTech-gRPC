@@ -24,6 +24,10 @@ namespace VolTech.Client.Auth
         private readonly SemaphoreSlim gate = new(1, 1);
 
         private AccountData account;
+
+        // デバイス登録はできたが保存できなかったアカウント。登録し直すとサーバーに使われないプレイヤーが増えるので、次は保存からやり直す
+        private AccountData unsavedAccount;
+
         private string accessToken;
         private DateTime expiresAt;
 
@@ -44,8 +48,49 @@ namespace VolTech.Client.Auth
         }
 
         /// <summary>
+        /// 端末に保存したアカウント情報の状態を返す。通信はしない。タイトル画面で、最初の API を呼ぶ前に呼ぶ。
+        /// </summary>
+        /// <remarks>
+        /// 保存していなければサインアップ、保存していればサインインに進む。読めなければ例外にせず Corrupted を返す。
+        /// </remarks>
+        public async UniTask<AccountStatus> GetAccountStatusAsync()
+        {
+            await gate.WaitAsync();
+            try
+            {
+                if (account != null)
+                {
+                    return AccountStatus.Registered;
+                }
+
+                // 登録したが保存できていないものは、サインアップの続きで保存するので、まだ保存されていないものとして扱う
+                if (unsavedAccount != null)
+                {
+                    return AccountStatus.NotRegistered;
+                }
+
+                try
+                {
+                    account = await accountStore.LoadAsync();
+                }
+                catch (CorruptedAccountDataException)
+                {
+                    return AccountStatus.Corrupted;
+                }
+
+                return account == null ? AccountStatus.NotRegistered : AccountStatus.Registered;
+            }
+            finally
+            {
+                gate.Release();
+            }
+        }
+
+        /// <summary>
         /// 有効なアクセストークンを返す。無ければ、デバイス登録やトークンの発行をしてから返す。
         /// </summary>
+        /// <exception cref="CorruptedAccountDataException">保存したアカウント情報が読めないとき。</exception>
+        /// <exception cref="AccountSaveFailedException">デバイス登録はできたが、保存できなかったとき。</exception>
         public async UniTask<string> GetTokenAsync()
         {
             await gate.WaitAsync();
@@ -56,10 +101,24 @@ namespace VolTech.Client.Auth
                     return accessToken;
                 }
 
-                account ??= await accountStore.LoadAsync();
                 if (account == null)
                 {
-                    account = await RegisterAsync();
+                    // 登録したのに保存できなかったものがあれば、登録し直さずに保存からやり直す
+                    if (unsavedAccount == null)
+                    {
+                        account = await accountStore.LoadAsync();
+                        if (account == null)
+                        {
+                            unsavedAccount = await RegisterAsync();
+                        }
+                    }
+
+                    if (unsavedAccount != null)
+                    {
+                        await SaveAsync(unsavedAccount);
+                        account = unsavedAccount;
+                        unsavedAccount = null;
+                    }
                 }
 
                 var issued = await client.IssueTokenAsync(
@@ -91,10 +150,14 @@ namespace VolTech.Client.Auth
         /// <summary>
         /// 覚えているトークンとアカウント情報を捨てる。次の GetTokenAsync で保存先から読み直す。
         /// </summary>
+        /// <remarks>
+        /// 保存できていない登録も捨てる。引き継ぎなどでアプリが保存先を入れ替えた後に、古い登録で上書きしないため。
+        /// </remarks>
         public void Reset()
         {
             accessToken = null;
             account = null;
+            unsavedAccount = null;
         }
 
         private async UniTask<AccountData> RegisterAsync()
@@ -105,10 +168,20 @@ namespace VolTech.Client.Auth
                 new RegisterRequest { SecretKey = secretKey },
                 Headers(),
                 Deadline());
-            // player_id もデバイス登録で発行されるので、ここで3つとも保存する
-            var registeredAccount = new AccountData(registered.DeviceId, secretKey, registered.PlayerId);
-            await accountStore.SaveAsync(registeredAccount);
-            return registeredAccount;
+            // player_id もデバイス登録で発行されるので、3つとも保存する
+            return new AccountData(registered.DeviceId, secretKey, registered.PlayerId);
+        }
+
+        private async UniTask SaveAsync(AccountData registered)
+        {
+            try
+            {
+                await accountStore.SaveAsync(registered);
+            }
+            catch (Exception exception)
+            {
+                throw new AccountSaveFailedException(exception);
+            }
         }
 
         // タイトル画面で最初に呼ぶので、ここで強制アップデートを判定してもらえるように、プラットフォームとバージョンを付ける

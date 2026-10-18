@@ -4,7 +4,7 @@ status: confirmed
 area: client
 related: [client/structure]
 proto: [server/rust/auth/proto/voltech/v1/account_store.proto]
-code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/Auth, Unity/com.chinpangx.voltech.grpc/Runtime/Client/Internal/AesHmacCipher.cs, Unity/com.chinpangx.voltech.grpc/Runtime/Client/Internal/SafeFile.cs, Unity/com.chinpangx.voltech.grpc/Runtime/Unity/UnityAccountStore.cs]
+code: [Unity/com.chinpangx.voltech.grpc/Runtime/Client/Auth, Unity/com.chinpangx.voltech.grpc/Runtime/Client/Internal/AesHmacCipher.cs, Unity/com.chinpangx.voltech.grpc/Runtime/Client/Internal/SafeFile.cs, Unity/com.chinpangx.voltech.grpc/Runtime/Unity/UnityAccountStore.cs, sandbox/UnityProject/Assets/Scripts/Sample/TitleScreen.cs]
 updated: 2026-10-18
 ---
 
@@ -18,7 +18,15 @@ updated: 2026-10-18
 - デバイス登録も、トークンの発行も **single-flight** にする(同時に走ると、`device_id` が2つ発行されたり、互いのトークンを無効にし合ったりするため)
 - デバイス登録は、アプリが最初にAPIを呼んだ時点で行われる。利用規約への同意などを先に済ませたい場合は、その後で最初のAPIを呼ぶ
 - それでも `UNAUTHENTICATED` が返ったら、再認証して**1回だけ**同じRequestIDで送り直す。サーバーが処理を始める前に弾いたものなので、二重実行にならない
-- 起動時の流れ: デバイス登録(未登録なら) → トークンの発行 → サインイン →(「プレイヤー未作成」なら)サインアップ
+- 起動時の流れ: タイトル画面で `DeviceTokenProvider.GetAccountStatusAsync()` を呼び、端末に保存したアカウント情報の状態で分ける(通信はしない)。アカウント情報の読み書きの失敗は端末の問題で、通信のエラーとは別に扱うため、API の結果に混ぜずにここで確かめる
+  | 状態 | 進む先 |
+  |---|---|
+  | `NotRegistered`(保存されていない) | サインアップ。最初の API でデバイス登録 → 保存 → トークンの発行が自動で行われる |
+  | `Registered`(保存されている) | サインイン |
+  | `Corrupted`(ファイルはあるのに読めない) | アプリの専用の画面(問い合わせ・引き継ぎ・新しく始める)。新しく始めるときは `ClearAsync` してから `ResetSession()` を呼び、サインアップに進む |
+  - サインインが「プレイヤーがいない」を返したら、サインアップしてからサインインし直す。デバイス登録と保存の後、サインアップの前に止まると(通信が切れたなど)、次は `Registered` でもプレイヤーがいないため
+  - 見本は sandbox の `TitleScreen`
+- **デバイス登録の後に保存できなければ、トークンを発行しない**(`AccountSaveFailedException`)。保存できないまま進めると、次に起動したときに別の端末として登録され、そのプレイヤーに戻れなくなるため。登録した結果はメモリに持ち、次に呼ばれたときは登録し直さずに保存からやり直す(登録し直すと、サーバーに使われないプレイヤーが増える)。`Reset()` のときは捨てる(引き継ぎなどで入れ替えた保存先を、古い登録で上書きしないため)
 
 ## 保存の仕組み
 
@@ -77,7 +85,7 @@ var tokenProvider = new DeviceTokenProvider(callInvoker, accountStore, options);
 | 公開範囲 | 名前空間をパッケージのものに変え、`internal` にする(アプリがSupplementも使っていても名前が衝突しないように) |
 
 - **読み込みのルール**: ファイルが無ければ未登録(`null`)。ファイルがあるのに読めない(HMACが合わない、復号できない、値が空)場合は `CorruptedAccountDataException` にし、**新しいアカウントを勝手に作らない・ファイルも消さない**(元のデータに戻れなくなるため)。問い合わせや引き継ぎに誘導する
-  - API の呼び出しの中で起きると、`ApiCore` が予約エラー `ACCOUNT_DATA_CORRUPTED`(既定の action は留まる)にする。送り直しやタイトルに戻っても同じファイルを読むだけで直らないので、留まる。アプリはタイトル画面の最初の API の `handledCodes` に入れて受け取り、問い合わせや引き継ぎ、ユーザーが選んだときだけ `ClearAsync` してから新しく始める、に進ませる
+  - 状態を確かめた後に、API の呼び出しの中で読み書きに失敗したときは、`ApiCore` が予約エラー `ACCOUNT_DATA_CORRUPTED`(読めない)・`ACCOUNT_SAVE_FAILED`(保存できない)にし、**共通エラーハンドラーに回さずに**呼び出し側に返す(ダイアログを出さず、action も使わない)。どちらもサインアップ・サインインの API で起きるので、タイトル画面の流れで受け取って専用の画面を出す
 - 鍵の元がアプリの中にある以上、暗号化は難読化の位置づけ(他のアプリからはOSのサンドボックスで守られる)。本当に守りたいアプリは、iOSのKeychainやAndroidのKeystoreを使う実装に差し替える
 - PBKDF2は本来は要らないが、コストは無視できるので、動作確認済みのコードを変える量を減らすために残す
 - 注意(v1ではドキュメントに書くだけ): 保存したファイルはOSのバックアップに含まれることがある。別の端末に戻すと、2台が同じ `device_id` を持ち、認証のたびに互いのトークンを無効にし合う。バックアップから外すかはアプリに任せる

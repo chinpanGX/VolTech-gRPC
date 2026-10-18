@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.IO;
 using System.Linq;
 using VolTech.Client.Auth;
 using Cysharp.Threading.Tasks;
@@ -160,5 +161,97 @@ namespace VolTech.Client.Tests.EditMode
             Assert.That(second, Is.EqualTo("token-2"));
             Assert.That(await provider.GetTokenAsync(), Is.EqualTo(second));
         });
+
+        /// <summary>
+        /// 保存したアカウント情報が無ければ NotRegistered、あれば Registered を返す。どちらも通信しない。
+        /// </summary>
+        [UnityTest]
+        [Description("保存したアカウント情報が無ければ NotRegistered、あれば Registered を返す。どちらも通信しない")]
+        public IEnumerator StatusTellsWhetherAccountIsSaved() => UniTask.ToCoroutine(async () =>
+        {
+            Assert.That(await provider.GetAccountStatusAsync(), Is.EqualTo(AccountStatus.NotRegistered));
+
+            await accountStore.SaveAsync(new AccountData("saved-device", "saved-secret-key-0000", "saved-player"));
+
+            Assert.That(await provider.GetAccountStatusAsync(), Is.EqualTo(AccountStatus.Registered));
+            Assert.That(invoker.Calls, Is.Empty);
+        });
+
+        /// <summary>
+        /// 保存したアカウント情報が読めなければ、例外にせず Corrupted を返す。
+        /// </summary>
+        [UnityTest]
+        [Description("保存したアカウント情報が読めなければ、例外にせず Corrupted を返す")]
+        public IEnumerator StatusIsCorruptedWhenUnreadable() => UniTask.ToCoroutine(async () =>
+        {
+            var store = new FlakyAccountStore { ThrowOnLoad = new CorruptedAccountDataException("account.bin", null) };
+            provider = new DeviceTokenProvider(invoker, store, new ApiCoreOptions(), () => currentTime);
+
+            Assert.That(await provider.GetAccountStatusAsync(), Is.EqualTo(AccountStatus.Corrupted));
+        });
+
+        /// <summary>
+        /// デバイス登録の後に保存できなければ AccountSaveFailedException にし、トークンは発行しない。
+        /// 次に呼ばれたときは登録し直さず、登録した結果の保存からやり直す。
+        /// </summary>
+        [UnityTest]
+        [Description("デバイス登録の後に保存できなければ AccountSaveFailedException にし、トークンは発行しない。次に呼ばれたときは登録し直さず、登録した結果の保存からやり直す")]
+        public IEnumerator SaveFailureRetriesSaveWithoutRegisteringAgain() => UniTask.ToCoroutine(async () =>
+        {
+            var store = new FlakyAccountStore { SaveFailures = 1 };
+            provider = new DeviceTokenProvider(invoker, store, new ApiCoreOptions(), () => currentTime);
+
+            AccountSaveFailedException thrown = null;
+            try
+            {
+                await provider.GetTokenAsync();
+            }
+            catch (AccountSaveFailedException exception)
+            {
+                thrown = exception;
+            }
+
+            Assert.That(thrown, Is.Not.Null);
+            Assert.That(thrown.InnerException, Is.InstanceOf<IOException>());
+            Assert.That(invoker.Calls.Select(call => call.MethodFullName), Is.EqualTo(new[] { RegisterMethod }));
+            Assert.That(await provider.GetAccountStatusAsync(), Is.EqualTo(AccountStatus.NotRegistered));
+
+            var token = await provider.GetTokenAsync();
+
+            Assert.That(token, Is.EqualTo("token-1"));
+            Assert.That(invoker.Calls.Count(call => call.MethodFullName == RegisterMethod), Is.EqualTo(1), "登録し直した");
+            Assert.That((await store.LoadAsync()).DeviceId, Is.EqualTo("device-1"));
+        });
+
+        // 読み込みで例外を投げたり、決めた回数だけ保存に失敗したりする IAccountStore
+        private sealed class FlakyAccountStore : IAccountStore
+        {
+            private readonly InMemoryAccountStore inner = new();
+
+            public Exception ThrowOnLoad { get; set; }
+
+            public int SaveFailures { get; set; }
+
+            public UniTask<AccountData> LoadAsync()
+            {
+                return ThrowOnLoad != null ? throw ThrowOnLoad : inner.LoadAsync();
+            }
+
+            public UniTask SaveAsync(AccountData data)
+            {
+                if (SaveFailures > 0)
+                {
+                    SaveFailures--;
+                    throw new IOException("disk full");
+                }
+
+                return inner.SaveAsync(data);
+            }
+
+            public UniTask ClearAsync()
+            {
+                return inner.ClearAsync();
+            }
+        }
     }
 }

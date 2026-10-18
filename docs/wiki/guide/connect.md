@@ -92,7 +92,7 @@ var gachaApi = new GachaApi(core, callInvoker);
 
 - 前面に戻ったときにサーバー時刻を合わせ直すため、`ServerClockResetter.Create(clock)` も作る
 - `ApiCore`・ラッパー・`CallInvoker` はアプリで1つずつにする(順番待ちとセッションを `ApiCore` が持つため)
-- アカウント情報は、`UnityAccountStore.Create(serverAddress)` で接続先ごとの暗号化したファイルに保存する。sandbox のサンプルは、起動するたびに新しい端末として試せるように `InMemoryAccountStore` を使っている
+- アカウント情報は、`UnityAccountStore.Create(serverAddress)` で接続先ごとの暗号化したファイルに保存する。新しいプレイヤーで始め直すときは、`ClearAsync()` のあとに `ResetSession()` を呼ぶ(sandbox のタイトル画面のデータ削除のボタンが見本)。`InMemoryAccountStore` はテスト用で、アプリでは使わない
 - デバイス登録とトークンの発行は、最初の通信で `ApiCore` が自動で行う。アプリが呼ぶことはない([認証とアカウント情報](../client/auth-account.md))
 
 アプリが実装する interface:

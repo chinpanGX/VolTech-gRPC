@@ -43,13 +43,33 @@ namespace VolTech.Client
         }
 
         /// <summary>
-        /// クライアント内部の例外を CLIENT_ERROR に変える。保存したアカウント情報が読めないときだけは ACCOUNT_DATA_CORRUPTED にする。
+        /// クライアント内部の例外を CLIENT_ERROR に変える。アカウント情報の読み書きの失敗は、それぞれ専用のコードにする。
         /// </summary>
         public static ApiError FromClientException(Exception exception, IErrorPolicyProvider policy)
         {
-            // バグとは違い、アプリが問い合わせや引き継ぎに誘導できるように、別のコードにする
-            var code = exception is CorruptedAccountDataException ? ReservedErrors.AccountDataCorrupted : ReservedErrors.ClientError;
-            return Create(code, StatusCode.Unknown, exception.Message, policy);
+            return Create(ClientErrorCode(exception), StatusCode.Unknown, exception.Message, policy);
+        }
+
+        /// <summary>
+        /// 端末のアカウント情報の読み書きの失敗か。通信のエラーではないので、共通エラーハンドラーに回さずに呼び出し側に返す。
+        /// </summary>
+        public static bool IsAccountStorageError(ErrorCode code)
+        {
+            return code == ReservedErrors.AccountDataCorrupted || code == ReservedErrors.AccountSaveFailed;
+        }
+
+        // バグとは違い、アプリが専用の画面(問い合わせ・引き継ぎなど)に進められるように、別のコードにする
+        private static ErrorCode ClientErrorCode(Exception exception)
+        {
+            switch (exception)
+            {
+                case CorruptedAccountDataException:
+                    return ReservedErrors.AccountDataCorrupted;
+                case AccountSaveFailedException:
+                    return ReservedErrors.AccountSaveFailed;
+                default:
+                    return ReservedErrors.ClientError;
+            }
         }
 
         // エラーの詳細が壊れていたら(途中の機器が書き換えた、など)、詳細が無いものとして UNKNOWN_ERROR にする

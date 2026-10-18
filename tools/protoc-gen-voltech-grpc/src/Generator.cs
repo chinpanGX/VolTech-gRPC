@@ -1,4 +1,4 @@
-﻿using Google.Protobuf.Compiler;
+using Google.Protobuf.Compiler;
 using Google.Protobuf.Reflection;
 
 namespace ProtocGenVoltechGrpc;

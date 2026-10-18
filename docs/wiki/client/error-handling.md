@@ -22,6 +22,7 @@ updated: 2026-10-18
 | `UNAUTHENTICATED` | 再認証して1回だけ送り直す。それでも失敗したらエラー([認証とアカウント情報](auth-account.md)) |
 | クライアント内部の例外(共通レスポンス項目の反映処理など) | `CLIENT_ERROR`([共通レスポンス項目の反映](response-items.md)) |
 | 保存したアカウント情報が読めない(`CorruptedAccountDataException`) | `ACCOUNT_DATA_CORRUPTED`([認証とアカウント情報](auth-account.md)) |
+| デバイス登録の後にアカウント情報を保存できない(`AccountSaveFailedException`) | `ACCOUNT_SAVE_FAILED`([認証とアカウント情報](auth-account.md)) |
 | 上記以外(`ErrorInfo` の無い `FAILED_PRECONDITION`、`UNIMPLEMENTED` 等) | `UNKNOWN_ERROR` |
 
 - 存在しないメソッドを呼ぶと `UNIMPLEMENTED` になるので、業務上の「見つからない」と混ざらない
@@ -50,6 +51,7 @@ updated: 2026-10-18
 3. それ以外は、共通エラーハンドラー(`ICommonErrorHandler`)が処理する([エラー](../api/errors.md)の action の表のとおり)
 
 - 予約コード(1〜999)は1と2を通らず、必ず共通エラーハンドラーが処理する。画面ごとにメンテナンスなどの扱いが変わらないようにするため
+- ただし `ACCOUNT_DATA_CORRUPTED`・`ACCOUNT_SAVE_FAILED`(端末のアカウント情報の読み書きの失敗)は、`handledCodes` に入れなくても、共通エラーハンドラーに回さずに呼び出し側に返す。通信のエラーではなく、送り直しやタイトルに戻っても直らないので、タイトル画面の流れで専用の画面を出す([認証とアカウント情報](auth-account.md))
 - ハンドラーは「再送する / 諦める」を返す。再送なら、順番待ちを持ったまま同じRequestIDで送り直す。諦めたら、呼び出し側に失敗を返す
 - **エラーハンドラーの呼び出しは1つずつにする**(ダイアログは同時に1つだけ)。順番待ちに並ばないRPC(ポーリングなど)は同時にエラーになり得るため。後のエラーは前のダイアログが閉じるまで待ち、前のダイアログでタイトル・ホームへ戻った場合は、ダイアログを出さずに失敗として終わらせる
 

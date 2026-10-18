@@ -59,10 +59,13 @@ namespace Sample
             builder.Register<PlayerRepository>(Lifetime.Singleton);
             builder.Register<BadgeStore>(Lifetime.Singleton);
             builder.Register<NotificationQueue>(Lifetime.Singleton);
+            // アカウント情報は、接続先ごとの暗号化したファイルに保存する。新しいプレイヤーで始めるときは、タイトル画面のデータ削除で消す
+            builder.RegisterInstance(UnityAccountStore.Create(serverAddress)).As<IAccountStore>();
+            // タイトル画面がアカウント情報の状態を確かめるのに使うので、ApiCore に渡すものと同じインスタンスを登録する
+            builder.Register(resolver => new DeviceTokenProvider(callInvoker, resolver.Resolve<IAccountStore>(), options), Lifetime.Singleton);
             builder.Register(resolver => ApiCore.CreateBuilder(
                         options,
-                        // アカウント情報の保存先は、サンプルではメモリに置く(起動するたびに新しい端末になる)
-                        new DeviceTokenProvider(callInvoker, new InMemoryAccountStore(), options),
+                        resolver.Resolve<DeviceTokenProvider>(),
                         // 業務エラーの既定の action は、errors.toml から生成した一覧から引く
                         new ErrorPolicyProvider(SandboxErrors.All),
                         new DefaultCommonErrorHandler(errorDialog))

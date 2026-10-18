@@ -407,9 +407,15 @@ namespace VolTech.Client
             }
         }
 
-        // 予約コードは画面ごとに扱いが変わらないように、handledCodes に入っていても共通エラーハンドラーに回す
+        // 呼び出し側が処理するエラーか。予約コードは画面ごとに扱いを変えないように、handledCodes にあっても共通エラーハンドラーに回す。
+        // ただし端末のアカウント情報の読み書きの失敗は、通信のエラーではなく、タイトル画面の流れで専用の画面を出すので、いつも呼び出し側に返す
         private static bool IsHandledByCaller(ApiError error, IEnumerable<ErrorCode> handledCodes)
         {
+            if (ErrorConverter.IsAccountStorageError(error.Code))
+            {
+                return true;
+            }
+
             return !error.Code.IsReserved && handledCodes != null && handledCodes.Contains(error.Code);
         }
 

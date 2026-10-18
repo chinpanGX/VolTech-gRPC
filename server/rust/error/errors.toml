@@ -55,4 +55,10 @@ description = "クライアントのバグ(共通レスポンス項目の反映�
 reason = "ACCOUNT_DATA_CORRUPTED"
 action = "stay"
 client_only = true
-description = "端末に保存したアカウント情報が読めない(壊れている・書き換えられている)。送り直しやタイトルに戻っても直らないので留まり、アプリが問い合わせや引き継ぎに誘導する。"
+description = "端末に保存したアカウント情報が読めない(壊れている・書き換えられている)。通信のエラーではないので、共通エラーハンドラーに回さずに呼び出し側に返す(action は使わない)。"
+
+[[errors]]
+reason = "ACCOUNT_SAVE_FAILED"
+action = "stay"
+client_only = true
+description = "デバイス登録はできたが、アカウント情報を端末に保存できなかった。通信のエラーではないので、共通エラーハンドラーに回さずに呼び出し側に返す(action は使わない)。"

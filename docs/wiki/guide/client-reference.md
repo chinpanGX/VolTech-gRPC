@@ -37,8 +37,8 @@ Unity のクライアントで使う、基盤の型の一覧。各型の細か�
 
 | 型 | 役割 |
 |---|---|
-| `DeviceTokenProvider`(`ITokenProvider`) | デバイス登録・トークンの発行・期限の管理を自動で行う。アカウント情報は `IAccountStore` に保存する([認証とアカウント情報](../client/auth-account.md)) |
-| `IAccountStore` / `EncryptedFileAccountStore` / `InMemoryAccountStore` | アカウント情報(`AccountData`: `DeviceId`・`SecretKey`・`PlayerId`)の保存先。`EncryptedFileAccountStore` は暗号化したファイルに保存する(Unity では `UnityAccountStore.Create(serverAddress)` で作る)。ファイルがあるのに読めないと `CorruptedAccountDataException` を投げる。`InMemoryAccountStore` はメモリだけ(起動するたびに新しい端末になる。テストや試すとき用) |
+| `DeviceTokenProvider`(`ITokenProvider`) | デバイス登録・トークンの発行・期限の管理を自動で行う。アカウント情報は `IAccountStore` に保存する。`GetAccountStatusAsync()` で、保存したアカウント情報の状態(`AccountStatus`: `NotRegistered`・`Registered`・`Corrupted`)を返す。タイトル画面でサインアップとサインインのどちらに進むかを決めるのに使う([認証とアカウント情報](../client/auth-account.md)) |
+| `IAccountStore` / `EncryptedFileAccountStore` | アカウント情報(`AccountData`: `DeviceId`・`SecretKey`・`PlayerId`)の保存先。`EncryptedFileAccountStore` は暗号化したファイルに保存する(Unity では `UnityAccountStore.Create(serverAddress)` で作る)。ファイルがあるのに読めないと `CorruptedAccountDataException` を投げる。新しいプレイヤーで始め直すときは、`ClearAsync()` のあとに `ApiCore.ResetSession()` を呼ぶ(開発中も同じ。sandbox のタイトル画面のデータ削除が見本) |
 | `DefaultCommonErrorHandler`(`ICommonErrorHandler`) | action ごとに決まったボタンのダイアログを出し、押されたボタンから動き(`ErrorDecision`)を決める([エラー処理](../client/error-handling.md)) |
 | `ErrorPolicyProvider`(`IErrorPolicyProvider`) | エラーコードから既定の action を引く。アプリの `errors.toml` から生成した一覧(例: `AppErrors.All`)を渡して作る。予約エラーは自動で入る([エラー](../api/errors.md)) |
 | `ServerClock`(`IServerClock`) | サーバー時刻。成功したレスポンスのヘッダーで合わせる。`IsSynchronized` が false の間は `Now` を読めない |
@@ -63,6 +63,7 @@ Unity のクライアントで使う、基盤の型の一覧。各型の細か�
 |---|---|
 | `FakeCallInvoker` | 通信する代わりに、RPC ごとに登録した処理を呼ぶ。生成したクライアント・ラッパーに渡すと、`ApiCore` とエラー処理は本物と同じに動く。`Calls` で呼ばれた RPC とヘッダーを確かめられる |
 | `FakeRpcErrors` | サーバーが返すエラーを作る。`FailedPrecondition(code, message, metadata)` は業務エラー(`ErrorInfo` 付き)、`Status(code)` はそれ以外 |
+| `InMemoryAccountStore` | メモリに持つだけの `IAccountStore`。テスト用で、アプリでは使わない(起動するたびに別の端末として登録され、前のプレイヤーに戻れなくなる) |
 
 ```csharp
 var invoker = new FakeCallInvoker()

@@ -193,19 +193,21 @@ namespace Sandbox.Tests.EditMode
         });
 
         /// <summary>
-        /// 保存したアカウント情報が読めないと、CLIENT_ERROR ではなく ACCOUNT_DATA_CORRUPTED(既定の action は留まる)としてエラーハンドラーに渡す。
+        /// 端末のアカウント情報の読み書きの失敗は、専用のコードにし、handledCodes に入れなくても共通エラーハンドラーに回さずに返す(通信のエラーとは扱いを分ける)。
         /// </summary>
         [UnityTest]
-        [Description("保存したアカウント情報が読めないと、CLIENT_ERROR ではなく ACCOUNT_DATA_CORRUPTED(既定の action は留まる)としてエラーハンドラーに渡す")]
-        public IEnumerator CorruptedAccountDataIsAccountDataCorrupted() => UniTask.ToCoroutine(async () =>
+        [Description("端末のアカウント情報の読み書きの失敗は、専用のコードにし、handledCodes に入れなくても共通エラーハンドラーに回さずに返す(通信のエラーとは扱いを分ける)")]
+        public IEnumerator AccountStorageErrorsAreReturnedWithoutErrorHandler() => UniTask.ToCoroutine(async () =>
         {
             tokenProvider.ThrowOnGet = new CorruptedAccountDataException("account.bin", null);
+            var corrupted = await sandboxApi.PingAsync(new PingRequest());
 
-            var result = await sandboxApi.PingAsync(new PingRequest());
+            tokenProvider.ThrowOnGet = new AccountSaveFailedException(new System.IO.IOException("disk full"));
+            var saveFailed = await sandboxApi.PingAsync(new PingRequest());
 
-            Assert.That(result.Error.Code, Is.EqualTo(ReservedErrors.AccountDataCorrupted));
-            Assert.That(result.Error.Action, Is.EqualTo(ErrorAction.Stay));
-            Assert.That(errorHandler.Errors, Has.Count.EqualTo(1));
+            Assert.That(corrupted.Error.Code, Is.EqualTo(ReservedErrors.AccountDataCorrupted));
+            Assert.That(saveFailed.Error.Code, Is.EqualTo(ReservedErrors.AccountSaveFailed));
+            Assert.That(errorHandler.Errors, Is.Empty);
             Assert.That(invoker.Calls, Is.Empty);
         });
 

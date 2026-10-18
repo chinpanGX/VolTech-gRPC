@@ -3,7 +3,8 @@
 namespace VolTech.Client.Auth
 {
     /// <summary>
-    /// メモリに持つだけの IAccountStore。テストや、起動するたびに新しい端末として試すときに使う。端末に保存するときは EncryptedFileAccountStore を使う。
+    /// メモリに持つだけの IAccountStore。テスト用で、アプリでは使わない(起動するたびに別の端末として登録され、前のプレイヤーに戻れなくなる)。
+    /// アプリでは EncryptedFileAccountStore(Unity では UnityAccountStore.Create)を使う。
     /// </summary>
     public sealed class InMemoryAccountStore : IAccountStore
     {
